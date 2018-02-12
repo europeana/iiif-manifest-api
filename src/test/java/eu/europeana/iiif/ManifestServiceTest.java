@@ -1,7 +1,8 @@
 package eu.europeana.iiif;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import eu.europeana.iiif.model.v3.Manifest;
+import eu.europeana.iiif.model.v2.ManifestV2;
+import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.ManifestService;
 import eu.europeana.iiif.service.exception.IIIFException;
 import eu.europeana.iiif.service.exception.InvalidApiKeyException;
@@ -18,7 +19,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests for the general flow of generating output (getRecord, generate the manifest and serialize it)
+ * Tests the general flow of generating output (getRecord, generate the manifest and serialize it) for both versions
+ * of the manifest (v2 and v3)
  * @author Patrick Ehlert on 18-1-18.
  */
 
@@ -29,6 +31,7 @@ public class ManifestServiceTest {
     private static final String TEST1_CHILD_RECORD_ID = "/9200408/BibliographicResource_3000117822022";
     private static final String TEST2_PARENT_RECORD_ID = "/9200356/BibliographicResource_3000100340004";
     private static final String TEST3_CHILD_RECORD_ID = "/9200385/BibliographicResource_3000117433317";
+    private static final String TEST4_PARENT_RECORD_ID = "/9200359/BibliographicResource_3000116004551";
     private static final String APIKEY = "api2demo";
 
     private static ManifestService ms;
@@ -45,8 +48,15 @@ public class ManifestServiceTest {
         return json;
     }
 
-    private Manifest getManifest(String recordId) throws IIIFException {
-        Manifest m = ms.generateManifest(getRecord(recordId));
+    private ManifestV2 getManifestV2(String recordId) throws IIIFException {
+        ManifestV2 m = ms.generateManifestV2(getRecord(recordId));
+        assertNotNull(m);
+        assertTrue(m.getId().contains(recordId));
+        return m;
+    }
+
+    private ManifestV3 getManifestV3(String recordId) throws IIIFException {
+        ManifestV3 m = ms.generateManifestV3(getRecord(recordId));
         assertNotNull(m);
         assertTrue(m.getId().contains(recordId));
         return m;
@@ -76,28 +86,50 @@ public class ManifestServiceTest {
      */
     @Test(expected = InvalidApiKeyException.class)
     public void testGetJsonRecordApikeyInvalid() throws IIIFException {
-        ms.getRecordJson(TEST1_CHILD_RECORD_ID, "INVALID");
+        ms.getRecordJson(TEST2_PARENT_RECORD_ID, "INVALID");
     }
 
     /**
-     * Test generation of Manifest
+     * Test generation of Manifest for version 2
      * @throws IIIFException
      */
     @Test
-    public void testGetManifest() throws IIIFException {
-        getManifest(TEST2_PARENT_RECORD_ID);
+    public void testGetManifestV2() throws IIIFException {
+        getManifestV2(TEST1_CHILD_RECORD_ID);
     }
 
     /**
-     * Test serializing manifest
+     * Test generation of Manifest for version 3
      * @throws IIIFException
      */
     @Test
-    public void testSerializeJsonLd() throws IIIFException {
+    public void testGetManifestV3() throws IIIFException {
+        getManifestV3(TEST2_PARENT_RECORD_ID);
+    }
+
+    /**
+     * Test serializing manifest for version 2
+     * @throws IIIFException
+     */
+    @Test
+    public void testSerializeJsonLdV2() throws IIIFException {
         String recordId = TEST3_CHILD_RECORD_ID;
-        String jsonLd = ms.serializeManifest(getManifest(recordId));
+        String jsonLd = ms.serializeManifest(getManifestV2(recordId));
         assertNotNull(jsonLd);
-        LogFactory.getLog(ManifestService.class).error("jsonld = "+jsonLd);
+        LogFactory.getLog(ManifestService.class).error("jsonld v2 = " + jsonLd);
+        assertTrue(jsonLd.contains("\"id\" : \"https://iiif.europeana.eu/presentation" + recordId + "/manifest"));
+    }
+
+    /**
+     * Test serializing manifest for version 3
+     * @throws IIIFException
+     */
+    @Test
+    public void testSerializeJsonLdV3() throws IIIFException {
+        String recordId = TEST4_PARENT_RECORD_ID;
+        String jsonLd = ms.serializeManifest(getManifestV3(recordId));
+        assertNotNull(jsonLd);
+        LogFactory.getLog(ManifestService.class).error("jsonld v3 = "+jsonLd);
         assertTrue(jsonLd.contains("\"id\" : \"https://iiif.europeana.eu/presentation"+recordId+"/manifest"));
     }
 

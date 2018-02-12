@@ -1,5 +1,7 @@
 package eu.europeana.iiif.model.v3;
 
+import eu.europeana.iiif.model.IdType;
+
 import java.io.Serializable;
 
 /**
@@ -13,7 +15,6 @@ public class Service extends IdType implements Serializable {
     public String profile;
 
     public Service(String id) {
-        super("ImageService3");
-        this.id = id;
+        super(id, "ImageService3");
     }
 }

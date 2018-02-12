@@ -5,16 +5,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
-import eu.europeana.iiif.model.Definitions;
-import eu.europeana.iiif.model.v3.Collection;
-import eu.europeana.iiif.model.v3.LanguageMap;
-import eu.europeana.iiif.model.v3.Manifest;
+import eu.europeana.iiif.model.AbstractManifest;
+import eu.europeana.iiif.model.v2.ManifestV2;
+import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.exception.IIIFException;
 import eu.europeana.iiif.service.exception.InvalidApiKeyException;
 import eu.europeana.iiif.service.exception.RecordNotFoundException;
@@ -33,12 +31,11 @@ import org.apache.logging.log4j.Logger;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -57,6 +54,7 @@ public class ManifestService {
     private static ObjectMapper mapper = new ObjectMapper();
 
     //TODO fix proper loading from .properties file (doesn't work right now)
+
 
     @Value("${record-api.url:bla}")
     private String recordApiUrl = "http://www.europeana.eu/api/v2/record";
@@ -153,65 +151,45 @@ public class ManifestService {
     }
 
     /**
-     * Generats a manifest object filled with data that is extracted from te provided JSON
+     * Generates a manifest object for IIIF v2 filled with data that is extracted from the provided JSON
      * @param json record data in JSON format
-     * @return Manifest object
+     * @return Manifest v2 object
      */
-    public Manifest generateManifest (String json)  {
-        Manifest result;
-
+    public ManifestV2 generateManifestV2 (String json)  {
         long start = System.currentTimeMillis();
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(json);
-        result = new Manifest(getIdUrl(getId(json)));
-        result.within = getWithin(document);
-        result.label = getLabel(document);
+        ManifestV2 result = EdmManifestMapping.getManifestV2(document);
 
-        LOG.debug("Generated in "+(System.currentTimeMillis()-start));
-
+        LOG.debug("Generated in {} ms", (System.currentTimeMillis()-start));
         return result;
     }
 
-    protected String getId(String json) {
-        return JsonPath.parse(json).read("$.object.about", String.class);
+    /**
+     * Generates a manifest object for IIIF v3 filled with data that is extracted from the provided JSON
+     * @param json record data in JSON format
+     * @return Manifest v3 object
+     */
+    public ManifestV3 generateManifestV3 (String json)  {
+        long start = System.currentTimeMillis();
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(json);
+        ManifestV3 result = EdmManifestMapping.getManifestV3(document);
+
+        LOG.debug("Generated in {} ms ", (System.currentTimeMillis()-start));
+        return result;
     }
 
-    protected String getIdUrl(String id) {
-        return Definitions.IIIF_MANIFESTID_BASE_UIRL +id+ Definitions.IIIF_MANIFESTID_POSTFIX;
-    }
 
-    protected Collection[] getWithin(Object json) {
-        List<Collection> result = new ArrayList<>();
-        // TODO I think we can incorporate the startsWith into the JsonPath read
-        List<String> collections = JsonPath.parse(json).read("$.object.proxies[*].dctermsIsPartOf.def[*]", List.class);
-        for (String collection : collections) {
-            if (collection.toLowerCase().startsWith("http://data.theeuropeanlibrary.org") || collection.toLowerCase().startsWith("https://data.theeuropeanlibrary.org")) {
-                result.add(new Collection(collection));
-            }
-        }
-        return result.toArray(new Collection[result.size()]);
-    }
-
-    protected LanguageMap getLabel(Object json)  {
-        LanguageMap[] maps = JsonPath.parse(json).read("$.object.proxies[*].dcTitle", LanguageMap[].class);
-        if (maps.length == 0) {
-            LOG.debug("No title, checking description");
-            maps = JsonPath.parse(json).read("$.object.proxies[*].dcDescription", LanguageMap[].class);
-        }
-        // TODO what if there is no title and no description
-        return maps[0];
-    }
-
-    // TODO insert context when serializing!
+    // TODO insert context when serializing!? (or do we redefine it?)
     // perhaps we can use https://github.com/io-informatics/jackson-jsonld or
     // https://github.com/kbss-cvut/jb4jsonld-jackson
 
-    /**
+   /**
      * Serialize manifest to JSON-LD
      * @param m manifest
      * @return JSON-LD string
      * @throws RecordParseException when there is a problem parsing
      */
-    public String serializeManifest(Manifest m) throws RecordParseException {
+    public String serializeManifest(AbstractManifest m) throws RecordParseException {
         try {
             return mapper.
                     writerWithDefaultPrettyPrinter().
@@ -231,9 +209,12 @@ public class ManifestService {
     public static void main(String[] args) throws IIIFException {
         ManifestService s = new ManifestService();
         //String json = s.getRecordJson("/9200356/BibliographicResource_3000118390149");
-        String json = "{\"apikey\":\"api2demo\",\"success\":true,\"statsDuration\":240,\"requestNumber\":999,\"object\":{\"edmDatasetName\":[\"9200356_Ag_EU_TEL_a0616_Newspapers_Estonia\"],\"title\":[\"Edasi - 1922-03-15\"],\"providedCHOs\":[{\"about\":\"/item/9200356/BibliographicResource_3000118390149\"}],\"aggregations\":[{\"about\":\"/aggregation/provider/9200356/BibliographicResource_3000118390149\",\"edmDataProvider\":{\"def\":[\"National Library of Estonia\"]},\"edmIsShownBy\":\"http://www.theeuropeanlibrary.org/tel4/newspapers/issue/fullscreen/3000118390149\",\"edmIsShownAt\":\"http://www.europeana.eu/api/api2demo/redirect?shownAt=http%3A%2F%2Fwww.theeuropeanlibrary.org%2Ftel4%2Fnewspapers%2Fissue%2F3000118390149&provider=The+European+Library&id=http%3A%2F%2Fwww.europeana.eu%2Fresolve%2Frecord%2F9200356%2FBibliographicResource_3000118390149&profile=full\",\"edmObject\":\"http://port2.theeuropeanlibrary.org/fcgi-bin/iipsrv2.fcgi?FIF=node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001.jp2&wid=200&cvt=jpg\",\"edmProvider\":{\"en\":[\"The European Library\"]},\"edmRights\":{\"def\":[\"http://creativecommons.org/publicdomain/mark/1.0/\"]},\"edmUgc\":\"false\",\"aggregatedCHO\":\"/item/9200356/BibliographicResource_3000118390149\",\"webResources\":[{\"webResourceEdmRights\":{\"def\":[\"http://creativecommons.org/publicdomain/mark/1.0/\"]},\"about\":\"http://www.theeuropeanlibrary.org/tel4/newspapers/issue/3000118390149\",\"textAttributionSnippet\":\"Edasi - 1922-03-15 - http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html. National Library of Estonia - http://www.theeuropeanlibrary.org/tel4/newspapers/issue/3000118390149. Public Domain - http://creativecommons.org/publicdomain/mark/1.0/\",\"htmlAttributionSnippet\":\"<span about='http://data.europeana.eu/item/9200356/BibliographicResource_3000118390149'><a href='http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html'><span property='dc:title'>Edasi - 1922-03-15</span></a>. <a href='http://www.theeuropeanlibrary.org/tel4/newspapers/issue/3000118390149'>National Library of Estonia</a>. <a href='http://creativecommons.org/publicdomain/mark/1.0/' rel='xhv:license http://www.europeana.eu/schemas/edm/rights'>Public Domain</a><span rel='cc:useGuidelines' resource='http://www.europeana.eu/rights/pd-usage-guide/'>.</span></span>\"},{\"webResourceEdmRights\":{\"def\":[\"http://creativecommons.org/publicdomain/mark/1.0/\"]},\"about\":\"http://www.theeuropeanlibrary.org/tel4/newspapers/issue/fullscreen/3000118390149\",\"textAttributionSnippet\":\"Edasi - 1922-03-15 - http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html. National Library of Estonia - http://www.theeuropeanlibrary.org/tel4/newspapers/issue/3000118390149. Public Domain - http://creativecommons.org/publicdomain/mark/1.0/\",\"htmlAttributionSnippet\":\"<span about='http://data.europeana.eu/item/9200356/BibliographicResource_3000118390149'><a href='http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html'><span property='dc:title'>Edasi - 1922-03-15</span></a>. <a href='http://www.theeuropeanlibrary.org/tel4/newspapers/issue/3000118390149'>National Library of Estonia</a>. <a href='http://creativecommons.org/publicdomain/mark/1.0/' rel='xhv:license http://www.europeana.eu/schemas/edm/rights'>Public Domain</a><span rel='cc:useGuidelines' resource='http://www.europeana.eu/rights/pd-usage-guide/'>.</span></span>\"},{\"webResourceEdmRights\":{\"def\":[\"http://creativecommons.org/publicdomain/mark/1.0/\"]},\"about\":\"http://port2.theeuropeanlibrary.org/fcgi-bin/iipsrv2.fcgi?FIF=node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001.jp2&wid=200&cvt=jpg\",\"textAttributionSnippet\":\"Edasi - 1922-03-15 - http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html. National Library of Estonia - http://www.theeuropeanlibrary.org/tel4/newspapers/issue/3000118390149. Public Domain - http://creativecommons.org/publicdomain/mark/1.0/\",\"htmlAttributionSnippet\":\"<span about='http://data.europeana.eu/item/9200356/BibliographicResource_3000118390149'><a href='http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html'><span property='dc:title'>Edasi - 1922-03-15</span></a>. <a href='http://www.theeuropeanlibrary.org/tel4/newspapers/issue/3000118390149'>National Library of Estonia</a>. <a href='http://creativecommons.org/publicdomain/mark/1.0/' rel='xhv:license http://www.europeana.eu/schemas/edm/rights'>Public Domain</a><span rel='cc:useGuidelines' resource='http://www.europeana.eu/rights/pd-usage-guide/'>.</span></span>\"}],\"edmPreviewNoDistribute\":false}],\"about\":\"/9200356/BibliographicResource_3000118390149\",\"europeanaAggregation\":{\"about\":\"/aggregation/europeana/9200356/BibliographicResource_3000118390149\",\"aggregatedCHO\":\"/item/9200356/BibliographicResource_3000118390149\",\"edmLandingPage\":\"http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html\",\"edmCountry\":{\"def\":[\"estonia\"]},\"edmLanguage\":{\"def\":[\"et\"]},\"edmRights\":{\"def\":[\"http://creativecommons.org/publicdomain/mark/1.0/\"]},\"edmPreview\":\"https://www.europeana.eu/api/v2/thumbnail-by-url.json?uri=http%3A%2F%2Fport2.theeuropeanlibrary.org%2Ffcgi-bin%2Fiipsrv2.fcgi%3FFIF%3Dnode-3%2Fimage%2FNLE%2FEdasi%2F1922%2F03%2F15%2F1%2F19220315_1-0001.jp2%26wid%3D200%26cvt%3Djpg&size=LARGE&type=TEXT\"},\"proxies\":[{\"about\":\"/proxy/provider/9200356/BibliographicResource_3000118390149\",\"dcDate\":{\"def\":[\"1922\"]},\"dcIdentifier\":{\"def\":[\"http://data.theeuropeanlibrary.org/BibliographicResource/3000118390149\"]},\"dcLanguage\":{\"def\":[\"et\"]},\"dcTitle\":{\"def\":[\"Edasi - 1922-03-15\"]},\"dcType\":{\"def\":[\"http://vocab.getty.edu/aat/300026656\",\"Newspaper Issue\"],\"en\":[\"Analytic serial\"]},\"dctermsExtent\":{\"en\":[\"Pages: 4\"]},\"dctermsIsPartOf\":{\"def\":[\"http://data.theeuropeanlibrary.org/BibliographicResource/3000100340004\",\"http://data.theeuropeanlibrary.org/Collection/a0616\"],\"en\":[\"Europeana Newspapers\"]},\"dctermsIssued\":{\"def\":[\"1922-03-15\"]},\"edmIsNextInSequence\":[\"http://data.theeuropeanlibrary.org/BibliographicResource/3000118390042\"],\"proxyIn\":[\"/aggregation/provider/9200356/BibliographicResource_3000118390149\"],\"proxyFor\":\"/item/9200356/BibliographicResource_3000118390149\",\"edmType\":\"TEXT\",\"europeanaProxy\":false},{\"about\":\"/proxy/europeana/9200356/BibliographicResource_3000118390149\",\"dcDate\":{\"def\":[\"http://semium.org/time/19xx_1_third\",\"http://semium.org/time/1922\"]},\"dctermsTemporal\":{\"def\":[\"http://semium.org/time/19xx\"]},\"proxyIn\":[\"/aggregation/europeana/9200356/BibliographicResource_3000118390149\"],\"proxyFor\":\"/item/9200356/BibliographicResource_3000118390149\",\"edmType\":\"TEXT\",\"year\":{\"def\":[\"1922\"]},\"europeanaProxy\":true}],\"language\":[\"et\"],\"timespans\":[{\"about\":\"http://semium.org/time/19xx_1_third\",\"prefLabel\":{\"ru\":[\"Начало 20-го века\"],\"en\":[\"Early 20th century\"]},\"begin\":{\"def\":[\"Tue Jan 01 00:19:32 CET 1901\"]},\"end\":{\"def\":[\"Sun Dec 31 00:19:32 CET 1933\"]},\"isPartOf\":{\"def\":[\"http://semium.org/time/19xx\"]}},{\"about\":\"http://semium.org/time/1922\",\"prefLabel\":{\"def\":[\"1922\"]},\"begin\":{\"def\":[\"Sun Jan 01 00:19:32 CET 1922\"]},\"end\":{\"def\":[\"Sun Dec 31 00:19:32 CET 1922\"]},\"isPartOf\":{\"def\":[\"http://semium.org/time/19xx_1_third\"]}},{\"about\":\"http://semium.org/time/AD2xxx\",\"prefLabel\":{\"en\":[\"Second millenium AD\",\"Second millenium AD, years 1001-2000\"],\"fr\":[\"2e millénaire après J.-C.\"]},\"isPartOf\":{\"def\":[\"http://semium.org/time/ChronologicalPeriod\"]}},{\"about\":\"http://semium.org/time/ChronologicalPeriod\",\"prefLabel\":{\"en\":[\"Chronological period\"]},\"isPartOf\":{\"def\":[\"http://semium.org/time/Time\"]}},{\"about\":\"http://semium.org/time/19xx\",\"prefLabel\":{\"ru\":[\"20й век\"],\"def\":[\"20..\",\"20??\",\"20e\"],\"en\":[\"20-th\",\"20th\",\"20th century\"],\"fr\":[\"20e siècle\"],\"nl\":[\"20de eeuw\"]},\"begin\":{\"def\":[\"Tue Jan 01 00:19:32 CET 1901\"]},\"end\":{\"def\":[\"Sun Dec 31 01:00:00 CET 2000\"]},\"isPartOf\":{\"def\":[\"http://semium.org/time/AD2xxx\"]}},{\"about\":\"http://semium.org/time/Time\",\"prefLabel\":{\"en\":[\"Time\"]}}],\"europeanaCompleteness\":5,\"europeanaCollectionName\":[\"9200356_Ag_EU_TEL_a0616_Newspapers_Estonia\"],\"concepts\":[{\"about\":\"http://vocab.getty.edu/aat/300026656\",\"prefLabel\":{\"de\":[\"Zeitung\"],\"en\":[\"newspapers\"],\"es\":[\"diarios (noticias)\"],\"nl\":[\"kranten\"]},\"altLabel\":{\"de\":[\"Tageblätter\"],\"sv\":[\"tidning\"],\"en\":[\"newspaper\"],\"it\":[\"giornale (newspaper)\"],\"fr\":[\"journal (newspaper)\"],\"nl\":[\"nieuwsbladen\"],\"es\":[\"diario (noticias)\"]},\"note\":{\"def\":[\"http://vocab.getty.edu/aat/rev/5002531933\"]},\"broader\":[\"http://vocab.getty.edu/aat/300026642\"],\"narrower\":[\"http://vocab.getty.edu/aat/300404424\"]}],\"year\":[\"1922\"],\"type\":\"TEXT\",\"timestamp_created_epoch\":1422220146248,\"timestamp_update_epoch\":1462984526654,\"timestamp_update\":\"2016-05-11T16:35:26.654Z\",\"timestamp_created\":\"2015-01-25T21:09:06.248Z\"}}\n";
-        Manifest m = s.generateManifest(json);
-        LOG.debug("jsonld = \n{}", s.serializeManifest(m));
+        String json = "{\"apikey\":\"api2demo\",\"success\":true,\"statsDuration\":295,\"requestNumber\":999,\"object\":{\"title\":[\"Edasi - 1922-03-15\"],\"edmDatasetName\":[\"9200356_Ag_EU_TEL_a0616_Newspapers_Estonia\"],\"aggregations\":[{\"about\":\"/aggregation/provider/9200356/BibliographicResource_3000118390149\",\"edmDataProvider\":{\"def\":[\"National Library of Estonia\"]},\"edmIsShownBy\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001/full/full/0/default.jpg\",\"edmObject\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001/full/full/0/default.jpg\",\"edmProvider\":{\"en\":[\"The European Library\"]},\"edmRights\":{\"def\":[\"http://creativecommons.org/publicdomain/mark/1.0/\"]},\"hasView\":[\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001/full/full/0/default.jpg\",\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0002/full/full/0/default.jpg\",\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0003/full/full/0/default.jpg\",\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0004/full/full/0/default.jpg\"],\"aggregatedCHO\":\"/item/9200356/BibliographicResource_3000118390149\",\"webResources\":[{\"about\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001/full/full/0/default.jpg\",\"textAttributionSnippet\":\"Edasi - 1922-03-15 - http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html. National Library of Estonia. Public Domain - http://creativecommons.org/publicdomain/mark/1.0/\",\"htmlAttributionSnippet\":\"<span about='http://data.europeana.eu/item/9200356/BibliographicResource_3000118390149'><a href='http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html'><span property='dc:title'>Edasi - 1922-03-15</span></a>. National Library of Estonia. <a href='http://creativecommons.org/publicdomain/mark/1.0/' rel='xhv:license http://www.europeana.eu/schemas/edm/rights'>Public Domain</a><span rel='cc:useGuidelines' resource='http://www.europeana.eu/rights/pd-usage-guide/'>.</span></span>\",\"svcsHasService\":[\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001\"]},{\"about\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0002/full/full/0/default.jpg\",\"isNextInSequence\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001/full/full/0/default.jpg\",\"textAttributionSnippet\":\"Edasi - 1922-03-15 - http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html. National Library of Estonia. Public Domain - http://creativecommons.org/publicdomain/mark/1.0/\",\"htmlAttributionSnippet\":\"<span about='http://data.europeana.eu/item/9200356/BibliographicResource_3000118390149'><a href='http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html'><span property='dc:title'>Edasi - 1922-03-15</span></a>. National Library of Estonia. <a href='http://creativecommons.org/publicdomain/mark/1.0/' rel='xhv:license http://www.europeana.eu/schemas/edm/rights'>Public Domain</a><span rel='cc:useGuidelines' resource='http://www.europeana.eu/rights/pd-usage-guide/'>.</span></span>\",\"svcsHasService\":[\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0002\"]},{\"about\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0003/full/full/0/default.jpg\",\"isNextInSequence\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0002/full/full/0/default.jpg\",\"textAttributionSnippet\":\"Edasi - 1922-03-15 - http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html. National Library of Estonia. Public Domain - http://creativecommons.org/publicdomain/mark/1.0/\",\"htmlAttributionSnippet\":\"<span about='http://data.europeana.eu/item/9200356/BibliographicResource_3000118390149'><a href='http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html'><span property='dc:title'>Edasi - 1922-03-15</span></a>. National Library of Estonia. <a href='http://creativecommons.org/publicdomain/mark/1.0/' rel='xhv:license http://www.europeana.eu/schemas/edm/rights'>Public Domain</a><span rel='cc:useGuidelines' resource='http://www.europeana.eu/rights/pd-usage-guide/'>.</span></span>\",\"svcsHasService\":[\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0003\"]},{\"about\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0004/full/full/0/default.jpg\",\"isNextInSequence\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0003/full/full/0/default.jpg\",\"textAttributionSnippet\":\"Edasi - 1922-03-15 - http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html. National Library of Estonia. Public Domain - http://creativecommons.org/publicdomain/mark/1.0/\",\"htmlAttributionSnippet\":\"<span about='http://data.europeana.eu/item/9200356/BibliographicResource_3000118390149'><a href='http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html'><span property='dc:title'>Edasi - 1922-03-15</span></a>. National Library of Estonia. <a href='http://creativecommons.org/publicdomain/mark/1.0/' rel='xhv:license http://www.europeana.eu/schemas/edm/rights'>Public Domain</a><span rel='cc:useGuidelines' resource='http://www.europeana.eu/rights/pd-usage-guide/'>.</span></span>\",\"svcsHasService\":[\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0004\"]}],\"edmPreviewNoDistribute\":false}],\"about\":\"/9200356/BibliographicResource_3000118390149\",\"europeanaAggregation\":{\"about\":\"/aggregation/europeana/9200356/BibliographicResource_3000118390149\",\"aggregatedCHO\":\"/item/9200356/BibliographicResource_3000118390149\",\"edmLandingPage\":\"http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html\",\"edmCountry\":{\"def\":[\"estonia\"]},\"edmLanguage\":{\"def\":[\"et\"]},\"edmPreview\":\"http://europeanastatic.eu/api/image?uri=http%3A%2F%2Fiiif.europeana.eu%2Frecords%2FGGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA%2Frepresentations%2Fpresentation_images%2Fversions%2Fc7aaa970-fd11-11e5-bc8a-fa163e60dd72%2Ffiles%2Fnode-3%2Fimage%2FNLE%2FEdasi%2F1922%2F03%2F15%2F1%2F19220315_1-0001%2Ffull%2Ffull%2F0%2Fdefault.jpg&size=LARGE&type=TEXT\"},\"proxies\":[{\"about\":\"/proxy/provider/9200356/BibliographicResource_3000118390149\",\"dcIdentifier\":{\"def\":[\"http://data.theeuropeanlibrary.org/BibliographicResource/3000118390149\"]},\"dcLanguage\":{\"def\":[\"et\"]},\"dcTitle\":{\"def\":[\"Edasi - 1922-03-15\"]},\"dcType\":{\"def\":[\"http://schema.org/PublicationIssue\"]},\"dctermsExtent\":{\"en\":[\"Pages: 4\"]},\"dctermsIsPartOf\":{\"def\":[\"http://data.theeuropeanLibrary.org/BibliographicResource/3000100340004\",\"http://data.theeuropeanlibrary.org/Collection/a0616\"],\"en\":[\"Europeana Newspapers\"]},\"dctermsIssued\":{\"def\":[\"1922-03-15\"]},\"edmIsNextInSequence\":[\"http://data.theeuropeanLibrary.org/BibliographicResource/3000118390042\"],\"proxyIn\":[\"/aggregation/provider/9200356/BibliographicResource_3000118390149\"],\"proxyFor\":\"/item/9200356/BibliographicResource_3000118390149\",\"edmType\":\"TEXT\",\"europeanaProxy\":false},{\"about\":\"/proxy/europeana/9200356/BibliographicResource_3000118390149\",\"proxyIn\":[\"/aggregation/europeana/9200356/BibliographicResource_3000118390149\"],\"proxyFor\":\"/item/9200356/BibliographicResource_3000118390149\",\"edmType\":\"TEXT\",\"europeanaProxy\":true}],\"language\":[\"et\"],\"europeanaCompleteness\":5,\"providedCHOs\":[{\"about\":\"/item/9200356/BibliographicResource_3000118390149\"}],\"europeanaCollectionName\":[\"9200356_Ag_EU_TEL_a0616_Newspapers_Estonia\"],\"services\":[{\"about\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001\",\"id\":{\"timestamp\":1512120749,\"machineIdentifier\":14987444,\"processIdentifier\":-15654,\"counter\":7962431,\"timeSecond\":1512120749,\"time\":1512120749000,\"date\":1512120749000},\"dctermsConformsTo\":[\"http://iiif.io/api/image\"],\"doapImplements\":[\"http://iiif.io/api/image/2/level1.json\"]},{\"about\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0002\",\"id\":{\"timestamp\":1512120749,\"machineIdentifier\":14987444,\"processIdentifier\":-15654,\"counter\":7962432,\"timeSecond\":1512120749,\"time\":1512120749000,\"date\":1512120749000},\"dctermsConformsTo\":[\"http://iiif.io/api/image\"],\"doapImplements\":[\"http://iiif.io/api/image/2/level1.json\"]},{\"about\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0003\",\"id\":{\"timestamp\":1512120749,\"machineIdentifier\":14987444,\"processIdentifier\":-15654,\"counter\":7962433,\"timeSecond\":1512120749,\"time\":1512120749000,\"date\":1512120749000},\"dctermsConformsTo\":[\"http://iiif.io/api/image\"],\"doapImplements\":[\"http://iiif.io/api/image/2/level1.json\"]},{\"about\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0004\",\"id\":{\"timestamp\":1512120749,\"machineIdentifier\":14987444,\"processIdentifier\":-15654,\"counter\":7962434,\"timeSecond\":1512120749,\"time\":1512120749000,\"date\":1512120749000},\"dctermsConformsTo\":[\"http://iiif.io/api/image\"],\"doapImplements\":[\"http://iiif.io/api/image/2/level1.json\"]}],\"type\":\"TEXT\",\"timestamp_created_epoch\":1422220146248,\"timestamp_update_epoch\":1512120749767,\"timestamp_created\":\"2015-01-25T21:09:06.248Z\",\"timestamp_update\":\"2017-12-01T09:32:29.767Z\"}}";
+        ManifestV3 m3 = s.generateManifestV3(json);
+        LOG.debug("jsonld V3 = \n{}", s.serializeManifest(m3));
+
+        ManifestV2 m2 = s.generateManifestV2(json);
+        LOG.debug("jsonld V2 = \n{}", s.serializeManifest(m2));
 
     }
 }

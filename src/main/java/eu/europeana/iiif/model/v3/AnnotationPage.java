@@ -1,5 +1,7 @@
 package eu.europeana.iiif.model.v3;
 
+import eu.europeana.iiif.model.IdType;
+
 import java.io.Serializable;
 
 /**
@@ -13,7 +15,6 @@ public class AnnotationPage extends IdType implements Serializable {
     public Annotation[] items;
 
     public AnnotationPage(String id) {
-        super("AnnotationPage");
-        this.id = id;
+        super(id, "AnnotationPage");
     }
 }

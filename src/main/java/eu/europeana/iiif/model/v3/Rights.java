@@ -1,5 +1,7 @@
 package eu.europeana.iiif.model.v3;
 
+import eu.europeana.iiif.model.IdType;
+
 import java.io.Serializable;
 
 /**
@@ -13,8 +15,7 @@ public class Rights extends IdType implements Serializable {
     public String format;
 
     public Rights(String id) {
-        super("Text");
-        this.id = id;
+        super(id, "Text");
     }
 
 }

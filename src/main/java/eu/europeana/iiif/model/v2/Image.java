@@ -1,4 +1,4 @@
-package eu.europeana.iiif.model.v3;
+package eu.europeana.iiif.model.v2;
 
 import eu.europeana.iiif.model.IdType;
 

@@ -1,5 +1,7 @@
 package eu.europeana.iiif.model.v3;
 
+import eu.europeana.iiif.model.IdType;
+
 import java.io.Serializable;
 
 /**
@@ -15,8 +17,7 @@ public class Annotation extends IdType implements Serializable {
     public String target;
 
     public Annotation(String id) {
-        super("Annotation");
-        this.id = id;
+        super(id, "Annotation");
     }
 
 }

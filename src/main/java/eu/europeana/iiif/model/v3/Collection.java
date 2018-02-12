@@ -1,5 +1,7 @@
 package eu.europeana.iiif.model.v3;
 
+import eu.europeana.iiif.model.IdType;
+
 import java.io.Serializable;
 
 /**
@@ -11,7 +13,6 @@ public class Collection extends IdType implements Serializable {
     private static final long serialVersionUID = 2809134550779212300L;
 
     public Collection (String id) {
-        super("Collection");
-        this.id = id;
+        super(id, "Collection");
     }
 }

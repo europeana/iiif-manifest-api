@@ -1,5 +1,7 @@
 package eu.europeana.iiif.model.v3;
 
+import eu.europeana.iiif.model.IdType;
+
 import java.io.Serializable;
 
 /**
@@ -18,7 +20,6 @@ public class Canvas extends IdType implements Serializable {
     public AnnotationPage[] items;
 
     public Canvas(String id) {
-        super("Canvas");
-        this.id = id;
+        super(id, "Canvas");
     }
 }

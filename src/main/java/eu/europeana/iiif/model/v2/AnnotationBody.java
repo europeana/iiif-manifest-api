@@ -1,4 +1,4 @@
-package eu.europeana.iiif.model.v3;
+package eu.europeana.iiif.model.v2;
 
 import eu.europeana.iiif.model.IdType;
 
@@ -10,13 +10,13 @@ import java.io.Serializable;
  */
 public class AnnotationBody extends IdType implements Serializable {
 
-    private static final long serialVersionUID = 7359225934920121361L;
+    private static final long serialVersionUID = 2703342049366188602L;
 
     private String format;
     private Service service;
 
     public AnnotationBody(String id) {
-        super(id, "dctypes:Image");
+        super(id, "dcTypes:Image");
     }
 
     public void setFormat(String format) {

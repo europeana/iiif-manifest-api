@@ -1,5 +1,7 @@
 package eu.europeana.iiif.model.v3;
 
+import eu.europeana.iiif.model.IdType;
+
 import java.io.Serializable;
 
 /**
@@ -15,7 +17,6 @@ public class Sequence extends IdType implements Serializable {
     public Canvas[] items;
 
     public Sequence(String id) {
-        super("Sequence");
-        this.id = id;
+        super(id, "Sequence");
     }
 }

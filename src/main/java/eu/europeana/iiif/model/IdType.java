@@ -1,10 +1,12 @@
-package eu.europeana.iiif.model.v3;
+package eu.europeana.iiif.model;
 
 import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldId;
 
 import java.io.Serializable;
 
 /**
+ * Common fields for IIIF types
+ *
  * @author Patrick Ehlert
  * Created on 24-01-2018
  */
