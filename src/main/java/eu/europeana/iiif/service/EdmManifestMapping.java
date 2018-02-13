@@ -222,9 +222,11 @@ public class EdmManifestMapping {
      */
     public static eu.europeana.iiif.model.v2.Image getThumbnailImage(String europeanaId, Object jsonDoc) {
         String[] thumbnails = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmPreview", String[].class);
-        String thumbnailId = (String) getFirstValueArray("thumbnail", europeanaId, thumbnails);
-        if (!StringUtils.isEmpty(thumbnailId)) {
-            return new eu.europeana.iiif.model.v2.Image(thumbnailId);
+        if (thumbnails.length > 0) {
+            String thumbnailId = (String) getFirstValueArray("thumbnail", europeanaId, thumbnails);
+            if (!StringUtils.isEmpty(thumbnailId)) {
+                return new eu.europeana.iiif.model.v2.Image(thumbnailId);
+            }
         }
         // TODO load thumbnail and set width and height? What if it's not available
 
@@ -372,9 +374,7 @@ public class EdmManifestMapping {
      * @return first value object from the array of values
      */
     private static Object getFirstValueArray(String fieldName, String europeanaId, Object[] values) {
-        if (values.length == 0) {
-            return null;
-        } else if (values.length > 1) {
+        if (values.length > 1) {
             LOG.warn("Multiple {} values found for record {}, returning first", fieldName, europeanaId);
         }
         return values[0];

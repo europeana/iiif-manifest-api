@@ -8,7 +8,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>war</packaging>
 
-	<name>iiif</name>
+	<name>Europeana IIIF API</name>
 	<description>Demo project for Spring Boot</description>
 
 	<parent>
