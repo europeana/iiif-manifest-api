@@ -1,6 +1,5 @@
 package eu.europeana.iiif.web;
 
-import eu.europeana.iiif.model.AbstractManifest;
 import eu.europeana.iiif.model.Definitions;
 import eu.europeana.iiif.service.ManifestService;
 import eu.europeana.iiif.service.exception.IIIFException;
@@ -14,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Locale;
 
 
 /**
@@ -53,22 +54,20 @@ public class ManifestController {
         // TODO integrate with apikey service (for now we let record API do the check when we retrieve record JSON data)
         String id = "/"+collectionId+"/"+recordId;
         String json = manifestService.getRecordJson(id, wskey);
-        LOG.debug("v = "+v);
 
         // if no version was provided as request param, then we check the acceptheader
         Integer version = v;
         if (version == null) {
             String accept = request.getHeader("Accept");
             LOG.debug("Manifest, Accept = {}", accept);
-            // TODO confirm if we will specify version 2 in this way or not
-            if (accept.toLowerCase().contains("https://iiif.io/api/presentation/2/context.json")) {
+            if (accept.toLowerCase(Locale.getDefault()).contains("https://iiif.io/api/presentation/2/context.json")) {
                 version = 2;
             } else {
                 version = 3;
             }
         }
 
-        AbstractManifest manifest = null;
+        Object manifest = null;
         if (version == 2) {
             manifest = manifestService.generateManifestV2(json);
         } else if (version == 3){

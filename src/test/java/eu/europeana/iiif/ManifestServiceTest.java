@@ -1,6 +1,5 @@
 package eu.europeana.iiif;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.ManifestService;
@@ -12,8 +11,6 @@ import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
-
-import java.io.IOException;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -117,7 +114,7 @@ public class ManifestServiceTest {
         String jsonLd = ms.serializeManifest(getManifestV2(recordId));
         assertNotNull(jsonLd);
         LogFactory.getLog(ManifestService.class).error("jsonld v2 = " + jsonLd);
-        assertTrue(jsonLd.contains("\"id\" : \"https://iiif.europeana.eu/presentation" + recordId + "/manifest"));
+        assertTrue(jsonLd.contains("\"@id\" : \"https://iiif.europeana.eu/presentation" + recordId + "/manifest"));
     }
 
     /**
@@ -130,7 +127,7 @@ public class ManifestServiceTest {
         String jsonLd = ms.serializeManifest(getManifestV3(recordId));
         assertNotNull(jsonLd);
         LogFactory.getLog(ManifestService.class).error("jsonld v3 = "+jsonLd);
-        assertTrue(jsonLd.contains("\"id\" : \"https://iiif.europeana.eu/presentation"+recordId+"/manifest"));
+        assertTrue(jsonLd.contains("\"@id\" : \"https://iiif.europeana.eu/presentation"+recordId+"/manifest"));
     }
 
 

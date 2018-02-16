@@ -1,7 +1,5 @@
 package eu.europeana.iiif.model.v3;
 
-import eu.europeana.iiif.model.IdType;
-
 import java.io.Serializable;
 
 /**

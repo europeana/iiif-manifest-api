@@ -31,6 +31,7 @@ public class SwaggerConfig {
                 .build();
     }
 
+    @SuppressWarnings("squid:UnusedPrivateMethod")
     private ApiInfo apiInfo() {
         return new ApiInfo(
                 "IIIF API",

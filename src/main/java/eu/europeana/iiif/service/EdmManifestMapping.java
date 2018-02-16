@@ -2,6 +2,7 @@ package eu.europeana.iiif.service;
 
 import com.jayway.jsonpath.JsonPath;
 import eu.europeana.iiif.model.Definitions;
+import eu.europeana.iiif.model.EdmDateUtils;
 import eu.europeana.iiif.model.v2.DataSet;
 import eu.europeana.iiif.model.v2.LanguageObject;
 import eu.europeana.iiif.model.v2.ManifestV2;
@@ -14,9 +15,11 @@ import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -25,6 +28,7 @@ import java.util.Map;
  * @author Patrick Ehlert
  * Created on 08-02-2018
  */
+@SuppressWarnings("squid:S1168") // ignore sonarqube rule: we return null on purpose in this class
 public class EdmManifestMapping {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestMapping.class);
@@ -35,7 +39,7 @@ public class EdmManifestMapping {
 
     /**
      * Generates a IIIF v2 manifest based on the provided (parsed) json document
-     * @param jsonDoc
+     * @param jsonDoc parsed json document
      * @return IIIF Manifest v2 object
      */
     public static ManifestV2 getManifestV2(Object jsonDoc) {
@@ -56,7 +60,7 @@ public class EdmManifestMapping {
 
     /**
      * Generates a IIIF v3 manifest based on the provided (parsed) json document
-     * @param jsonDoc
+     * @param jsonDoc parsed json document
      * @return IIIF Manifest v3 object
      */
     public static ManifestV3 getManifestV3(Object jsonDoc) {
@@ -70,13 +74,12 @@ public class EdmManifestMapping {
 
     /**
      * Extract the Europeana object ID from the 'about' field.
-     * @param jsonDoc
+     * @param jsonDoc parsed json document
      * @return string containing the Europeana ID of the object (dataset ID and record ID separated by a slash)
      */
     public static String getEuropeanaId(Object jsonDoc) {
         return JsonPath.parse(jsonDoc).read("$.object.about", String.class);
     }
-
 
     /**
      * Create the IIIF manifest ID
@@ -94,7 +97,7 @@ public class EdmManifestMapping {
      * @return string containing the sequence ID
      */
     public static String getSequenceId(String europeanaId, int order) {
-        return Definitions.SEQUENCE_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId).concat(Integer.valueOf(order).toString());
+        return Definitions.SEQUENCE_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId).concat(Integer.toString(order));
     }
 
     /**
@@ -104,7 +107,7 @@ public class EdmManifestMapping {
      * @return String containing the canvas ID
      */
     public static String getCanvasId(String europeanaId, int order) {
-        return Definitions.CANVAS_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId).concat(Integer.valueOf(order).toString());
+        return Definitions.CANVAS_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId).concat(Integer.toString(order));
     }
 
     /**
@@ -114,11 +117,11 @@ public class EdmManifestMapping {
      * @return String containing the annotation ID
      */
     public static String getAnnotationId(String europeanaId, int order) {
-        return Definitions.ANNOTATION_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId).concat(Integer.valueOf(order).toString());
+        return Definitions.ANNOTATION_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId).concat(Integer.toString(order));
     }
 
     /**
-     * Constuct the Dataset ID (datasets information are part of the manifest)
+     * Create a dataset ID (datasets information are part of the manifest)
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
      * @return string containing the dataset ID consisting of a base url, Europeana ID and postfix (rdf/xml, json or json-ld)
      */
@@ -126,41 +129,86 @@ public class EdmManifestMapping {
         return Definitions.DATASET_ID_BASE_URL + europeanaId + postFix;
     }
 
+    /**
+     *
+     * @param jsonDoc parsed json document
+     * @return
+     */
     public static String getWithinV2(Object jsonDoc) {
-        // TODO wait until V2 implementation for within is clear
+        // TODO wait until V2 implementation for 'within' is clear
         return null;
     }
 
-
+    /**
+     * @param jsonDoc parsed json document
+     * @return
+     */
     public static Collection[] getWithinV3(Object jsonDoc) {
         List<Collection> result = new ArrayList<>();
         // TODO I think we can incorporate the startsWith into the JsonPath read
         List<String> collections = JsonPath.parse(jsonDoc).read("$.object.proxies[*].dctermsIsPartOf.def[*]", List.class);
         for (String collection : collections) {
-            if (collection.toLowerCase().startsWith("http://data.theeuropeanlibrary.org") || collection.toLowerCase().startsWith("https://data.theeuropeanlibrary.org")) {
+            if (collection.toLowerCase(Locale.getDefault()).startsWith("http://data.theeuropeanlibrary.org")
+                    || collection.toLowerCase(Locale.getDefault()).startsWith("https://data.theeuropeanlibrary.org")) {
                 result.add(new Collection(collection));
             }
         }
         return result.toArray(new Collection[result.size()]);
     }
 
+    /**
+     * We first check all proxies for a title. If there are no titles, then we check the description fields
+     * @param jsonDoc parsed json document
+     * @return
+     */
     public static LanguageMap[] getLabelsV3(Object jsonDoc)  {
         LanguageMap[] maps = JsonPath.parse(jsonDoc).read("$.object.proxies[*].dcTitle", LanguageMap[].class);
-        if (maps.length == 0) {
-            LOG.debug("No title, checking description");
+        if (maps == null || maps.length == 0) {
             maps = JsonPath.parse(jsonDoc).read("$.object.proxies[*].dcDescription", LanguageMap[].class);
+            if (maps == null || maps.length == 0) {
+                return null;
+            }
         }
-        // TODO what if there is no title and no description
         return maps;
     }
 
+    /**
+     * We first check all proxies for a title. If there are no titles, then we check the description fields
+     * @param jsonDoc parsed json document
+     * @return array of LanguageObject
+     */
     public static LanguageObject[] getLabelsV2(Object jsonDoc) {
-        return EdmManifestMapping.langMapsToObjects(getLabelsV3(jsonDoc));
+        // we read everything in as LanguageMap[] because that best matches the EDM implementation, then we convert to LanguageObjects[]
+        LanguageMap[] labelsV3 = getLabelsV3(jsonDoc);
+        if (labelsV3 == null) {
+            return null;
+        }
+        return EdmManifestMapping.langMapsToObjects(labelsV3);
     }
 
     /**
-     * Returns values of all proxy/description in EDM, but only if
-     * @param jsonDoc
+     * This converts a LanguageMap array (v3) to a LanguageObject array (v2).
+     */
+    private static LanguageObject[] langMapsToObjects(LinkedHashMap<String, String[]>[] maps) {
+        List<LanguageObject> result = new ArrayList<>();
+        for (LinkedHashMap<String, String[]> map : maps) {
+            for (Map.Entry<String, String[]> entry : map.entrySet()) {
+                String language = entry.getKey();
+                String[] values = entry.getValue();
+                for (String value: values) {
+                    result.add(new LanguageObject(language, value));
+                }
+            }
+        }
+        if (result.isEmpty()) {
+            return null;
+        }
+        return result.toArray(new LanguageObject[result.size()]);
+    }
+
+    /**
+     * Returns the values from the proxy.dcDescription fields, but only if they aren't used as a label yet.
+     * @param jsonDoc parsed json document
      * @return
      */
     public static LanguageMap[] getDescriptionV3(Object jsonDoc) {
@@ -170,13 +218,27 @@ public class EdmManifestMapping {
         return null;
     }
 
+    /**
+     * Returns the values from the proxy.dcDescription fields, but only if they aren't used as a label yet.
+     * @param jsonDoc parsed json document
+     * @return
+     */
     public static LanguageObject[] getDescriptionV2(Object jsonDoc) {
+        // we read everything in as LanguageMap[] because that best matches the EDM implementation, then we convert to LanguageObjects[]
+        LanguageMap[] descriptionsV3 = getDescriptionV3(jsonDoc);
+        if (descriptionsV3 == null) {
+            return null;
+        }
         return EdmManifestMapping.langMapsToObjects(getDescriptionV3(jsonDoc));
     }
 
+    /**
+     * Reads the dcDate, dcFormat, dcRelation, dcType, dcLanguage and dcSource values from all proxies and puts them in a
+     * map with the appropriate label
+     * @param jsonDoc parsed json document
+     * @return
+     */
     public static eu.europeana.iiif.model.v2.MetaData[] getMetaDataV2(Object jsonDoc) {
-        // we add to a map first to avoid duplicate data (or perhaps combine data if this is necessary)
-        // TODO think if we can construct MetaData objects right away
         Map<String, List<LanguageObject>> data = new LinkedHashMap<>();
         addMetaData(data, JsonPath.parse(jsonDoc).read("$.object.proxies[*].dcDate", LanguageMap[].class), "date");
         addMetaData(data, JsonPath.parse(jsonDoc).read("$.object.proxies[*].dcFormat", LanguageMap[].class), "format");
@@ -192,9 +254,16 @@ public class EdmManifestMapping {
             result.add(new eu.europeana.iiif.model.v2.MetaData(label, values.toArray(new LanguageObject[values.size()])));
         }
 
+        if (result.isEmpty()) {
+            return null;
+        }
         return result.toArray(new eu.europeana.iiif.model.v2.MetaData[result.size()]);
     }
 
+    /**
+     * We read in metadata as a LanguageMap[], but we need to convert it to Map consisting of labels and List<LanguageObjects>
+     * Also if the key is 'def' we should leave that out (for v2)
+     */
     private static void addMetaData(Map<String, List<LanguageObject>> metaData, LanguageMap[] dataToAdd, String fieldName) {
         for (LanguageMap map : dataToAdd) {
             for (Map.Entry<String, String[]> entry : map.entrySet()) {
@@ -215,52 +284,62 @@ public class EdmManifestMapping {
     }
 
     /**
-     * Return an with the id of the thumbnail as defined in 'ore:Aggregation/edm:preview'
-     * Note that we assume there is only 1 aggregation with an edmPreview field that contains a single thumbnail url
-     * @param jsonDoc
+     * Return an with the id of the thumbnail as defined in 'europeanaAggregation.edmPreview'
+     * @param jsonDoc parsed json document
      * @return Image object, or null if no edmPreview was found
      */
     public static eu.europeana.iiif.model.v2.Image getThumbnailImage(String europeanaId, Object jsonDoc) {
-        String[] thumbnails = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmPreview", String[].class);
-        if (thumbnails.length > 0) {
-            String thumbnailId = (String) getFirstValueArray("thumbnail", europeanaId, thumbnails);
-            if (!StringUtils.isEmpty(thumbnailId)) {
-                return new eu.europeana.iiif.model.v2.Image(thumbnailId);
-            }
+        String[] thumbnailIds = JsonPath.parse(jsonDoc).read("$.object.europeanaAggregation[?(@.edmPreview)].edmPreview", String[].class);
+        String thumbnailId = (String) getFirstValueArray("thumbnail ids", europeanaId, thumbnailIds);
+        if (StringUtils.isEmpty(thumbnailId)) {
+            return null;
         }
-        // TODO load thumbnail and set width and height? What if it's not available
-
-        return null;
+        // TODO ?? implement width based on image = large/medium
+        return new eu.europeana.iiif.model.v2.Image(thumbnailId);
     }
 
     /**
-     * Return the default dctermsIssued date
+     * Return the first dctermsIssued date we can find in a proxy
      * Note that we assume that the desired value is in a mapping with a 'def' key
-     * @param jsonDoc
-     * @return
+     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
+     * @param jsonDoc parsed json document
+     * @return date string in xsd:datetime format (i.e. YYYY-MM-DDThh:mm:ssZ)
      */
     public static String getNavDate(String europeanaId, Object jsonDoc) {
-        // TODO check: Can we always take value from first proxy Also should I  always take def value?
-        // TODO check: specs say (xsd: dateTime), does this mean dates are not always in format YYYY-MM-DD and this needs to be checked?
-        String[][] proxiesDates = JsonPath.parse(jsonDoc).read("$.object.proxies[*].dctermsIssued.def", String[][].class);
-        String[] navDates = (String[]) getFirstValueArray(" proxy navDates", europeanaId, proxiesDates);
-        String navDate = (String) getFirstValueArray("navDate", europeanaId, navDates);
-        if (!StringUtils.isEmpty(navDate)) {
-            return navDate;
+        Date navDate = null;
+        LanguageMap[] proxiesLangDates = JsonPath.parse(jsonDoc).read("$.object.proxies[*].dctermsIssued", LanguageMap[].class);
+        for (LanguageMap langDates : proxiesLangDates) {
+            for (String[] dates : langDates.values()) {
+                // we assume there is only 1 value here
+                String date = (String) getFirstValueArray("navDate", europeanaId, dates);
+                // TODO make EdmDateStringToDate handle more different date strings (see EA-990)
+                navDate = EdmDateUtils.dateStringToDate(date);
+                if (navDate != null) {
+                    break;
+                }
+            }
+            if (navDate != null) {
+                break;
+            }
         }
-        return null;
+
+        if (navDate == null) {
+            return null;
+        }
+        return navDate.toInstant().toString();
     }
 
     /**
-     * Return attribution text as a languageObject
-     * We take the attribution from he first webResource we find that has a 'textAttributionSnippet' field
-     * @param jsonDoc
+     * Return attribution text as a String
+     * We take the value from the first 'textAttributionSnippet' field of a webResource we find in any aggregation.
+     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
+     * @param jsonDoc parsed json document
      * @return
      */
     public static String getAttribution(String europeanaId, Object jsonDoc) {
-        // TODO check: can we assume there is only 1 aggregation?
-        String[] attributions = JsonPath.parse(jsonDoc).read("$.object.aggregations[0].webResources[*].textAttributionSnippet", String[].class);
-        String attribution = (String) getFirstValueArray("attribution", europeanaId, attributions);
+        String[] attributions = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].webResources[*].textAttributionSnippet", String[].class);
+        // since there are usually many webresources we simply just pick the first one and ignore if there are others.
+        String attribution = (String) getFirstValueArray(null, europeanaId, attributions);
         if (!StringUtils.isEmpty(attribution)) {
             return attribution;
         }
@@ -268,55 +347,62 @@ public class EdmManifestMapping {
     }
 
     /**
-     * Return the license description as defined in 'ore:Aggregation/edm:rights'
-     * Note that we assume there is only 1 aggregation with an edmRights mapping with a 'def' key that contains a single license text value
-     * // TODO check: aggregations until we find one with edmRights?
-     * @param jsonDoc
+     * Return the first license description we find in any 'aggregation.edmRights' field. Note that we first try the europeanaAggregation and if
+     * that doesn't contain an edmRights, we check the other aggregations
+     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
+     * @param jsonDoc parsed json document
      * @return
      */
     public static String getLicense(String europeanaId, Object jsonDoc) {
-        String[][] licenses = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmRights.def", String[][].class);
-        String[] licenseTexts = (String[]) getFirstValueArray("license", europeanaId, licenses);
-        return (String) getFirstValueArray("license text", europeanaId, licenseTexts);
+        // edmRights may not exists in the europeanaAggregation
+        LanguageMap[] licenseMaps = JsonPath.parse(jsonDoc).read("$.object.europeanaAggregation[?(@.edmRights)].edmRights", LanguageMap[].class);
+        LanguageMap licenseMap = (LanguageMap) getFirstValueArray("licenseMap", europeanaId, licenseMaps);
+        if (licenseMap == null || licenseMap.values().isEmpty()) {
+            LanguageMap[] licenses = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmRights", LanguageMap[].class);
+            licenseMap = (LanguageMap) getFirstValueArray("license", europeanaId, licenses);
+        }
+
+        if (licenseMap != null && !licenseMap.values().isEmpty()) {
+            return (String) getFirstValueArray("license text", europeanaId, licenseMap.values().iterator().next());
+        }
+        return null;
     }
 
     /**
-     * Generates 3 datasets with the appropriate Id and format (one for rdf/xml, one for json and one for json-ld)
-     * @param europeanaId consisting of 'dataset-id/record-id'
+     * Generates 3 datasets with the appropriate ID and format (one for rdf/xml, one for json and one for json-ld)
+     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
      * @return array of 3 datasets
      */
     public static DataSet[] getDataSets(String europeanaId) {
         DataSet[] result = new DataSet[3];
-        // TODO check: record API says json-ld is of type 'application/json;charset=UTF-8'. Do we still hang on to "application/ld+json";
-        // TODO check: add charset=UTF-8 to mediatypes?
         result[0] = new DataSet(getDatasetId(europeanaId, ".json-ld"), Definitions.MEDIA_TYPE_JSONLD);
         result[1] = new DataSet(getDatasetId(europeanaId, ".json"), MediaType.APPLICATION_JSON_VALUE);
         result[2] = new DataSet(getDatasetId(europeanaId, ".rdf"), Definitions.MEDIA_TYPE_RDF);
         return result;
     }
 
+    /**
+     *
+     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
+     * @param jsonDoc parsed json document
+     * @return
+     */
     public static eu.europeana.iiif.model.v2.Sequence[] getSequencesV2(String europeanaId, Object jsonDoc) {
+        Map<String, Object>[] webResources = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].webResources[*]", Map[].class);
+        Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
 
-        // TODO check: make sure we only need to check nextInSequence of webresources and have nothing to do withnot edmNextInSequence of proxy
-
-        // TODO check: what if webresource doesn't have edmNextInSequence? or if there are no webresources. Do we still create a sequence without canvases, or not?
-
-        // TODO check: can I assume there is always only 1 aggregation with webresources?
-        Map<String, Object>[] webResources = JsonPath.parse(jsonDoc).read("$.object.aggregations[0].webResources[*]", Map[].class);
-
-        // need to check in reverse order
+        // we need to create a canvas for all webResources, but they should be in the order they link to each other in the isNextInSequence
+        // for all webResources that are not linked, the ordering doesn't matter
+        // TODO implement canvas ordering, based on isNextInSequence
         int order = 1;
         List<eu.europeana.iiif.model.v2.Canvas> canvases = new LinkedList<>();
         for (int i = webResources.length - 1; i >= 0; i--) {
             Map<String, Object> webResource = webResources[i];
-            if (webResource.keySet().contains("isNextInSequence")) {
-                canvases.add(getCanvas(europeanaId, order, webResource));
-                order++;
-            }
+            canvases.add(getCanvas(europeanaId, order, webResource, services));
+            order++;
         }
 
-        // TODO check: I assume that we do not have to make a sequence if there are no webresources with edmNextInSequence
-        if (canvases.size() > 0) {
+        if (!canvases.isEmpty()) {
             // there should be only 1 sequence, so order number is always 1
             eu.europeana.iiif.model.v2.Sequence[] result = new eu.europeana.iiif.model.v2.Sequence[1];
             result[0] = new eu.europeana.iiif.model.v2.Sequence(getSequenceId(europeanaId, 1));
@@ -327,81 +413,84 @@ public class EdmManifestMapping {
         return null;
     }
 
-    private static eu.europeana.iiif.model.v2.Canvas getCanvas(String europeanaId, int order, Map<String, Object> webResource) {
-        eu.europeana.iiif.model.v2.Canvas c = new eu.europeana.iiif.model.v2.Canvas(europeanaId);
-        c.label = "p. "+order;
-        // TODO check: textAttributionSnippet is a string. For now I created a langObject with name 'def'
+    //private static ArrayList<Canvas>
+
+    private static eu.europeana.iiif.model.v2.Canvas getCanvas(String europeanaId, int order, Map<String, Object> webResource, Map<String, Object>[] services) {
+        eu.europeana.iiif.model.v2.Canvas c = new eu.europeana.iiif.model.v2.Canvas(getCanvasId(europeanaId, order));
+        c.setLabel("p. "+order);
         String attributionText = (String) webResource.get("textAttributionSnippet");
         if (!StringUtils.isEmpty(attributionText)){
-            c.attribution = new LanguageObject("def", attributionText);
+            c.setAttribution(attributionText);
         }
-        // TODO check if the name is correct, haven't been able to find an example where this is used
-        String license = (String) webResource.get("edmRights");
-        if (!StringUtils.isEmpty(license)) {
-            c.license = license;
+        LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get("webResourceEdmRights");
+        if (license != null && !license.values().isEmpty()) {
+            c.setLicense(license.values().iterator().next().get(0));
         }
 
-        // TODO check if we should really copy order from canvas, or always supply 1 (as there will be ony 1 annotation)
-        c.images = new eu.europeana.iiif.model.v2.Annotation[1];
-        c.images[0] = new eu.europeana.iiif.model.v2.Annotation(getAnnotationId(europeanaId, order));
-        c.images[0].setOn(c.getId());
-        // TODO check: what should the id be of the annotation body? the about of the webresource?
+        c.setImages(new eu.europeana.iiif.model.v2.Annotation[1]);
+        c.getImages()[0] = new eu.europeana.iiif.model.v2.Annotation(getAnnotationId(europeanaId, order));
+        c.getImages()[0].setOn(c.getId());
         eu.europeana.iiif.model.v2.AnnotationBody body = new eu.europeana.iiif.model.v2.AnnotationBody((String) webResource.get("about"));
-        // TODO: I guess i can leave format empty if there is no ebucoreHasMimeType?
         String ebuCoreMimeType = (String) webResource.get("ebuCoreHasMimeType");
         if (!StringUtils.isEmpty(ebuCoreMimeType)) {
             body.setFormat(ebuCoreMimeType);
         }
-        // TODO can I assume there is always only 1 service at most/
-        List<String> services = (List<String>) webResource.get("svcsHasService");
-        if (services.size() > 0) {
-            String serviceId = (String) getFirstValueArray("service", europeanaId, services.toArray());
-            eu.europeana.iiif.model.v2.Service s = new eu.europeana.iiif.model.v2.Service(serviceId);
-            // TODO what value should we set for profile!?!? doapImplements??
-            s.setProfile("");
-            body.setService(s);
+
+        List<String> serviceIds = (List<String>) webResource.get("svcsHasService");
+        if (serviceIds != null && !serviceIds.isEmpty()) {
+            String serviceId = (String) getFirstValueArray("service", europeanaId, serviceIds.toArray());
+            eu.europeana.iiif.model.v2.Service service = new eu.europeana.iiif.model.v2.Service(serviceId);
+            service.setProfile(lookupServiceDoapImplements(services, serviceId, europeanaId));
+            body.setService(service);
         }
-        c.images[0].setResource(body);
+        c.getImages()[0].setResource(body);
         return c;
+    }
+
+    /**
+     * Check if the array of services contains a service with the provided serviceId. If so we retrieve the doapImplements
+     * field from that service;
+     */
+    private static String lookupServiceDoapImplements(Map<String, Object>[] services, String serviceId, String europeanaId) {
+        String result = null;
+        for (Map<String, Object> s : services) {
+            String sId = (String) s.get("about");
+            if (sId != null && sId.equalsIgnoreCase(serviceId)) {
+                // Note: there is a problem with cardinality of the doapImplements field. It should be a String, but at the moment
+                // it is defined in EDM as a String[]. So we need to check what we get here.
+                Object doapImplements = s.get("doapImplements");
+                if (doapImplements == null) {
+                    LOG.warn("Record {} has service {} with no doapImplements field", europeanaId, serviceId);
+                } else if (doapImplements instanceof List) {
+                    result = ((List<String>) doapImplements).get(0);
+                } else {
+                    result = (String) doapImplements;
+                }
+                break;
+            }
+        }
+        if (result == null) {
+            LOG.warn("Record {} defined service {} in webresource, but no such service is defined (with a doapImplements field)", europeanaId, serviceId);
+        }
+        return result;
     }
 
     /**
      * In many cases we assume there will be only 1 proxy or aggregation with the provided value, so this method helps
      * to retrieve the first value object while providing a warning if there are more values than expected.
-     * @param fieldName
+     * @param fieldName optional, if not null we log a warning if there is more than 1 expected value
      * @param europeanaId
      * @param values
      * @return first value object from the array of values
      */
     private static Object getFirstValueArray(String fieldName, String europeanaId, Object[] values) {
-        if (values.length > 1) {
-            LOG.warn("Multiple {} values found for record {}, returning first", fieldName, europeanaId);
-        }
-        return values[0];
-    }
-
-    /**
-     * This converts a LanguageMap array (v3) to a LanguageObject array (v2).
-     * Note: We often use LanguageMaps because it matches how language is implemented in EDM. So the easiest solution often
-     * is to read values into a v3 LanguageMap and then convert it to v2 LanguageObjects using this method
-     * @param maps
-     * @return array of languageObjects with the same data as the provided languageMap
-     */
-    private static LanguageObject[] langMapsToObjects(LinkedHashMap<String, String[]>[] maps) {
-        List<LanguageObject> result = new ArrayList<>();
-        for (LinkedHashMap<String, String[]> map : maps) {
-            for (Map.Entry<String, String[]> entry : map.entrySet()) {
-                String language = entry.getKey();
-                String[] values = entry.getValue();
-                for (String value: values) {
-                    result.add(new LanguageObject(language, value));
-                }
+        if (values.length >= 1) {
+            if (!StringUtils.isEmpty(fieldName) && values.length > 1) {
+                LOG.warn("Multiple {} values found for record {}, returning first", fieldName, europeanaId);
             }
+            return values[0];
         }
-        if (result.size() == 0) {
-            return null;
-        }
-        return result.toArray(new LanguageObject[result.size()]);
+        return null;
     }
 
 }

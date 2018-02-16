@@ -1,7 +1,8 @@
 package eu.europeana.iiif.model.v2;
 
-import eu.europeana.iiif.model.AbstractManifest;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.europeana.iiif.model.Definitions;
+import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldType;
 
 import java.io.Serializable;
 
@@ -11,10 +12,12 @@ import java.io.Serializable;
  * @author Patrick Ehlert
  * Created on 06-02-2018
  */
-public class ManifestV2 extends AbstractManifest implements Serializable {
+@JsonldType(value = "Manifest")
+public class ManifestV2 extends JsonLdId implements Serializable {
 
     private static final long serialVersionUID = -2645198128531918309L;
 
+    @JsonProperty("@context")
     private String context = "http://iiif.io/api/presentation/2/context.json";
     private String within;
     private LanguageObject[] label;
@@ -30,6 +33,10 @@ public class ManifestV2 extends AbstractManifest implements Serializable {
 
     public ManifestV2(String id) {
         super(id);
+    }
+
+    public String getContext() {
+        return context;
     }
 
     public String getWithin() {

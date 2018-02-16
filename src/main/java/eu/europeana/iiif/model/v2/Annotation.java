@@ -1,6 +1,6 @@
 package eu.europeana.iiif.model.v2;
 
-import eu.europeana.iiif.model.IdType;
+import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldType;
 
 import java.io.Serializable;
 
@@ -8,7 +8,8 @@ import java.io.Serializable;
  * @author Patrick Ehlert
  * Created on 06-02-2018
  */
-public class Annotation extends IdType implements Serializable {
+@JsonldType(value = "oa:Annotation")
+public class Annotation extends JsonLdId implements Serializable {
 
     private static final long serialVersionUID = -7091618924397220872L;
 
@@ -17,11 +18,23 @@ public class Annotation extends IdType implements Serializable {
     private String on;
 
     public Annotation(String id) {
-        super(id, "oa:Annotation");
+        super(id);
+    }
+
+    public String getMotivation() {
+        return motivation;
+    }
+
+    public AnnotationBody getResource() {
+        return resource;
     }
 
     public void setResource(AnnotationBody resource) {
         this.resource = resource;
+    }
+
+    public String getOn() {
+        return on;
     }
 
     public void setOn(String on) {
