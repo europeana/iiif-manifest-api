@@ -3,6 +3,7 @@ package eu.europeana.iiif;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.ManifestService;
+import eu.europeana.iiif.service.ManifestSettings;
 import eu.europeana.iiif.service.exception.IIIFException;
 import eu.europeana.iiif.service.exception.InvalidApiKeyException;
 import eu.europeana.iiif.service.exception.RecordNotFoundException;
@@ -35,7 +36,7 @@ public class ManifestServiceTest {
 
     @BeforeClass
     public static void setup() {
-        ms = new ManifestService();
+        ms = new ManifestService(new ManifestSettings());
     }
 
     private String getRecord(String recordId) throws IIIFException {
@@ -115,6 +116,7 @@ public class ManifestServiceTest {
         assertNotNull(jsonLd);
         LogFactory.getLog(ManifestService.class).error("jsonld v2 = " + jsonLd);
         assertTrue(jsonLd.contains("\"@id\" : \"https://iiif.europeana.eu/presentation" + recordId + "/manifest"));
+        assertTrue(jsonLd.contains("\"http://iiif.io/api/presentation/2/context.json\""));
     }
 
     /**
@@ -127,7 +129,8 @@ public class ManifestServiceTest {
         String jsonLd = ms.serializeManifest(getManifestV3(recordId));
         assertNotNull(jsonLd);
         LogFactory.getLog(ManifestService.class).error("jsonld v3 = "+jsonLd);
-        assertTrue(jsonLd.contains("\"@id\" : \"https://iiif.europeana.eu/presentation"+recordId+"/manifest"));
+        assertTrue(jsonLd.contains("\"id\" : \"https://iiif.europeana.eu/presentation"+recordId+"/manifest"));
+        assertTrue(jsonLd.contains("\"http://iiif.io/api/presentation/3/context.json\""));
     }
 
 

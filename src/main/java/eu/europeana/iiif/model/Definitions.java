@@ -69,7 +69,13 @@ public class Definitions {
      */
     public static final String EUROPEANA_LOGO_URL = "https://style.europeana.eu/images/europeana-logo-default.png";
 
+    /**
+     * Location of the EDM schema definition;
+     */
+    public static final String EDM_SCHEMA_URL = "http://www.europeana.eu/schemas/edm/";
+
     private Definitions() {
         // empty constructor to avoid initializationRE
     }
+
 }

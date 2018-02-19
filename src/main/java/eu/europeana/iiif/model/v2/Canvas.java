@@ -1,5 +1,6 @@
 package eu.europeana.iiif.model.v2;
 
+import eu.europeana.iiif.service.ManifestSettings;
 import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldType;
 
 import java.io.Serializable;
@@ -13,18 +14,18 @@ public class Canvas extends JsonLdId implements Serializable {
 
     private static final long serialVersionUID = 6160907015595073905L;
 
-    // TODO load height and width from configuration file
-
     private String label;
-    private Integer height = 1024;
-    private Integer width = 686;
+    private Integer height;
+    private Integer width;
     private String attribution;
     private String license;
     private Annotation[] images;
     private FullText[] otherContent;
 
-    public Canvas(String id) {
+    public Canvas(ManifestSettings settings, String id) {
         super(id);
+        this.height = settings.getCanvasHeight();
+        this.width = settings.getCanvasWidth();
     }
 
     public String getLabel() {

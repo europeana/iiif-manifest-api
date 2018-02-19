@@ -1,12 +1,12 @@
 package eu.europeana.iiif;
 
 import eu.europeana.iiif.service.ManifestService;
+import eu.europeana.iiif.service.ManifestSettings;
 import eu.europeana.iiif.web.ManifestController;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
@@ -18,11 +18,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
  * Created on 6-12-2017
  */
 @SpringBootApplication
-@PropertySource("classpath:iiif.properties")
-@PropertySource(value = "classpath:iiif.user.properties", ignoreResourceNotFound = true)
 public class IiifApplication extends SpringBootServletInitializer {
 
-	//TODO figure out why corsConfigurer below doesn't work (however @CrossOrigin annotation on the controller method does work)
+	//TODO figure out why corsConfigurer below doesn't work (however @CrossOrigin annotation on a controller method does work)
 
 	/**
 	 * Setup CORS for manifest requests
@@ -36,6 +34,12 @@ public class IiifApplication extends SpringBootServletInitializer {
 				registry.addMapping("*").allowedOrigins("*").maxAge(1000);
 			}
 		};
+
+	}
+
+	@Bean
+	public ManifestSettings manifestSettings() {
+		return new ManifestSettings();
 	}
 
 	/**
@@ -44,7 +48,7 @@ public class IiifApplication extends SpringBootServletInitializer {
 	 */
 	@Bean
 	public ManifestService manifestService() {
-		return new ManifestService();
+		return new ManifestService(manifestSettings());
 	}
 
 	/**

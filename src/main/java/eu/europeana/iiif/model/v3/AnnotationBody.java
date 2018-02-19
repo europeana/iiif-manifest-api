@@ -6,7 +6,7 @@ import java.io.Serializable;
  * @author Patrick Ehlert
  * Created on 24-01-2018
  */
-public class AnnotationBody extends IdType implements Serializable {
+public class AnnotationBody extends JsonLdIdType implements Serializable {
 
     private static final long serialVersionUID = 7359225934920121361L;
 
@@ -14,11 +14,19 @@ public class AnnotationBody extends IdType implements Serializable {
     private Service service;
 
     public AnnotationBody(String id) {
-        super(id, "dctypes:Image");
+        super(id, "Image");
+    }
+
+    public String getFormat() {
+        return format;
     }
 
     public void setFormat(String format) {
         this.format = format;
+    }
+
+    public Service getService() {
+        return service;
     }
 
     public void setService(Service service) {

@@ -1,9 +1,0 @@
-{
-    "@context": [
-        "http://www.w3.org/ns/anno.jsonld",
-        "https://iiif.io/api/presentation/3/context.json"
-      ]
-}
-
-
-

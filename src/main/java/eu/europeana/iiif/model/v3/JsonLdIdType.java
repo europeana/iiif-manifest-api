@@ -1,9 +1,5 @@
 package eu.europeana.iiif.model.v3;
 
-import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldId;
-import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldProperty;
-import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldType;
-
 import java.io.Serializable;
 
 /**
@@ -12,24 +8,19 @@ import java.io.Serializable;
  * @author Patrick Ehlert
  * Created on 24-01-2018
  */
-public class IdType implements Serializable{
+public class JsonLdIdType implements Serializable{
 
     private static final long serialVersionUID = -2716881573824312952L;
 
-    @JsonldId
     private String id;
     private String type;
 
-    public IdType() {
+    public JsonLdIdType() {
         // empty constructor to make it also deserializable (see SonarQube squid:S2055)
     }
 
-    public IdType(String id, String type) {
+    public JsonLdIdType(String id, String type) {
         this.id = id;
-        this.type = type;
-    }
-
-    public IdType(String type) {
         this.type = type;
     }
 

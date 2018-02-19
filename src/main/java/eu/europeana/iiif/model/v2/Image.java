@@ -13,7 +13,20 @@ public class Image extends JsonLdId implements Serializable {
 
     private static final long serialVersionUID = 1636104373070277504L;
 
-    public Image(String id) {
+    private Integer height;
+    private Integer width;
+
+    public Image(String id, Integer height, Integer width) {
         super(id);
+        this.height = height;
+        this.width = width;
+    }
+
+    public Integer getHeight() {
+        return height;
+    }
+
+    public Integer getWidth() {
+        return width;
     }
 }

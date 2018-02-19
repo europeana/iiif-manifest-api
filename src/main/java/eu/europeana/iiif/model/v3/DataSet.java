@@ -1,4 +1,4 @@
-package eu.europeana.iiif.model.v2;
+package eu.europeana.iiif.model.v3;
 
 import eu.europeana.iiif.model.Definitions;
 
@@ -11,15 +11,15 @@ import java.io.Serializable;
  * @author Patrick Ehlert
  * Created on 06-02-2018
  */
-public class DataSet extends JsonLdId implements Serializable {
+public class DataSet extends JsonLdIdType implements Serializable {
 
-    private static final long serialVersionUID = 8476756746789079580L;
+    private static final long serialVersionUID = -8010439369804222272L;
 
     private String format;
     private String profile = Definitions.EDM_SCHEMA_URL;
 
     public DataSet(String id, String format) {
-        super(id);
+        super(id, "Dataset");
         this.format = format;
     }
 

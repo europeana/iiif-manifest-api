@@ -10,6 +10,20 @@ public class MetaData implements Serializable {
 
     private static final long serialVersionUID = -8198825949445182532L;
 
-    public LanguageMap label;
-    public LanguageMap value;
+    private LanguageMap label;
+    private LanguageMap value;
+
+    public MetaData(LanguageMap label, LanguageMap value) {
+        this.label = label;
+        this.value = value;
+    }
+
+    public LanguageMap getLabel() {
+        return label;
+    }
+
+    public LanguageMap getValue() {
+        return value;
+    }
+
 }

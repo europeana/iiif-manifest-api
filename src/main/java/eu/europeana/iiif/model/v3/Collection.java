@@ -6,7 +6,7 @@ import java.io.Serializable;
  * @author Patrick Ehlert
  * Created on 24-01-2018
  */
-public class Collection extends IdType implements Serializable {
+public class Collection extends JsonLdIdType implements Serializable {
 
     private static final long serialVersionUID = 2809134550779212300L;
 

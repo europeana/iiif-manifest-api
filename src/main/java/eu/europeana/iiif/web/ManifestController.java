@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URL;
 import java.util.Locale;
 
 
@@ -38,8 +39,10 @@ public class ManifestController {
      * Handles manifest requests
      * @param collectionId (required field)
      * @param recordId (required field)
-     * @param v IIIF version (optional field)
      * @param wskey apikey (required field)
+     * @param v IIIF version (optional field)
+     * @param recordApi url of an alternative Record API instance to use instead of the configured one (optional field)
+     *
      * @return JSON-LD string containing manifest
      * @throws IIIFException when something goes wrong during processing
      */
@@ -47,13 +50,14 @@ public class ManifestController {
     @RequestMapping(value = "/presentation/{collectionId}/{recordId}/manifest", method = RequestMethod.GET, produces = {Definitions.MEDIA_TYPE_JSONLD_V3, MediaType.APPLICATION_JSON_VALUE})
     public String manifest(@PathVariable String collectionId,
                            @PathVariable String recordId,
-                           @RequestParam(value = "v", required = false) Integer v,
                            @RequestParam(value = "wskey", required = true) String wskey,
+                           @RequestParam(value = "v", required = false) Integer v,
+                           @RequestParam(value = "recordApi", required = false) URL recordApi,
                            HttpServletRequest request)
                     throws IIIFException {
-        // TODO integrate with apikey service (for now we let record API do the check when we retrieve record JSON data)
+        // TODO integrate with apikey service?? (or leave it like this?)
         String id = "/"+collectionId+"/"+recordId;
-        String json = manifestService.getRecordJson(id, wskey);
+        String json = manifestService.getRecordJson(id, wskey, recordApi);
 
         // if no version was provided as request param, then we check the acceptheader
         Integer version = v;

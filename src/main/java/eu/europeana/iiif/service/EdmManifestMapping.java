@@ -3,12 +3,12 @@ package eu.europeana.iiif.service;
 import com.jayway.jsonpath.JsonPath;
 import eu.europeana.iiif.model.Definitions;
 import eu.europeana.iiif.model.EdmDateUtils;
-import eu.europeana.iiif.model.v2.DataSet;
 import eu.europeana.iiif.model.v2.LanguageObject;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.Collection;
 import eu.europeana.iiif.model.v3.LanguageMap;
 import eu.europeana.iiif.model.v3.ManifestV3;
+import eu.europeana.iiif.service.exception.RecordParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.MediaType;
@@ -39,36 +39,46 @@ public class EdmManifestMapping {
 
     /**
      * Generates a IIIF v2 manifest based on the provided (parsed) json document
+     * @param settings manifest settings object loaded from properties file
      * @param jsonDoc parsed json document
      * @return IIIF Manifest v2 object
      */
-    public static ManifestV2 getManifestV2(Object jsonDoc) {
+    public static ManifestV2 getManifestV2(ManifestSettings settings, Object jsonDoc) {
         String europeanaId = getEuropeanaId(jsonDoc);
         ManifestV2 manifest = new ManifestV2(getManifestId(europeanaId));
         manifest.setWithin(getWithinV2(jsonDoc));
         manifest.setLabel(getLabelsV2(jsonDoc));
         manifest.setDescription(getDescriptionV2(jsonDoc));
         manifest.setMetadata(getMetaDataV2(jsonDoc));
-        manifest.setThumbnail(getThumbnailImage(europeanaId, jsonDoc));
+        manifest.setThumbnail(getThumbnailImageV2(settings, europeanaId, jsonDoc));
         manifest.setNavDate(getNavDate(europeanaId, jsonDoc));
-        manifest.setAttribution(getAttribution(europeanaId, jsonDoc));
+        manifest.setAttribution(getAttributionV2(europeanaId, jsonDoc));
         manifest.setLicense(getLicense(europeanaId, jsonDoc));
-        manifest.setSeeAlso(getDataSets(europeanaId));
-        manifest.setSequences(getSequencesV2(europeanaId, jsonDoc));
+        manifest.setSeeAlso(getDataSetsV2(europeanaId));
+        manifest.setSequences(getSequencesV2(settings, europeanaId, jsonDoc));
         return manifest;
     }
 
     /**
      * Generates a IIIF v3 manifest based on the provided (parsed) json document
+     * @param settings manifest settings object loaded from properties file
      * @param jsonDoc parsed json document
      * @return IIIF Manifest v3 object
      */
-    public static ManifestV3 getManifestV3(Object jsonDoc) {
+    public static ManifestV3 getManifestV3(ManifestSettings settings, Object jsonDoc) {
         String europeanaId = getEuropeanaId(jsonDoc);
         ManifestV3 manifest = new ManifestV3(getManifestId(europeanaId));
         manifest.setWithin(EdmManifestMapping.getWithinV3(jsonDoc));
-//        manifest.setLabel(EdmManifestMapping.getLabelsV3(jsonDoc));
-//        manifest.setDescription(EdmManifestMapping.getDescriptionV3(jsonDoc));
+        manifest.setLabel(EdmManifestMapping.getLabelsV3(jsonDoc));
+        manifest.setDescription(EdmManifestMapping.getDescriptionV3(jsonDoc));
+        // TODO implement rest of v3 that is currently commented out
+        //manifest.setMetaData(EdmManifestMapping.getMetaDataV3());
+        //manifest.setThumbnail(getThumbnailImageV3(settings, europeanaId, jsonDoc));
+        manifest.setNavDate(getNavDate(europeanaId, jsonDoc));
+        //manifest.setAttributionV3(getAttributionV3(europeanaId, jsonDoc));
+        //manifest.setRights(getRights(europeanaId, jsonDoc));
+        manifest.setSeeAlso(getDataSetsV3(europeanaId));
+        //manifest.setSequences(getSequencesV3(settings, europeanaId, jsonDoc));
         return manifest;
     }
 
@@ -161,15 +171,13 @@ public class EdmManifestMapping {
      * @param jsonDoc parsed json document
      * @return
      */
-    public static LanguageMap[] getLabelsV3(Object jsonDoc)  {
+    public static LanguageMap getLabelsV3(Object jsonDoc)  {
         LanguageMap[] maps = JsonPath.parse(jsonDoc).read("$.object.proxies[*].dcTitle", LanguageMap[].class);
         if (maps == null || maps.length == 0) {
             maps = JsonPath.parse(jsonDoc).read("$.object.proxies[*].dcDescription", LanguageMap[].class);
-            if (maps == null || maps.length == 0) {
-                return null;
-            }
         }
-        return maps;
+
+        return mergeLanguageMaps(maps);
     }
 
     /**
@@ -179,7 +187,7 @@ public class EdmManifestMapping {
      */
     public static LanguageObject[] getLabelsV2(Object jsonDoc) {
         // we read everything in as LanguageMap[] because that best matches the EDM implementation, then we convert to LanguageObjects[]
-        LanguageMap[] labelsV3 = getLabelsV3(jsonDoc);
+        LanguageMap labelsV3 = getLabelsV3(jsonDoc);
         if (labelsV3 == null) {
             return null;
         }
@@ -189,9 +197,8 @@ public class EdmManifestMapping {
     /**
      * This converts a LanguageMap array (v3) to a LanguageObject array (v2).
      */
-    private static LanguageObject[] langMapsToObjects(LinkedHashMap<String, String[]>[] maps) {
+    private static LanguageObject[] langMapsToObjects(LinkedHashMap<String, String[]> map) {
         List<LanguageObject> result = new ArrayList<>();
-        for (LinkedHashMap<String, String[]> map : maps) {
             for (Map.Entry<String, String[]> entry : map.entrySet()) {
                 String language = entry.getKey();
                 String[] values = entry.getValue();
@@ -199,7 +206,6 @@ public class EdmManifestMapping {
                     result.add(new LanguageObject(language, value));
                 }
             }
-        }
         if (result.isEmpty()) {
             return null;
         }
@@ -207,13 +213,38 @@ public class EdmManifestMapping {
     }
 
     /**
+     * This merges an array of languagemaps into a single languagemap. We also check for empty maps and return null if
+     * the provided array is empty
+     */
+    private static LanguageMap mergeLanguageMaps(LanguageMap[] maps) {
+        if (maps == null || maps.length == 0) {
+            return null;
+        } else if (maps.length == 1) {
+            return maps[0];
+        }
+        LanguageMap result = new LanguageMap();
+        for (LanguageMap map : maps) {
+            // we should not have duplicate keys in our data, but we check for that if debug is enabled
+            if (LOG.isDebugEnabled()) {
+                for(String key : map.keySet()) {
+                    if (result.keySet().contains(key)) {
+                        LOG.warn("Duplicate key found when merging language maps: key = {}", key);
+                    }
+                }
+            }
+            result.putAll(map);
+        }
+        return result;
+    }
+
+    /**
      * Returns the values from the proxy.dcDescription fields, but only if they aren't used as a label yet.
      * @param jsonDoc parsed json document
      * @return
      */
-    public static LanguageMap[] getDescriptionV3(Object jsonDoc) {
+    public static LanguageMap getDescriptionV3(Object jsonDoc) {
         if (JsonPath.parse(jsonDoc).read("$.object.proxies[*].dcTitle", LanguageMap[].class).length > 0) {
-            return JsonPath.parse(jsonDoc).read("$.object.proxies[*].dcDescription", LanguageMap[].class);
+            return mergeLanguageMaps(JsonPath.parse(jsonDoc).read("$.object.proxies[*].dcDescription", LanguageMap[].class));
         }
         return null;
     }
@@ -225,7 +256,7 @@ public class EdmManifestMapping {
      */
     public static LanguageObject[] getDescriptionV2(Object jsonDoc) {
         // we read everything in as LanguageMap[] because that best matches the EDM implementation, then we convert to LanguageObjects[]
-        LanguageMap[] descriptionsV3 = getDescriptionV3(jsonDoc);
+        LanguageMap descriptionsV3 = getDescriptionV3(jsonDoc);
         if (descriptionsV3 == null) {
             return null;
         }
@@ -285,17 +316,18 @@ public class EdmManifestMapping {
 
     /**
      * Return an with the id of the thumbnail as defined in 'europeanaAggregation.edmPreview'
+     * @param settings manifest settings object loaded from properties file
      * @param jsonDoc parsed json document
      * @return Image object, or null if no edmPreview was found
      */
-    public static eu.europeana.iiif.model.v2.Image getThumbnailImage(String europeanaId, Object jsonDoc) {
+    public static eu.europeana.iiif.model.v2.Image getThumbnailImageV2(ManifestSettings settings, String europeanaId, Object jsonDoc) {
         String[] thumbnailIds = JsonPath.parse(jsonDoc).read("$.object.europeanaAggregation[?(@.edmPreview)].edmPreview", String[].class);
         String thumbnailId = (String) getFirstValueArray("thumbnail ids", europeanaId, thumbnailIds);
         if (StringUtils.isEmpty(thumbnailId)) {
             return null;
         }
         // TODO ?? implement width based on image = large/medium
-        return new eu.europeana.iiif.model.v2.Image(thumbnailId);
+        return new eu.europeana.iiif.model.v2.Image(thumbnailId, null, null);
     }
 
     /**
@@ -336,7 +368,7 @@ public class EdmManifestMapping {
      * @param jsonDoc parsed json document
      * @return
      */
-    public static String getAttribution(String europeanaId, Object jsonDoc) {
+    public static String getAttributionV2(String europeanaId, Object jsonDoc) {
         String[] attributions = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].webResources[*].textAttributionSnippet", String[].class);
         // since there are usually many webresources we simply just pick the first one and ignore if there are others.
         String attribution = (String) getFirstValueArray(null, europeanaId, attributions);
@@ -345,7 +377,7 @@ public class EdmManifestMapping {
         }
         return null;
     }
-
+    
     /**
      * Return the first license description we find in any 'aggregation.edmRights' field. Note that we first try the europeanaAggregation and if
      * that doesn't contain an edmRights, we check the other aggregations
@@ -373,32 +405,46 @@ public class EdmManifestMapping {
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
      * @return array of 3 datasets
      */
-    public static DataSet[] getDataSets(String europeanaId) {
-        DataSet[] result = new DataSet[3];
-        result[0] = new DataSet(getDatasetId(europeanaId, ".json-ld"), Definitions.MEDIA_TYPE_JSONLD);
-        result[1] = new DataSet(getDatasetId(europeanaId, ".json"), MediaType.APPLICATION_JSON_VALUE);
-        result[2] = new DataSet(getDatasetId(europeanaId, ".rdf"), Definitions.MEDIA_TYPE_RDF);
+    public static eu.europeana.iiif.model.v2.DataSet[] getDataSetsV2(String europeanaId) {
+        eu.europeana.iiif.model.v2.DataSet[] result = new eu.europeana.iiif.model.v2.DataSet[3];
+        result[0] = new eu.europeana.iiif.model.v2.DataSet(getDatasetId(europeanaId, ".json-ld"), Definitions.MEDIA_TYPE_JSONLD);
+        result[1] = new eu.europeana.iiif.model.v2.DataSet(getDatasetId(europeanaId, ".json"), MediaType.APPLICATION_JSON_VALUE);
+        result[2] = new eu.europeana.iiif.model.v2.DataSet(getDatasetId(europeanaId, ".rdf"), Definitions.MEDIA_TYPE_RDF);
+        return result;
+    }
+
+    /**
+     * Generates 3 datasets with the appropriate ID and format (one for rdf/xml, one for json and one for json-ld)
+     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
+     * @return array of 3 datasets
+     */
+    public static eu.europeana.iiif.model.v3.DataSet[] getDataSetsV3(String europeanaId) {
+        eu.europeana.iiif.model.v3.DataSet[] result = new eu.europeana.iiif.model.v3.DataSet[3];
+        result[0] = new eu.europeana.iiif.model.v3.DataSet(getDatasetId(europeanaId, ".json-ld"), Definitions.MEDIA_TYPE_JSONLD);
+        result[1] = new eu.europeana.iiif.model.v3.DataSet(getDatasetId(europeanaId, ".json"), MediaType.APPLICATION_JSON_VALUE);
+        result[2] = new eu.europeana.iiif.model.v3.DataSet(getDatasetId(europeanaId, ".rdf"), Definitions.MEDIA_TYPE_RDF);
         return result;
     }
 
     /**
      *
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
+     * @param settings manifest settings object loaded from properties file*
      * @param jsonDoc parsed json document
      * @return
      */
-    public static eu.europeana.iiif.model.v2.Sequence[] getSequencesV2(String europeanaId, Object jsonDoc) {
+    public static eu.europeana.iiif.model.v2.Sequence[] getSequencesV2(ManifestSettings settings, String europeanaId, Object jsonDoc) {
         Map<String, Object>[] webResources = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].webResources[*]", Map[].class);
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
 
         // we need to create a canvas for all webResources, but they should be in the order they link to each other in the isNextInSequence
         // for all webResources that are not linked, the ordering doesn't matter
-        // TODO implement canvas ordering, based on isNextInSequence
+        // TODO implement canvas ordering, based on isNextInSequence (EA-1003)
         int order = 1;
         List<eu.europeana.iiif.model.v2.Canvas> canvases = new LinkedList<>();
         for (int i = webResources.length - 1; i >= 0; i--) {
             Map<String, Object> webResource = webResources[i];
-            canvases.add(getCanvas(europeanaId, order, webResource, services));
+            canvases.add(getCanvas(settings, europeanaId, order, webResource, services));
             order++;
         }
 
@@ -413,15 +459,19 @@ public class EdmManifestMapping {
         return null;
     }
 
-    //private static ArrayList<Canvas>
+    private static eu.europeana.iiif.model.v2.Canvas getCanvas(ManifestSettings settings,
+                                                               String europeanaId,
+                                                               int order, Map<String, Object> webResource,
+                                                               Map<String, Object>[] services) {
+        eu.europeana.iiif.model.v2.Canvas c = new eu.europeana.iiif.model.v2.Canvas(settings, getCanvasId(europeanaId, order));
 
-    private static eu.europeana.iiif.model.v2.Canvas getCanvas(String europeanaId, int order, Map<String, Object> webResource, Map<String, Object>[] services) {
-        eu.europeana.iiif.model.v2.Canvas c = new eu.europeana.iiif.model.v2.Canvas(getCanvasId(europeanaId, order));
         c.setLabel("p. "+order);
+
         String attributionText = (String) webResource.get("textAttributionSnippet");
         if (!StringUtils.isEmpty(attributionText)){
             c.setAttribution(attributionText);
         }
+
         LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get("webResourceEdmRights");
         if (license != null && !license.values().isEmpty()) {
             c.setLicense(license.values().iterator().next().get(0));
@@ -430,6 +480,7 @@ public class EdmManifestMapping {
         c.setImages(new eu.europeana.iiif.model.v2.Annotation[1]);
         c.getImages()[0] = new eu.europeana.iiif.model.v2.Annotation(getAnnotationId(europeanaId, order));
         c.getImages()[0].setOn(c.getId());
+
         eu.europeana.iiif.model.v2.AnnotationBody body = new eu.europeana.iiif.model.v2.AnnotationBody((String) webResource.get("about"));
         String ebuCoreMimeType = (String) webResource.get("ebuCoreHasMimeType");
         if (!StringUtils.isEmpty(ebuCoreMimeType)) {
@@ -491,6 +542,26 @@ public class EdmManifestMapping {
             return values[0];
         }
         return null;
+    }
+
+    /**
+     * Main method for testing/debugging purposes only
+     * @param args
+     */
+    public static void main(String[] args) {
+        ManifestService s = new ManifestService(new ManifestSettings());
+        //String json = s.getRecordJson("/9200356/BibliographicResource_3000118390149");
+        String json = "{\"apikey\":\"api2demo\",\"success\":true,\"statsDuration\":295,\"requestNumber\":999,\"object\":{\"title\":[\"Edasi - 1922-03-15\"],\"edmDatasetName\":[\"9200356_Ag_EU_TEL_a0616_Newspapers_Estonia\"],\"aggregations\":[{\"about\":\"/aggregation/provider/9200356/BibliographicResource_3000118390149\",\"edmDataProvider\":{\"def\":[\"National Library of Estonia\"]},\"edmIsShownBy\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001/full/full/0/default.jpg\",\"edmObject\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001/full/full/0/default.jpg\",\"edmProvider\":{\"en\":[\"The European Library\"]},\"edmRights\":{\"def\":[\"http://creativecommons.org/publicdomain/mark/1.0/\"]},\"hasView\":[\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001/full/full/0/default.jpg\",\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0002/full/full/0/default.jpg\",\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0003/full/full/0/default.jpg\",\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0004/full/full/0/default.jpg\"],\"aggregatedCHO\":\"/item/9200356/BibliographicResource_3000118390149\",\"webResources\":[{\"about\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001/full/full/0/default.jpg\",\"textAttributionSnippet\":\"Edasi - 1922-03-15 - http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html. National Library of Estonia. Public Domain - http://creativecommons.org/publicdomain/mark/1.0/\",\"htmlAttributionSnippet\":\"<span about='http://data.europeana.eu/item/9200356/BibliographicResource_3000118390149'><a href='http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html'><span property='dc:title'>Edasi - 1922-03-15</span></a>. National Library of Estonia. <a href='http://creativecommons.org/publicdomain/mark/1.0/' rel='xhv:license http://www.europeana.eu/schemas/edm/rights'>Public Domain</a><span rel='cc:useGuidelines' resource='http://www.europeana.eu/rights/pd-usage-guide/'>.</span></span>\",\"svcsHasService\":[\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001\"]},{\"about\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0002/full/full/0/default.jpg\",\"isNextInSequence\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001/full/full/0/default.jpg\",\"textAttributionSnippet\":\"Edasi - 1922-03-15 - http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html. National Library of Estonia. Public Domain - http://creativecommons.org/publicdomain/mark/1.0/\",\"htmlAttributionSnippet\":\"<span about='http://data.europeana.eu/item/9200356/BibliographicResource_3000118390149'><a href='http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html'><span property='dc:title'>Edasi - 1922-03-15</span></a>. National Library of Estonia. <a href='http://creativecommons.org/publicdomain/mark/1.0/' rel='xhv:license http://www.europeana.eu/schemas/edm/rights'>Public Domain</a><span rel='cc:useGuidelines' resource='http://www.europeana.eu/rights/pd-usage-guide/'>.</span></span>\",\"svcsHasService\":[\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0002\"]},{\"about\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0003/full/full/0/default.jpg\",\"isNextInSequence\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0002/full/full/0/default.jpg\",\"textAttributionSnippet\":\"Edasi - 1922-03-15 - http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html. National Library of Estonia. Public Domain - http://creativecommons.org/publicdomain/mark/1.0/\",\"htmlAttributionSnippet\":\"<span about='http://data.europeana.eu/item/9200356/BibliographicResource_3000118390149'><a href='http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html'><span property='dc:title'>Edasi - 1922-03-15</span></a>. National Library of Estonia. <a href='http://creativecommons.org/publicdomain/mark/1.0/' rel='xhv:license http://www.europeana.eu/schemas/edm/rights'>Public Domain</a><span rel='cc:useGuidelines' resource='http://www.europeana.eu/rights/pd-usage-guide/'>.</span></span>\",\"svcsHasService\":[\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0003\"]},{\"about\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0004/full/full/0/default.jpg\",\"isNextInSequence\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0003/full/full/0/default.jpg\",\"textAttributionSnippet\":\"Edasi - 1922-03-15 - http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html. National Library of Estonia. Public Domain - http://creativecommons.org/publicdomain/mark/1.0/\",\"htmlAttributionSnippet\":\"<span about='http://data.europeana.eu/item/9200356/BibliographicResource_3000118390149'><a href='http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html'><span property='dc:title'>Edasi - 1922-03-15</span></a>. National Library of Estonia. <a href='http://creativecommons.org/publicdomain/mark/1.0/' rel='xhv:license http://www.europeana.eu/schemas/edm/rights'>Public Domain</a><span rel='cc:useGuidelines' resource='http://www.europeana.eu/rights/pd-usage-guide/'>.</span></span>\",\"svcsHasService\":[\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0004\"]}],\"edmPreviewNoDistribute\":false}],\"about\":\"/9200356/BibliographicResource_3000118390149\",\"europeanaAggregation\":{\"about\":\"/aggregation/europeana/9200356/BibliographicResource_3000118390149\",\"aggregatedCHO\":\"/item/9200356/BibliographicResource_3000118390149\",\"edmLandingPage\":\"http://europeana.eu/portal/record/9200356/BibliographicResource_3000118390149.html\",\"edmCountry\":{\"def\":[\"estonia\"]},\"edmLanguage\":{\"def\":[\"et\"]},\"edmPreview\":\"http://europeanastatic.eu/api/image?uri=http%3A%2F%2Fiiif.europeana.eu%2Frecords%2FGGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA%2Frepresentations%2Fpresentation_images%2Fversions%2Fc7aaa970-fd11-11e5-bc8a-fa163e60dd72%2Ffiles%2Fnode-3%2Fimage%2FNLE%2FEdasi%2F1922%2F03%2F15%2F1%2F19220315_1-0001%2Ffull%2Ffull%2F0%2Fdefault.jpg&size=LARGE&type=TEXT\"},\"proxies\":[{\"about\":\"/proxy/provider/9200356/BibliographicResource_3000118390149\",\"dcIdentifier\":{\"def\":[\"http://data.theeuropeanlibrary.org/BibliographicResource/3000118390149\"]},\"dcLanguage\":{\"def\":[\"et\"]},\"dcTitle\":{\"def\":[\"Edasi - 1922-03-15\"]},\"dcType\":{\"def\":[\"http://schema.org/PublicationIssue\"]},\"dctermsExtent\":{\"en\":[\"Pages: 4\"]},\"dctermsIsPartOf\":{\"def\":[\"http://data.theeuropeanLibrary.org/BibliographicResource/3000100340004\",\"http://data.theeuropeanlibrary.org/Collection/a0616\"],\"en\":[\"Europeana Newspapers\"]},\"dctermsIssued\":{\"def\":[\"1922-03-15\"]},\"edmIsNextInSequence\":[\"http://data.theeuropeanLibrary.org/BibliographicResource/3000118390042\"],\"proxyIn\":[\"/aggregation/provider/9200356/BibliographicResource_3000118390149\"],\"proxyFor\":\"/item/9200356/BibliographicResource_3000118390149\",\"edmType\":\"TEXT\",\"europeanaProxy\":false},{\"about\":\"/proxy/europeana/9200356/BibliographicResource_3000118390149\",\"proxyIn\":[\"/aggregation/europeana/9200356/BibliographicResource_3000118390149\"],\"proxyFor\":\"/item/9200356/BibliographicResource_3000118390149\",\"edmType\":\"TEXT\",\"europeanaProxy\":true}],\"language\":[\"et\"],\"europeanaCompleteness\":5,\"providedCHOs\":[{\"about\":\"/item/9200356/BibliographicResource_3000118390149\"}],\"europeanaCollectionName\":[\"9200356_Ag_EU_TEL_a0616_Newspapers_Estonia\"],\"services\":[{\"about\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001\",\"id\":{\"timestamp\":1512120749,\"machineIdentifier\":14987444,\"processIdentifier\":-15654,\"counter\":7962431,\"timeSecond\":1512120749,\"time\":1512120749000,\"date\":1512120749000},\"dctermsConformsTo\":[\"http://iiif.io/api/image\"],\"doapImplements\":[\"http://iiif.io/api/image/2/level1.json\"]},{\"about\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0002\",\"id\":{\"timestamp\":1512120749,\"machineIdentifier\":14987444,\"processIdentifier\":-15654,\"counter\":7962432,\"timeSecond\":1512120749,\"time\":1512120749000,\"date\":1512120749000},\"dctermsConformsTo\":[\"http://iiif.io/api/image\"],\"doapImplements\":[\"http://iiif.io/api/image/2/level1.json\"]},{\"about\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0003\",\"id\":{\"timestamp\":1512120749,\"machineIdentifier\":14987444,\"processIdentifier\":-15654,\"counter\":7962433,\"timeSecond\":1512120749,\"time\":1512120749000,\"date\":1512120749000},\"dctermsConformsTo\":[\"http://iiif.io/api/image\"],\"doapImplements\":[\"http://iiif.io/api/image/2/level1.json\"]},{\"about\":\"http://iiif.europeana.eu/records/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/representations/presentation_images/versions/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/files/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0004\",\"id\":{\"timestamp\":1512120749,\"machineIdentifier\":14987444,\"processIdentifier\":-15654,\"counter\":7962434,\"timeSecond\":1512120749,\"time\":1512120749000,\"date\":1512120749000},\"dctermsConformsTo\":[\"http://iiif.io/api/image\"],\"doapImplements\":[\"http://iiif.io/api/image/2/level1.json\"]}],\"type\":\"TEXT\",\"timestamp_created_epoch\":1422220146248,\"timestamp_update_epoch\":1512120749767,\"timestamp_created\":\"2015-01-25T21:09:06.248Z\",\"timestamp_update\":\"2017-12-01T09:32:29.767Z\"}}";
+
+        try {
+            ManifestV2 m2 = s.generateManifestV2(json);
+            LOG.debug("jsonld V2 = \n{}", s.serializeManifest(m2));
+
+            ManifestV3 m3 = s.generateManifestV3(json);
+            LOG.debug("jsonld V3 = \n{}", s.serializeManifest(m3));
+        } catch (RecordParseException e) {
+            LOG.error("Error generating manifest", e);
+        }
     }
 
 }

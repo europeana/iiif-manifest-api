@@ -12,9 +12,9 @@ import eu.europeana.iiif.model.v2.Sequence;
 import eu.europeana.iiif.model.v2.Service;
 import eu.europeana.iiif.service.EdmManifestMapping;
 import eu.europeana.iiif.service.ManifestService;
+import eu.europeana.iiif.service.ManifestSettings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -48,13 +48,9 @@ public class EdmManifestMappingTest {
     private static final String TEST_SEQUENCE_1CANVAS_1SERVICE = "{\"object\": { \"aggregations\": [ {\"webResources\": [ {\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\", \"webResourceEdmRights\": {\"def\":[\"wr1License\"]}, \"ebuCoreHasMimeType\": \"wr1MimeType\", \"svcsHasService\": [\"service1Id\"]  } ] } ], \"services\": [{\"about\": \"service1Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
     private static final String TEST_SEQUENCE_4CANVASES_NOSERVICE = "{\"object\": { \"europeanaAggregation\" : {\"edmRights\":{}}, \"aggregations\": [{}, {\"edmRights\": { \"en\": [\"licenseTextAggregation\"]}}] }}";
 
-    /**
-     *  Initialize the manifestservice, because that will setup our default Jackson mapper configuration used in the tests
-     */
-    @BeforeClass
-    public static void setup() {
-        ManifestService s = new ManifestService();
-    }
+    // Initialize the manifestservice, because that will setup our default Jackson mapper configuration used in the tests
+    private static final ManifestService ms = new ManifestService(new ManifestSettings());
+
 
 //    @Test
 //    public void testEmpty() {
@@ -164,7 +160,7 @@ public class EdmManifestMappingTest {
     @Test
     public void testThumbnail() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(TEST_THUMBNAIL);
-        Image image = EdmManifestMapping.getThumbnailImage("test", document);
+        Image image = EdmManifestMapping.getThumbnailImageV2(ms.getSettings(), "test", document);
         assertNotNull(image);
         assertEquals(TEST_THUMBNAIL_ID, image.getId());
     }
@@ -175,7 +171,7 @@ public class EdmManifestMappingTest {
     @Test
     public void testThumbnailEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(TEST_EMPTY);
-        assertNull(EdmManifestMapping.getThumbnailImage("test", document));
+        assertNull(EdmManifestMapping.getThumbnailImageV2(ms.getSettings(), "test", document));
     }
 
     /**
@@ -204,7 +200,7 @@ public class EdmManifestMappingTest {
     @Test
     public void testAttribution() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(TEST_ATTRIBUTION);
-        String attribution = EdmManifestMapping.getAttribution("test", document);
+        String attribution = EdmManifestMapping.getAttributionV2("test", document);
         assertNotNull(attribution);
         assertEquals("attributionText", attribution);
     }
@@ -215,7 +211,7 @@ public class EdmManifestMappingTest {
     @Test
     public void testAttributionEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(TEST_EMPTY);
-        assertNull(EdmManifestMapping.getAttribution("test", document));
+        assertNull(EdmManifestMapping.getAttributionV2("test", document));
     }
 
     /**
@@ -254,7 +250,7 @@ public class EdmManifestMappingTest {
      */
     @Test
     public void testSeeAlso() {
-        DataSet[] datasets = EdmManifestMapping.getDataSets("TEST-ID");
+        DataSet[] datasets = EdmManifestMapping.getDataSetsV2("TEST-ID");
         assertNotNull(datasets);
         assertEquals(3, datasets.length);
         for (DataSet dataset : datasets) {
@@ -268,7 +264,7 @@ public class EdmManifestMappingTest {
     @Test
     public void testSequenceV2Empty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(TEST_EMPTY);
-        assertNull(EdmManifestMapping.getSequencesV2("test", document));
+        assertNull(EdmManifestMapping.getSequencesV2(ms.getSettings(), "test", document));
     }
 
     /**
@@ -277,7 +273,7 @@ public class EdmManifestMappingTest {
     @Test
     public void testSequenceV2() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(TEST_SEQUENCE_1CANVAS_1SERVICE);
-        Sequence[] sequence = EdmManifestMapping.getSequencesV2("/test-id", document);
+        Sequence[] sequence = EdmManifestMapping.getSequencesV2(ms.getSettings(), "/test-id", document);
         assertNotNull(sequence);
         assertEquals(1, sequence.length); // there should be only 1 sequence
         assertTrue(sequence[0].getId().endsWith("/test-id" + "/sequence/s1"));

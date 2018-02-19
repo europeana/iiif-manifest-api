@@ -6,11 +6,11 @@ import java.io.Serializable;
  * @author Patrick Ehlert
  * Created on 24-01-2018
  */
-public class Rights extends IdType implements Serializable {
+public class Rights extends JsonLdIdType implements Serializable {
 
     private static final long serialVersionUID = -3102243950444778135L;
 
-    public String format;
+    public String format = "text/html";
 
     public Rights(String id) {
         super(id, "Text");
