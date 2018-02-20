@@ -47,7 +47,7 @@ public class ManifestController {
      * @throws IIIFException when something goes wrong during processing
      */
     @CrossOrigin
-    @RequestMapping(value = "/presentation/{collectionId}/{recordId}/manifest", method = RequestMethod.GET, produces = {Definitions.MEDIA_TYPE_JSONLD_V3, MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "/presentation/{collectionId}/{recordId}/manifest", method = RequestMethod.GET, produces = {Definitions.MEDIA_TYPE_JSONLD_V3, Definitions.MEDIA_TYPE_JSONLD_V2, MediaType.APPLICATION_JSON_VALUE})
     public String manifest(@PathVariable String collectionId,
                            @PathVariable String recordId,
                            @RequestParam(value = "wskey", required = true) String wskey,
