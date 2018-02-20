@@ -19,4 +19,11 @@ public class RecordNotFoundException extends IIIFException {
         super(msg);
     }
 
+    /**
+     * @return false because we don't want to explicitly log this type of exception
+     */
+    @Override
+    public boolean doLog() {
+        return false;
+    }
 }

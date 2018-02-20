@@ -18,4 +18,12 @@ public class InvalidApiKeyException extends IIIFException {
     public InvalidApiKeyException(String msg) {
         super(msg);
     }
+
+    /**
+     * @return false because we don't want to explicitly log this type of exception
+     */
+    @Override
+    public boolean doLog() {
+        return false;
+    }
 }
