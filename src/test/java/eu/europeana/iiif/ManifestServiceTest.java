@@ -8,39 +8,42 @@ import eu.europeana.iiif.service.exception.IIIFException;
 import eu.europeana.iiif.service.exception.InvalidApiKeyException;
 import eu.europeana.iiif.service.exception.RecordNotFoundException;
 import org.apache.commons.logging.LogFactory;
-import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the general flow of generating output (getRecord, generate the manifest and serialize it) for both versions
- * of the manifest (v2 and v3)
+ * of the manifest (v2 and v3).
+
  * @author Patrick Ehlert on 18-1-18.
  */
 
+@RunWith(SpringJUnit4ClassRunner.class)
+@TestPropertySource("classpath:iiif-test.properties")
+@SpringBootTest(classes = {ManifestService.class, ManifestSettings.class})
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ManifestServiceTest {
 
+    // TODO add mock record API
 
-    private static final String TEST1_CHILD_RECORD_ID = "/9200408/BibliographicResource_3000117822022";
-    private static final String TEST2_PARENT_RECORD_ID = "/9200356/BibliographicResource_3000100340004";
-    private static final String TEST3_CHILD_RECORD_ID = "/9200385/BibliographicResource_3000117433317";
-    private static final String TEST4_PARENT_RECORD_ID = "/9200359/BibliographicResource_3000116004551";
-    private static final String APIKEY = "api2demo";
+    @Value("${record-api.key:api2demo}")
+    private String apikey;
 
-    private static ManifestService ms;
-
-    @BeforeClass
-    public static void setup() {
-        ms = new ManifestService(new ManifestSettings());
-    }
+    @Autowired
+    private ManifestService ms;
 
     private String getRecord(String recordId) throws IIIFException {
-        String json = ms.getRecordJson(recordId, APIKEY);
+        String json = ms.getRecordJson(recordId, apikey);
         assertNotNull(json);
         assertTrue(json.contains("\"about\":\""+recordId+"\""));
         return json;
@@ -66,7 +69,7 @@ public class ManifestServiceTest {
      */
     @Test
     public void testGetJsonRecord() throws IIIFException {
-        getRecord(TEST1_CHILD_RECORD_ID);
+        getRecord(ExampleRecordJson.EXAMPLE_PARENT_ID);
     }
 
     /**
@@ -84,7 +87,7 @@ public class ManifestServiceTest {
      */
     @Test(expected = InvalidApiKeyException.class)
     public void testGetJsonRecordApikeyInvalid() throws IIIFException {
-        ms.getRecordJson(TEST2_PARENT_RECORD_ID, "INVALID");
+        ms.getRecordJson(ExampleRecordJson.EXAMPLE_CHILD_ID, "INVALID");
     }
 
     /**
@@ -93,7 +96,7 @@ public class ManifestServiceTest {
      */
     @Test
     public void testGetManifestV2() throws IIIFException {
-        getManifestV2(TEST1_CHILD_RECORD_ID);
+        getManifestV2(ExampleRecordJson.EXAMPLE_CHILD_ID);
     }
 
     /**
@@ -102,7 +105,7 @@ public class ManifestServiceTest {
      */
     @Test
     public void testGetManifestV3() throws IIIFException {
-        getManifestV3(TEST2_PARENT_RECORD_ID);
+        getManifestV3(ExampleRecordJson.EXAMPLE_PARENT_ID);
     }
 
     /**
@@ -111,10 +114,10 @@ public class ManifestServiceTest {
      */
     @Test
     public void testSerializeJsonLdV2() throws IIIFException {
-        String recordId = TEST3_CHILD_RECORD_ID;
+        String recordId = ExampleRecordJson.EXAMPLE_PARENT_ID;
         String jsonLd = ms.serializeManifest(getManifestV2(recordId));
         assertNotNull(jsonLd);
-        LogFactory.getLog(ManifestService.class).error("jsonld v2 = " + jsonLd);
+        LogFactory.getLog(ManifestService.class).info("jsonld v2 = " + jsonLd);
         assertTrue(jsonLd.contains("\"@id\" : \"https://iiif.europeana.eu/presentation" + recordId + "/manifest"));
         assertTrue(jsonLd.contains("\"http://iiif.io/api/presentation/2/context.json\""));
     }
@@ -125,10 +128,10 @@ public class ManifestServiceTest {
      */
     @Test
     public void testSerializeJsonLdV3() throws IIIFException {
-        String recordId = TEST4_PARENT_RECORD_ID;
+        String recordId = ExampleRecordJson.EXAMPLE_CHILD_ID;
         String jsonLd = ms.serializeManifest(getManifestV3(recordId));
         assertNotNull(jsonLd);
-        LogFactory.getLog(ManifestService.class).error("jsonld v3 = "+jsonLd);
+        LogFactory.getLog(ManifestService.class).info("jsonld v3 = "+jsonLd);
         assertTrue(jsonLd.contains("\"id\" : \"https://iiif.europeana.eu/presentation"+recordId+"/manifest"));
         assertTrue(jsonLd.contains("\"http://iiif.io/api/presentation/3/context.json\""));
     }

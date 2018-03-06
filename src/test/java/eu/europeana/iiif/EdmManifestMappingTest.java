@@ -13,9 +13,11 @@ import eu.europeana.iiif.model.v2.Service;
 import eu.europeana.iiif.service.EdmManifestMapping;
 import eu.europeana.iiif.service.ManifestService;
 import eu.europeana.iiif.service.ManifestSettings;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -28,12 +30,12 @@ import static org.junit.Assert.assertTrue;
  * Created on 13-02-2018
  */
 
+@RunWith(SpringJUnit4ClassRunner.class)
+@TestPropertySource("classpath:iiif-test.properties")
+@SpringBootTest
 public class EdmManifestMappingTest {
 
-    private static final Logger LOG = LogManager.getLogger(EdmManifestMappingTest.class);
-
     private static final String TEST_EMPTY = "{\"object\": { \"proxies\":[], \"europeanaAggregation\":{}, \"aggregations\":[] }}";
-    private static final String TEST_EMPTY_SUPPRESS_EXCEPTIONS = ""; // this will only work if suppress exceptions for the parser is enabled
     private static final String TEST_ID = "{\"object\": {\"about\":\"id\"}}";
     private static final String TEST_TITLE = "{\"object\": { \"proxies\":[{}, { \"dcTitle\":{\"en\":[\"Title\"]} }, {} ] }}";
     private static final String TEST_DESCRIPTION = "{\"object\": { \"proxies\":[{}, { \"dcDescription\":{\"def\":[\"Description\"]} }, {}] }}";
@@ -51,12 +53,6 @@ public class EdmManifestMappingTest {
     // Initialize the manifestservice, because that will setup our default Jackson mapper configuration used in the tests
     private static final ManifestService ms = new ManifestService(new ManifestSettings());
 
-
-//    @Test
-//    public void testEmpty() {
-//        EdmManifestMapping.getManifestV2(TEST_EMPTY);
-//        EdmManifestMapping.getManifestV3(TEST_EMPTY);
-//    }
 
     @Test
     public void testId() {

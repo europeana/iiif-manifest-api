@@ -24,16 +24,16 @@ public class ManifestSettings {
     private static final Logger LOG = LogManager.getLogger(ManifestSettings.class);
 
     @Value("${record-api.baseurl}")
-    private String recordApiBaseUrl = "https://www.europeana.eu"; // default value in case property isn't specified
+    private String recordApiBaseUrl;
     @Value("${record-api.path}")
-    private String recordApiPath = "/api/v2/record";
+    private String recordApiPath;
     @Value("${suppress-parse-exception}")
-    private Boolean suppressParseException = true; // default value in case property isn't specified
+    private Boolean suppressParseException;
 
     @Value("${canvas.height}")
-    private Integer canvasHeight = 10; // default value in case property isn't specified
+    private Integer canvasHeight;
     @Value("${canvas.width}")
-    private Integer canvasWidth = 6; // default value in case property isn't specified
+    private Integer canvasWidth;
 
     /**
      * @return base url from where we should retrieve record json data

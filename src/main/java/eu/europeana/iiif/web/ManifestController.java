@@ -3,7 +3,9 @@ package eu.europeana.iiif.web;
 import eu.europeana.iiif.model.Definitions;
 import eu.europeana.iiif.service.ManifestService;
 import eu.europeana.iiif.service.exception.IIIFException;
-import org.apache.catalina.servlet4preview.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.MediaType;
@@ -16,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URL;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -27,31 +31,37 @@ import java.util.Locale;
 @RestController
 public class ManifestController {
 
-    private static final Logger LOG = LogManager.getLogger(ManifestController.class);
-
     private ManifestService manifestService;
+
+    /* for parsing accept headers */
+    private Pattern acceptProfilePattern = Pattern.compile("profiles=\"(.*?)\"");
+
 
     public ManifestController(ManifestService manifestService) {
         this.manifestService = manifestService;
     }
 
     /**
-     * Handles manifest requests
+     * Handles manifest requests for version 2
      * @param collectionId (required field)
      * @param recordId (required field)
      * @param wskey apikey (required field)
-     * @param v IIIF version (optional field)
-     * @param recordApi url of an alternative Record API instance to use instead of the configured one (optional field)
-     *
+     * @param version
+     * @param recordApi
+     * @param request
      * @return JSON-LD string containing manifest
      * @throws IIIFException when something goes wrong during processing
      */
     @CrossOrigin
-    @RequestMapping(value = "/presentation/{collectionId}/{recordId}/manifest", method = RequestMethod.GET, produces = {Definitions.MEDIA_TYPE_JSONLD_V3, Definitions.MEDIA_TYPE_JSONLD_V2, MediaType.APPLICATION_JSON_VALUE})
+    @RequestMapping(value = "/presentation/{collectionId}/{recordId}/manifest", method = RequestMethod.GET,
+            produces = {Definitions.MEDIA_TYPE_IIIF_JSONLD_V3,
+                        Definitions.MEDIA_TYPE_IIIF_JSONLD_V2,
+                        Definitions.MEDIA_TYPE_JSONLD,
+                        MediaType.APPLICATION_JSON_VALUE})
     public String manifest(@PathVariable String collectionId,
                            @PathVariable String recordId,
                            @RequestParam(value = "wskey", required = true) String wskey,
-                           @RequestParam(value = "v", required = false) Integer v,
+                           @RequestParam(value = "v", required = false) String version,
                            @RequestParam(value = "recordApi", required = false) URL recordApi,
                            HttpServletRequest request)
                     throws IIIFException {
@@ -59,26 +69,37 @@ public class ManifestController {
         String id = "/"+collectionId+"/"+recordId;
         String json = manifestService.getRecordJson(id, wskey, recordApi);
 
-        // if no version was provided as request param, then we check the acceptheader
-        Integer version = v;
+        // if no version was provided as request param, then we check the accept header for a profiles= value
+        String v = version;
         if (version == null) {
-            String accept = request.getHeader("Accept");
-            LOG.debug("Manifest, Accept = {}", accept);
-            if (accept.toLowerCase(Locale.getDefault()).contains("https://iiif.io/api/presentation/2/context.json")) {
-                version = 2;
-            } else {
-                version = 3;
-            }
+            v = versionFromAcceptHeader(request);
         }
 
-        Object manifest = null;
-        if (version == 2) {
-            manifest = manifestService.generateManifestV2(json);
-        } else if (version == 3){
-            manifest = manifestService.generateManifestV3(json); // default
+        Object manifest;
+        if ("3".equalsIgnoreCase(v)) {
+            manifest = manifestService.generateManifestV3(json);
+        } else {
+            manifest = manifestService.generateManifestV2(json); // fallback option
         }
         return manifestService.serializeManifest(manifest);
     }
 
 
+    private String versionFromAcceptHeader(HttpServletRequest request) {
+        String result = "2"; // default version if no accept header is present
+
+        String accept = request.getHeader("Accept");
+        if (StringUtils.isNotEmpty(accept)) {
+            Matcher m = acceptProfilePattern.matcher(accept);
+            if (m.find()) {
+                String profiles = m.group(1);
+                if (profiles.toLowerCase(Locale.getDefault()).contains(Definitions.MEDIA_TYPE_IIIF_V3)) {
+                    result = "3";
+                } else {
+                    result = "2";
+                }
+            }
+        }
+        return result;
+    }
 }
