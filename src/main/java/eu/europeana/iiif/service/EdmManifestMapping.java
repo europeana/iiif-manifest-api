@@ -176,7 +176,6 @@ public class EdmManifestMapping {
         if (maps == null || maps.length == 0) {
             maps = JsonPath.parse(jsonDoc).read("$.object.proxies[*].dcDescription", LanguageMap[].class);
         }
-
         return mergeLanguageMaps(maps);
     }
 
@@ -198,6 +197,9 @@ public class EdmManifestMapping {
      * This converts a LanguageMap array (v3) to a LanguageObject array (v2).
      */
     private static LanguageObject[] langMapsToObjects(LinkedHashMap<String, String[]> map) {
+        if (map == null) {
+            return null;
+        }
         List<LanguageObject> result = new ArrayList<>();
             for (Map.Entry<String, String[]> entry : map.entrySet()) {
                 String language = entry.getKey();

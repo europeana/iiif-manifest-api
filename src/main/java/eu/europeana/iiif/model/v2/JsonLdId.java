@@ -1,5 +1,6 @@
 package eu.europeana.iiif.model.v2;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldId;
 
 import java.io.Serializable;
@@ -10,6 +11,7 @@ import java.io.Serializable;
  * @author Patrick Ehlert
  * Created on 24-01-2018
  */
+@JsonPropertyOrder({"id"}) // make sure id always comes first, instead of last
 public class JsonLdId implements Serializable{
     
     private static final long serialVersionUID = -4566241702990679641L;

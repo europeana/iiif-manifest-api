@@ -6,6 +6,8 @@ import eu.europeana.iiif.web.ManifestController;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.support.SpringBootServletInitializer;
+import org.springframework.cloud.client.circuitbreaker.EnableCircuitBreaker;
+import org.springframework.cloud.netflix.hystrix.dashboard.EnableHystrixDashboard;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -18,6 +20,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
  * Created on 6-12-2017
  */
 @SpringBootApplication
+@EnableHystrixDashboard
+@EnableCircuitBreaker
 public class IiifApplication extends SpringBootServletInitializer {
 
 	//TODO figure out why corsConfigurer below doesn't work (however @CrossOrigin annotation on a controller method does work)

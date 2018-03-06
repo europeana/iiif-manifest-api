@@ -1,6 +1,7 @@
 package eu.europeana.iiif.model.v2;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import eu.europeana.iiif.model.Definitions;
 import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldType;
 
@@ -12,6 +13,7 @@ import java.io.Serializable;
  * @author Patrick Ehlert
  * Created on 06-02-2018
  */
+@JsonPropertyOrder({"id", "context"})
 @JsonldType(value = "Manifest")
 public class ManifestV2 extends JsonLdId implements Serializable {
 

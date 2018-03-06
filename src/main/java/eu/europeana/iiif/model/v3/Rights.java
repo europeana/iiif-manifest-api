@@ -10,10 +10,14 @@ public class Rights extends JsonLdIdType implements Serializable {
 
     private static final long serialVersionUID = -3102243950444778135L;
 
-    public String format = "text/html";
+    private String format = "text/html";
 
     public Rights(String id) {
         super(id, "Text");
+    }
+
+    public String getFormat() {
+        return format;
     }
 
 }

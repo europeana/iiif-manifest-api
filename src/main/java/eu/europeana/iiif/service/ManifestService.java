@@ -9,6 +9,7 @@ import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.exception.IIIFException;
@@ -116,6 +117,8 @@ public class ManifestService {
      * @throws IIIFException (InvalidApiKeyException if the provide key is not valid,
      *      RecordNotFoundException if there was a 404, RecordRetrieveException on all other problems)
      */
+    // TODO only use hysterix for default connection!? Not for custom recordApiUrls?
+    @HystrixCommand(ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class})
     public String getRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
         String result= null;
 
@@ -156,7 +159,6 @@ public class ManifestService {
             throw new RecordRetrieveException("Error retrieving record", e);
         }
 
-
         return result;
     }
 
@@ -171,7 +173,7 @@ public class ManifestService {
         ManifestV2 result = EdmManifestMapping.getManifestV2(settings, document);
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Generated in {} ms", (System.currentTimeMillis() - start));
+            LOG.debug("Generated in {} ms", System.currentTimeMillis() - start);
         }
         return result;
     }
@@ -187,7 +189,7 @@ public class ManifestService {
         ManifestV3 result = EdmManifestMapping.getManifestV3(settings, document);
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Generated in {} ms ", (System.currentTimeMillis() - start));
+            LOG.debug("Generated in {} ms ", System.currentTimeMillis() - start);
         }
         return result;
     }
