@@ -82,13 +82,13 @@ public class ManifestControllerTest {
     public void testManifestAcceptHeader() throws Exception {
         // first try v2 header
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
-                .header("Accept", "application/json; profiles=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\""))
+                .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\""))
                 .andExpect(status().isOk())
                 .andExpect(content().json(JSONLD_V2_OUTPUT));
 
         // then try v3
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
-                .header("Accept", "application/ld+json;profiles=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\""))
+                .header("Accept", "application/ld+json;profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\""))
                 .andExpect(status().isOk())
                 .andExpect(content().json(JSONLD_V3_OUTPUT));
 

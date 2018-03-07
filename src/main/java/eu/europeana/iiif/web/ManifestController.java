@@ -34,7 +34,7 @@ public class ManifestController {
     private ManifestService manifestService;
 
     /* for parsing accept headers */
-    private Pattern acceptProfilePattern = Pattern.compile("profiles=\"(.*?)\"");
+    private Pattern acceptProfilePattern = Pattern.compile("profile=\"(.*?)\"");
 
 
     public ManifestController(ManifestService manifestService) {
@@ -61,7 +61,7 @@ public class ManifestController {
     public String manifest(@PathVariable String collectionId,
                            @PathVariable String recordId,
                            @RequestParam(value = "wskey", required = true) String wskey,
-                           @RequestParam(value = "v", required = false) String version,
+                           @RequestParam(value = "format", required = false) String version,
                            @RequestParam(value = "recordApi", required = false) URL recordApi,
                            HttpServletRequest request)
                     throws IIIFException {
@@ -70,13 +70,13 @@ public class ManifestController {
         String json = manifestService.getRecordJson(id, wskey, recordApi);
 
         // if no version was provided as request param, then we check the accept header for a profiles= value
-        String v = version;
-        if (version == null) {
-            v = versionFromAcceptHeader(request);
+        String iiifVersion = version;
+        if (iiifVersion == null) {
+            iiifVersion = versionFromAcceptHeader(request);
         }
 
         Object manifest;
-        if ("3".equalsIgnoreCase(v)) {
+        if ("3".equalsIgnoreCase(iiifVersion)) {
             manifest = manifestService.generateManifestV3(json);
         } else {
             manifest = manifestService.generateManifestV2(json); // fallback option

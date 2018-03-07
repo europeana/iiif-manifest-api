@@ -28,7 +28,7 @@ public class ManifestSettings {
     @Value("${record-api.path}")
     private String recordApiPath;
     @Value("${suppress-parse-exception}")
-    private Boolean suppressParseException;
+    private Boolean suppressParseException = false; // default value if we run this outside of Spring
 
     @Value("${canvas.height}")
     private Integer canvasHeight;
