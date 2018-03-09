@@ -3,11 +3,14 @@ package eu.europeana.iiif.service;
 import com.jayway.jsonpath.JsonPath;
 import eu.europeana.iiif.model.Definitions;
 import eu.europeana.iiif.model.EdmDateUtils;
+import eu.europeana.iiif.model.WebResource;
+import eu.europeana.iiif.model.WebResourceSorter;
 import eu.europeana.iiif.model.v2.LanguageObject;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.Collection;
 import eu.europeana.iiif.model.v3.LanguageMap;
 import eu.europeana.iiif.model.v3.ManifestV3;
+import eu.europeana.iiif.service.exception.DataInconsistentException;
 import eu.europeana.iiif.service.exception.RecordParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -436,16 +439,20 @@ public class EdmManifestMapping {
      * @return
      */
     public static eu.europeana.iiif.model.v2.Sequence[] getSequencesV2(ManifestSettings settings, String europeanaId, Object jsonDoc) {
-        Map<String, Object>[] webResources = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].webResources[*]", Map[].class);
+        WebResource[] webResources = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].webResources[*]", WebResource[].class);
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
 
-        // we need to create a canvas for all webResources, but they should be in the order they link to each other in the isNextInSequence
-        // for all webResources that are not linked, the ordering doesn't matter
-        // TODO implement canvas ordering, based on isNextInSequence (EA-1003)
+        // create canvases in a particular order
+        WebResource[] sorted;
+        try {
+            sorted = WebResourceSorter.sort(webResources);
+        } catch (DataInconsistentException e) {
+            LOG.error("Error trying to sort webresources for {}. Cause: {}", europeanaId, e.getMessage());
+            sorted = webResources;
+        }
         int order = 1;
         List<eu.europeana.iiif.model.v2.Canvas> canvases = new LinkedList<>();
-        for (int i = webResources.length - 1; i >= 0; i--) {
-            Map<String, Object> webResource = webResources[i];
+        for (WebResource webResource: sorted) {
             canvases.add(getCanvas(settings, europeanaId, order, webResource, services));
             order++;
         }

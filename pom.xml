@@ -16,7 +16,7 @@
 	<packaging>war</packaging>
 
 	<name>Europeana IIIF API</name>
-	<description>Demo project for Spring Boot</description>
+	<description>Europeana IIIF API supporting IIIF v2 manifests</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
