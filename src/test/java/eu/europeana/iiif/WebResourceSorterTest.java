@@ -56,7 +56,7 @@ public class WebResourceSorterTest {
      * @throws DataInconsistentException
      */
     @Test
-    public void sortNormalTest() throws DataInconsistentException {
+    public void sortNormal() throws DataInconsistentException {
         // 2 sequences and 2 isolated nodes
         List<WebResource> test = new ArrayList<>();
         test.add(ISOLATED1);
@@ -72,6 +72,26 @@ public class WebResourceSorterTest {
         assertTrue(isAfter(wrs, "iso1", "5"));
         assertTrue(isAfter(wrs, "iso2", "2"));
         assertTrue(isAfter(wrs, "iso2", "5"));
+    }
+
+    /**
+     * Check if we can handle a list of webresources that have no sequences properly
+     * @throws DataInconsistentException
+     */
+    @Test
+    public void sortOnlyIsolated() throws DataInconsistentException {
+        WebResource[] isolated = new WebResource[]{ ISOLATED1, ISOLATED2};
+        WebResource[] wrs = WebResourceSorter.sort(isolated);
+        // can't test order since it's not defined.
+    }
+
+    /**
+     * Test if we handle an empty list of webresources properly
+     * @throws DataInconsistentException
+     */
+    @Test
+    public void sortEmpty() throws DataInconsistentException {
+        WebResourceSorter.sort(new WebResource[0]);
     }
 
     /**
