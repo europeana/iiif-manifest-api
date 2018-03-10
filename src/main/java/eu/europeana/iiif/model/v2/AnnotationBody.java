@@ -8,7 +8,7 @@ import java.io.Serializable;
  * @author Patrick Ehlert
  * Created on 24-01-2018
  */
-@JsonldType("dcTypes:Image")
+@JsonldType("dctypes:Image")
 public class AnnotationBody extends JsonLdId implements Serializable {
 
     private static final long serialVersionUID = 2703342049366188602L;

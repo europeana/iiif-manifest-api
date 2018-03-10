@@ -52,7 +52,7 @@ public class Definitions {
     /**
      * Media type for IIIF version 2
      */
-    public static final String MEDIA_TYPE_IIIF_V2 = "http://iiif.io/api/presentation/2.1/context.json";
+    public static final String MEDIA_TYPE_IIIF_V2 = "http://iiif.io/api/presentation/2/context.json";
 
     /**
      * Media type for IIIF version 3
