@@ -4,10 +4,9 @@ import eu.europeana.iiif.model.Definitions;
 import eu.europeana.iiif.service.ManifestService;
 import eu.europeana.iiif.service.exception.IIIFException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -54,8 +53,8 @@ public class ManifestController {
      */
     @CrossOrigin
     @RequestMapping(value = "/presentation/{collectionId}/{recordId}/manifest", method = RequestMethod.GET,
-            produces = {Definitions.MEDIA_TYPE_IIIF_JSONLD_V3,
-                        Definitions.MEDIA_TYPE_IIIF_JSONLD_V2,
+            produces = {Definitions.MEDIA_TYPE_IIIF_JSONLD_V2,
+                        Definitions.MEDIA_TYPE_IIIF_JSONLD_V3,
                         Definitions.MEDIA_TYPE_JSONLD,
                         MediaType.APPLICATION_JSON_VALUE})
     public String manifest(@PathVariable String collectionId,
@@ -63,7 +62,8 @@ public class ManifestController {
                            @RequestParam(value = "wskey", required = true) String wskey,
                            @RequestParam(value = "format", required = false) String version,
                            @RequestParam(value = "recordApi", required = false) URL recordApi,
-                           HttpServletRequest request)
+                           HttpServletRequest request,
+                           HttpServletResponse response)
                     throws IIIFException {
         // TODO integrate with apikey service?? (or leave it like this?)
         String id = "/"+collectionId+"/"+recordId;
@@ -78,8 +78,10 @@ public class ManifestController {
         Object manifest;
         if ("3".equalsIgnoreCase(iiifVersion)) {
             manifest = manifestService.generateManifestV3(json);
+            response.setContentType(Definitions.MEDIA_TYPE_IIIF_JSONLD_V3+";charset=UTF-8");
         } else {
             manifest = manifestService.generateManifestV2(json); // fallback option
+            response.setContentType(Definitions.MEDIA_TYPE_IIIF_JSONLD_V2+";charset=UTF-8");
         }
         return manifestService.serializeManifest(manifest);
     }

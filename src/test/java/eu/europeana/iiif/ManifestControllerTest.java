@@ -12,6 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
+
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -19,6 +23,7 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -84,23 +89,39 @@ public class ManifestControllerTest {
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
                 .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\""))
                 .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", containsString("profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\"")))
                 .andExpect(content().json(JSONLD_V2_OUTPUT));
 
         // then try v3
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
                 .header("Accept", "application/ld+json;profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\""))
                 .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", containsString("profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\"")))
                 .andExpect(content().json(JSONLD_V3_OUTPUT));
 
         // check if we get v2 if there is an unknown, but otherwise valid accept
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
                 .header("Accept", "application/json;profile=X"))
                 .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", containsString("profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\"")))
                 .andExpect(content().json(JSONLD_V2_OUTPUT));
 
         // finally check if we get a 406 for unsupported accept headers
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
                 .header("Accept", "application/xml"))
                 .andExpect(status().isNotAcceptable());
+    }
+
+    /**
+     * Check if we get the proper cross origin headers
+     * @throws Exception
+     */
+    @Test
+    public void testManifestCrossOrigin() throws Exception {
+        this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
+                .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\"")
+                .header("Origin", "test"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", anyOf(is("test"), is("*"))));
     }
 }
