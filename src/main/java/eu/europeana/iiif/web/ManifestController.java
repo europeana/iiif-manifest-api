@@ -3,18 +3,16 @@ package eu.europeana.iiif.web;
 import eu.europeana.iiif.model.Definitions;
 import eu.europeana.iiif.service.ManifestService;
 import eu.europeana.iiif.service.exception.IIIFException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.lang.StringUtils;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.net.URL;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -51,7 +49,6 @@ public class ManifestController {
      * @return JSON-LD string containing manifest
      * @throws IIIFException when something goes wrong during processing
      */
-    @CrossOrigin
     @RequestMapping(value = "/presentation/{collectionId}/{recordId}/manifest", method = RequestMethod.GET,
             produces = {Definitions.MEDIA_TYPE_IIIF_JSONLD_V2,
                         Definitions.MEDIA_TYPE_IIIF_JSONLD_V3,

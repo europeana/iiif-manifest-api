@@ -24,11 +24,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 @EnableCircuitBreaker
 public class IiifApplication extends SpringBootServletInitializer {
 
-	//TODO figure out why corsConfigurer below doesn't work (however @CrossOrigin annotation on a controller method does work)
-	// this article suggest it should work: https://spring.io/guides/gs/rest-service-cors/. Method gets called on startup
-
 	/**
-	 * Setup CORS for manifest requests
+	 * Setup CORS for all requests
 	 * @return
 	 */
 	@Bean
@@ -36,7 +33,7 @@ public class IiifApplication extends SpringBootServletInitializer {
 		return new WebMvcConfigurerAdapter() {
 			@Override
 			public void addCorsMappings(CorsRegistry registry) {
-				registry.addMapping("*").allowedOrigins("*").maxAge(1000);
+				registry.addMapping("/**").allowedOrigins("*").maxAge(1000);
 			}
 		};
 

@@ -12,7 +12,7 @@
 
 	<groupId>eu.europeana</groupId>
 	<artifactId>iiif</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.1beta-SNAPSHOT</version>
 	<packaging>war</packaging>
 
 	<name>Europeana IIIF API</name>
