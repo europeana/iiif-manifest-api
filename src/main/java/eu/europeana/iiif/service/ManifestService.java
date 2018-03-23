@@ -10,6 +10,7 @@ import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.exception.IIIFException;
@@ -118,7 +119,9 @@ public class ManifestService {
      *      RecordNotFoundException if there was a 404, RecordRetrieveException on all other problems)
      */
     // TODO only use hysterix for default connection!? Not for custom recordApiUrls?
-    @HystrixCommand(ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class})
+    @HystrixCommand(ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class}, commandProperties = {
+            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "15000")
+    })
     public String getRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
         String result= null;
 
