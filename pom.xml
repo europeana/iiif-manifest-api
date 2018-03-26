@@ -4,26 +4,41 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.springframework.boot</groupId>
-		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.5.10.RELEASE</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<groupId>eu.europeana</groupId>
+		<artifactId>europeana-parent-pom</artifactId>
+		<version>2.0</version>
 	</parent>
 
 	<groupId>eu.europeana</groupId>
-	<artifactId>iiif</artifactId>
-	<version>0.1beta-SNAPSHOT</version>
+	<artifactId>iiif-api</artifactId>
+	<version>0.1-alpha-SNAPSHOT</version>
 	<packaging>war</packaging>
 
 	<name>Europeana IIIF API</name>
 	<description>Europeana IIIF API supporting IIIF v2 manifests</description>
 
 	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<java.version>1.8</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+
+		<spring-boot.version>1.5.9.RELEASE</spring-boot.version>
 		<spring-cloud.version>1.4.3.RELEASE</spring-cloud.version>
 	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<!-- Import dependency management from Spring Boot (because we don't use Spring-Boot as parent pom)-->
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-dependencies</artifactId>
+				<version>${spring-boot.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<dependencies>
 
@@ -116,10 +131,21 @@
 	</dependencies>
 
 	<build>
+		<!-- set fixed name for easy deployment -->
+		<finalName>${project.artifactId}</finalName>
+
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<version>${spring-boot.version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

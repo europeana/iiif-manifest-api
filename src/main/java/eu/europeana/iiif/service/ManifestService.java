@@ -113,14 +113,15 @@ public class ManifestService {
      * @param recordId Europeana record id in the form of "/datasetid/recordid" (so with leading slash and without trailing slash)
      * @param wsKey api key to send to record API
      * @param recordApiUrl if not null we will use the provided URL as the address of the Record API instead of the default configured address
-     *
+     *f
      * @return record information in json format
      * @throws IIIFException (InvalidApiKeyException if the provide key is not valid,
      *      RecordNotFoundException if there was a 404, RecordRetrieveException on all other problems)
      */
     // TODO only use hysterix for default connection!? Not for custom recordApiUrls?
     @HystrixCommand(ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class}, commandProperties = {
-            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "15000")
+            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "20000"),
+            @HystrixProperty(name = "fallback.enabled", value="false")
     })
     public String getRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
         String result= null;
