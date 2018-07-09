@@ -44,8 +44,8 @@ public class WebResourceSorter {
      * @throws DataInconsistentException when
      * @return sorted array of webResources
      */
-    public static WebResource[] sort(WebResource[] webResources) throws DataInconsistentException {
-        LOG.debug("WebResources = ", webResources);
+    public static ArrayList<WebResource> sort(List<WebResource> webResources) throws DataInconsistentException {
+        LOG.debug("WebResources = {}", webResources);
 
         // to simplify/speed up processing we generate a hashmap that links all ids to the appropriate webResource object
         // and a hashmap with all the id's (keys) and nextInSequence (values)
@@ -66,7 +66,7 @@ public class WebResourceSorter {
         LOG.debug("  StartNodes = {}", startNodes);
 
         // for each start node, follow the sequence down to the end node and list webresource in reverse order
-        List<WebResource> result = new ArrayList<>();
+        ArrayList<WebResource> result = new ArrayList<>();
         Iterator<String> startNodeIds = startNodes.iterator();
         while (startNodeIds.hasNext()) {
             String startNodeId = startNodeIds.next();
@@ -87,7 +87,7 @@ public class WebResourceSorter {
         if (LOG.isDebugEnabled()) {
             LOG.debug("RESULT = {}", result);
         }
-        return result.toArray(new WebResource[result.size()]);
+        return result;
     }
 
     /**

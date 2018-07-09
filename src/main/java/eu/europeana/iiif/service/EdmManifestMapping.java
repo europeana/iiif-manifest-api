@@ -11,13 +11,17 @@ import eu.europeana.iiif.model.v3.Collection;
 import eu.europeana.iiif.model.v3.LanguageMap;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.exception.DataInconsistentException;
+import eu.europeana.iiif.service.exception.IIIFException;
 import eu.europeana.iiif.service.exception.RecordParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -439,11 +443,11 @@ public class EdmManifestMapping {
      * @return
      */
     public static eu.europeana.iiif.model.v2.Sequence[] getSequencesV2(ManifestSettings settings, String europeanaId, Object jsonDoc) {
-        WebResource[] webResources = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].webResources[*]", WebResource[].class);
+        List<WebResource> webResources = getWebResources(jsonDoc);
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
 
         // create canvases in a particular order
-        WebResource[] sorted;
+        List<WebResource> sorted;
         try {
             sorted = WebResourceSorter.sort(webResources);
         } catch (DataInconsistentException e) {
@@ -468,9 +472,35 @@ public class EdmManifestMapping {
         return null;
     }
 
+    private static List<WebResource> getWebResources(Object jsonDoc) {
+        // we should only generate a canvas for webresources that are either in the edmIsShownBy or in the hasViews
+        String[] edmIsShownBys = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmIsShownBy", String[].class);
+        String[][] hasViews = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].hasView", String[][].class);
+
+        List<String> validWebResources = new ArrayList<>();
+        validWebResources.addAll(Arrays.asList(edmIsShownBys));
+        for (String[] hasView : hasViews) {
+            validWebResources.addAll(Arrays.asList(hasView));
+        }
+
+        // get all webresources and check if they are edmIsShownBy or hasView
+        WebResource[] webResources = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].webResources[*]", WebResource[].class);
+        List<WebResource> result = new ArrayList<>();
+        for (WebResource wr : webResources) {
+            if (validWebResources.contains(wr.getId())) {
+                result.add(wr);
+                LOG.debug("Valid webresource {} ", wr.getId());
+            } else {
+                LOG.debug("Skipping webresource {}", wr.getId());
+            }
+        }
+        return result;
+    }
+
     private static eu.europeana.iiif.model.v2.Canvas getCanvas(ManifestSettings settings,
                                                                String europeanaId,
-                                                               int order, Map<String, Object> webResource,
+                                                               int order,
+                                                               WebResource webResource,
                                                                Map<String, Object>[] services) {
         eu.europeana.iiif.model.v2.Canvas c = new eu.europeana.iiif.model.v2.Canvas(settings, getCanvasId(europeanaId, order));
 
@@ -499,9 +529,12 @@ public class EdmManifestMapping {
         List<String> serviceIds = (List<String>) webResource.get("svcsHasService");
         if (serviceIds != null && !serviceIds.isEmpty()) {
             String serviceId = (String) getFirstValueArray("service", europeanaId, serviceIds.toArray());
+            LOG.debug("WebResource {} has serviceId {}", webResource.getId(), serviceId);
             eu.europeana.iiif.model.v2.Service service = new eu.europeana.iiif.model.v2.Service(serviceId);
             service.setProfile(lookupServiceDoapImplements(services, serviceId, europeanaId));
             body.setService(service);
+        } else {
+            LOG.debug("No serviceId for webresource {}", webResource.getId());
         }
         c.getImages()[0].setResource(body);
         return c;
@@ -557,10 +590,12 @@ public class EdmManifestMapping {
      * Main method for testing/debugging purposes only
      * @param args
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IIIFException, MalformedURLException {
+        String apiKey = "REMOVED";
         ManifestService s = new ManifestService(new ManifestSettings());
-        //String json = s.getRecordJson("/9200356/BibliographicResource_3000118390149");
-        String json = "";
+        String json = s.getRecordJson("/9200356/BibliographicResource_3000118390149", apiKey, new URL("https://ing-prod-preview-api.eanadev.org"));
+        //String json = s.getRecordJson("/9200408/BibliographicResource_3000123630009", apiKey, new URL("https://ing-prod-preview-api.eanadev.org"));
+        //String json = "";
 
         try {
             ManifestV2 m2 = s.generateManifestV2(json);

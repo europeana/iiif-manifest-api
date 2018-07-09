@@ -47,8 +47,18 @@ public class EdmManifestMappingTest {
     private static final String TEST_ATTRIBUTION = "{\"object\": {\"aggregations\":[{}, {\"webResources\":[{}, {\"textAttributionSnippet\":\"attributionText\"}]}]}}";
     private static final String TEST_LICENSE_EUROPEANAAGGREGATION = "{\"object\": { \"aggregations\": [{\"edmRights\": { \"en\": [\"licenseTextAggregation\"]}}], \"europeanaAggregation\" : {\"edmRights\": { \"en\": [\"licenseTextEuropeana\"]}}}}";
     private static final String TEST_LICENSE_OTHERAGGREGATION = "{\"object\": { \"europeanaAggregation\" : {\"edmRights\":{}}, \"aggregations\": [{}, {\"edmRights\": { \"en\": [\"licenseTextAggregation\"]}}] }}";
-    private static final String TEST_SEQUENCE_1CANVAS_1SERVICE = "{\"object\": { \"aggregations\": [ {\"webResources\": [ {\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\", \"webResourceEdmRights\": {\"def\":[\"wr1License\"]}, \"ebuCoreHasMimeType\": \"wr1MimeType\", \"svcsHasService\": [\"service1Id\"]  } ] } ], \"services\": [{\"about\": \"service1Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
-    private static final String TEST_SEQUENCE_4CANVASES_NOSERVICE = "{\"object\": { \"europeanaAggregation\" : {\"edmRights\":{}}, \"aggregations\": [{}, {\"edmRights\": { \"en\": [\"licenseTextAggregation\"]}}] }}";
+    private static final String TEST_SEQUENCE_2CANVAS_1SERVICE = "{\"object\": { \"aggregations\": [ {\"edmIsShownBy\": \"wr1Id\", \"hasView\": [\"wr2Id\"], \"webResources\": [ "+
+            "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\", \"webResourceEdmRights\":"+
+            "{\"def\":[\"wr1License\"]}, \"ebuCoreHasMimeType\": \"wr1MimeType\", \"svcsHasService\": [\"service1Id\"]  },"+
+            "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"webResourceEdmRights\":"+
+            "{\"def\":[\"wr2License\"]}, \"ebuCoreHasMimeType\": \"wr2MimeType\", \"svcsHasService\": [\"service2Id\"]  }"+
+            "] } ], \"services\": [{\"about\": \"service1Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
+    private static final String TEST_SEQUENCE_2CANVAS_NOISSHOWNAT = "{\"object\": { \"aggregations\": [ { \"webResources\": [ "+
+            "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\", \"webResourceEdmRights\":"+
+            "{\"def\":[\"wr1License\"]}, \"ebuCoreHasMimeType\": \"wr1MimeType\", \"svcsHasService\": [\"service1Id\"]  },"+
+            "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"webResourceEdmRights\":"+
+            "{\"def\":[\"wr2License\"]}, \"ebuCoreHasMimeType\": \"wr2MimeType\", \"svcsHasService\": [\"service2Id\"]  }"+
+            "] } ], \"services\": [{\"about\": \"service1Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
 
     // Initialize the manifestservice, because that will setup our default Jackson mapper configuration used in the tests
     private static final ManifestService ms = new ManifestService(new ManifestSettings());
@@ -264,20 +274,29 @@ public class EdmManifestMappingTest {
     }
 
     /**
+     * Test that we do not create a sequence if the webresource is not an edmIsShownAtField (or hasView)
+     */
+    @Test
+    public void testSequenceV2MissingIsShownAtHasView() {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(TEST_SEQUENCE_2CANVAS_NOISSHOWNAT);
+        assertNull(EdmManifestMapping.getSequencesV2(ms.getSettings(), "test", document));
+    }
+
+    /**
      * Test if we generate sequences (and it's containing objects) properly
      */
     @Test
     public void testSequenceV2() {
-        Object document = Configuration.defaultConfiguration().jsonProvider().parse(TEST_SEQUENCE_1CANVAS_1SERVICE);
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(TEST_SEQUENCE_2CANVAS_1SERVICE);
         Sequence[] sequence = EdmManifestMapping.getSequencesV2(ms.getSettings(), "/test-id", document);
         assertNotNull(sequence);
-        assertEquals(1, sequence.length); // there should be only 1 sequence
+        assertEquals(1, sequence.length); // there should always be only 1 sequence
         assertTrue(sequence[0].getId().endsWith("/test-id" + "/sequence/s1"));
 
         // test canvas part
         assertTrue(sequence[0].getStartCanvas().endsWith("/test-id" + "/canvas/p1"));
         assertNotNull(sequence[0].getCanvases());
-        assertEquals(1, sequence[0].getCanvases().length);
+        assertEquals(2, sequence[0].getCanvases().length);
 
         ExpectedCanvasValues ecv = new ExpectedCanvasValues();
         ecv.id = sequence[0].getStartCanvas();
@@ -295,8 +314,6 @@ public class EdmManifestMappingTest {
 
         checkCanvasV2(ecv, sequence[0].getCanvases()[0]);
     }
-
-    // TODO test canvas ordering
 
     /**
      * Test if we generate a canvas object (and it's containing objects) properly

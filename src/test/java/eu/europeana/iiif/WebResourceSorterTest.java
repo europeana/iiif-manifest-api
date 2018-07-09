@@ -29,11 +29,11 @@ public class WebResourceSorterTest {
      * @param webResources
      * @return true if the webresource with wrId1 is found after the webresource with wrId2 in the webResources array
      */
-    public boolean isAfter(WebResource[] webResources, String wrId1, String wrId2) {
+    public boolean isAfter(List<WebResource> webResources, String wrId1, String wrId2) {
         int pos1 = -1;
         int pos2 = -1;
-        for (int i = 0; i < webResources.length && (pos1 == -1 || pos2 == -1); i++) {
-            WebResource wr = webResources[i];
+        for (int i = 0; i < webResources.size() && (pos1 == -1 || pos2 == -1); i++) {
+            WebResource wr = webResources.get(i);
             if (wrId1.equals(wr.getId())) {
                 pos1 = i;
             }
@@ -64,7 +64,7 @@ public class WebResourceSorterTest {
         test.add(ISOLATED2);
         test.addAll(Arrays.asList(SEQUENCE2));
 
-        WebResource[] wrs = WebResourceSorter.sort(test.toArray(new WebResource[test.size()]));
+        List<WebResource> wrs = WebResourceSorter.sort(test);
         assertTrue(isAfter(wrs, "1", "2"));
         assertTrue(isAfter(wrs, "3", "4"));
         assertTrue(isAfter(wrs, "4", "5"));
@@ -81,7 +81,7 @@ public class WebResourceSorterTest {
     @Test
     public void sortOnlyIsolated() throws DataInconsistentException {
         WebResource[] isolated = new WebResource[]{ ISOLATED1, ISOLATED2};
-        WebResource[] wrs = WebResourceSorter.sort(isolated);
+        List<WebResource> wrs = WebResourceSorter.sort(Arrays.asList(isolated));
         // can't test order since it's not defined.
     }
 
@@ -91,7 +91,7 @@ public class WebResourceSorterTest {
      */
     @Test
     public void sortEmpty() throws DataInconsistentException {
-        WebResourceSorter.sort(new WebResource[0]);
+        List<WebResource> wrs = WebResourceSorter.sort(Arrays.asList(new WebResource[0]));
     }
 
     /**
@@ -104,7 +104,7 @@ public class WebResourceSorterTest {
                 new WebResource("1", "2"),
                 new WebResource("2", "3"),
                 new WebResource("3", "1")};
-        WebResource[] wrs = WebResourceSorter.sort(infiniteLoop);
+        List<WebResource> wrs = WebResourceSorter.sort(Arrays.asList(infiniteLoop));
     }
 
     /**
@@ -117,7 +117,7 @@ public class WebResourceSorterTest {
                 new WebResource("1", "2"),
                 new WebResource("2", "3"),
                 new WebResource("3", "4")};
-        WebResource[] wrs = WebResourceSorter.sort(incomplete);
+        List<WebResource> wrs = WebResourceSorter.sort(Arrays.asList(incomplete));
     }
 
     /**
@@ -131,7 +131,7 @@ public class WebResourceSorterTest {
                 new WebResource("2", "3"),
                 new WebResource("5", "4"),
                 new WebResource("4", "3")};
-        WebResource[] wrs = WebResourceSorter.sort(intertwined);
+        List<WebResource> wrs = WebResourceSorter.sort(Arrays.asList(intertwined));
     }
 
 }

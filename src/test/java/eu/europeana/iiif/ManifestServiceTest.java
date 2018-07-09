@@ -7,7 +7,7 @@ import eu.europeana.iiif.service.ManifestSettings;
 import eu.europeana.iiif.service.exception.IIIFException;
 import eu.europeana.iiif.service.exception.InvalidApiKeyException;
 import eu.europeana.iiif.service.exception.RecordNotFoundException;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -117,7 +117,7 @@ public class ManifestServiceTest {
         String recordId = ExampleRecordJson.EXAMPLE_PARENT_ID;
         String jsonLd = ms.serializeManifest(getManifestV2(recordId));
         assertNotNull(jsonLd);
-        LogFactory.getLog(ManifestService.class).info("jsonld v2 = " + jsonLd);
+        LogManager.getLogger(ManifestService.class).info("jsonld v2 = " + jsonLd);
         assertTrue(jsonLd.contains("\"@id\" : \"https://iiif.europeana.eu/presentation" + recordId + "/manifest"));
         assertTrue(jsonLd.contains("\"http://iiif.io/api/presentation/2/context.json\""));
     }
@@ -131,7 +131,7 @@ public class ManifestServiceTest {
         String recordId = ExampleRecordJson.EXAMPLE_CHILD_ID;
         String jsonLd = ms.serializeManifest(getManifestV3(recordId));
         assertNotNull(jsonLd);
-        LogFactory.getLog(ManifestService.class).info("jsonld v3 = "+jsonLd);
+        LogManager.getLogger(ManifestService.class).info("jsonld v3 = "+jsonLd);
         assertTrue(jsonLd.contains("\"id\" : \"https://iiif.europeana.eu/presentation"+recordId+"/manifest"));
         assertTrue(jsonLd.contains("\"http://iiif.io/api/presentation/3/context.json\""));
     }
