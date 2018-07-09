@@ -590,20 +590,20 @@ public class EdmManifestMapping {
      * Main method for testing/debugging purposes only
      * @param args
      */
-    public static void main(String[] args) throws IIIFException, MalformedURLException {
+    public static void main(String[] args) {
         String apiKey = "REMOVED";
         ManifestService s = new ManifestService(new ManifestSettings());
-        String json = s.getRecordJson("/9200356/BibliographicResource_3000118390149", apiKey, new URL("https://ing-prod-preview-api.eanadev.org"));
-        //String json = s.getRecordJson("/9200408/BibliographicResource_3000123630009", apiKey, new URL("https://ing-prod-preview-api.eanadev.org"));
-        //String json = "";
-
         try {
+            String json = s.getRecordJson("/9200356/BibliographicResource_3000118390149", apiKey, new URL("https://ing-prod-preview-api.eanadev.org"));
+            //String json = s.getRecordJson("/9200408/BibliographicResource_3000123630009", apiKey, new URL("https://ing-prod-preview-api.eanadev.org"));
+            //String json = "";
+
             ManifestV2 m2 = s.generateManifestV2(json);
             LOG.debug("jsonld V2 = \n{}", s.serializeManifest(m2));
 
             ManifestV3 m3 = s.generateManifestV3(json);
             LOG.debug("jsonld V3 = \n{}", s.serializeManifest(m3));
-        } catch (RecordParseException e) {
+        } catch (IIIFException | MalformedURLException e) {
             LOG.error("Error generating manifest", e);
         }
     }
