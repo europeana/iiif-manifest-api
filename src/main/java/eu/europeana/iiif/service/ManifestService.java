@@ -100,8 +100,11 @@ public class ManifestService {
      * @param wsKey api key to send to record API
      *
      * @return record information in json format
-     * @throws IIIFException (InvalidApiKeyException if the provide key is not valid,
-     *      RecordNotFoundException if there was a 404, RecordRetrieveException on all other problems)
+     * @throws IIIFException (
+     *      IllegalArgumentException if a parameter has an illegal format,
+     *      InvalidApiKeyException if the provide key is not valid,
+     *      RecordNotFoundException if there was a 404,
+     *      RecordRetrieveException on all other problems)
      */
     public String getRecordJson(String recordId, String wsKey) throws IIIFException {
         return getRecordJson(recordId, wsKey, null);
@@ -115,8 +118,12 @@ public class ManifestService {
      * @param recordApiUrl if not null we will use the provided URL as the address of the Record API instead of the default configured address
      *f
      * @return record information in json format
-     * @throws IIIFException (InvalidApiKeyException if the provide key is not valid,
-     *      RecordNotFoundException if there was a 404, RecordRetrieveException on all other problems)
+     * @throws IIIFException (
+     *      IllegalArgumentException if a parameter has an illegal format,
+     *      InvalidApiKeyException if the provide key is not valid,
+     *      RecordNotFoundException if there was a 404,
+     *      RecordRetrieveException on all other problems)
+     *
      */
     // TODO only use hysterix for default connection!? Not for custom recordApiUrls?
     @HystrixCommand(ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class}, commandProperties = {
@@ -126,13 +133,17 @@ public class ManifestService {
     public String getRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
         String result= null;
 
+        ValidateUtils.validateRecordIdFormat(recordId);
+        ValidateUtils.validateWskeyFormat(wsKey);
+
         StringBuilder url;
         if (recordApiUrl == null) {
             url = new StringBuilder(settings.getRecordApiBaseUrl());
         } else {
+            ValidateUtils.validateRecordApiUrlFormat(recordApiUrl.toString());
             url = new StringBuilder(recordApiUrl.toString());
         }
-        url.append(settings.getRecordApiApiPath());
+        url.append(settings.getRecordApiPath());
         url.append(recordId);
         url.append(".json?wskey=");
         url.append(wsKey);

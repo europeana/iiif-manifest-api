@@ -26,9 +26,9 @@ public class ManifestSettings {
     @Value("${record-api.baseurl}")
     private String recordApiBaseUrl;
     @Value("${record-api.path}")
-    private String recordApiPath;
+    private String recordApiPath = "/api/v2/record"; // default value if we run this outside of Spring
     @Value("${suppress-parse-exception}")
-    private Boolean suppressParseException = false; // default value if we run this outside of Spring
+    private Boolean suppressParseException = Boolean.FALSE; // default value if we run this outside of Spring
 
     @Value("${canvas.height}")
     private Integer canvasHeight;
@@ -45,7 +45,7 @@ public class ManifestSettings {
     /**
      * @return Record resource path (should be appended to the record API base url)
      */
-    public String getRecordApiApiPath() {
+    public String getRecordApiPath() {
         return recordApiPath;
     }
 
@@ -75,7 +75,7 @@ public class ManifestSettings {
     @PostConstruct
     private void logImportantSettings() {
         LOG.info("Manifest settings:");
-        LOG.info("  Record API Url = {}{} ", this.getRecordApiBaseUrl(), this.getRecordApiApiPath());
+        LOG.info("  Record API Url = {}{} ", this.getRecordApiBaseUrl(), this.getRecordApiPath());
         LOG.info("  Suppress parse exceptions = {}", this.getSuppressParseException());
     }
 }
