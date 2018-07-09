@@ -12,7 +12,6 @@ import eu.europeana.iiif.model.v3.LanguageMap;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.exception.DataInconsistentException;
 import eu.europeana.iiif.service.exception.IIIFException;
-import eu.europeana.iiif.service.exception.RecordParseException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.MediaType;
