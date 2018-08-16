@@ -51,7 +51,7 @@ public class EdmManifestMapping {
      */
     public static ManifestV2 getManifestV2(ManifestSettings settings, Object jsonDoc) {
         String europeanaId = getEuropeanaId(jsonDoc);
-        ManifestV2 manifest = new ManifestV2(getManifestId(europeanaId));
+        ManifestV2 manifest = new ManifestV2(europeanaId);
         manifest.setWithin(getWithinV2(jsonDoc));
         manifest.setLabel(getLabelsV2(jsonDoc));
         manifest.setDescription(getDescriptionV2(jsonDoc));
@@ -73,7 +73,7 @@ public class EdmManifestMapping {
      */
     public static ManifestV3 getManifestV3(ManifestSettings settings, Object jsonDoc) {
         String europeanaId = getEuropeanaId(jsonDoc);
-        ManifestV3 manifest = new ManifestV3(getManifestId(europeanaId));
+        ManifestV3 manifest = new ManifestV3(europeanaId);
         manifest.setWithin(EdmManifestMapping.getWithinV3(jsonDoc));
         manifest.setLabel(EdmManifestMapping.getLabelsV3(jsonDoc));
         manifest.setDescription(EdmManifestMapping.getDescriptionV3(jsonDoc));
@@ -496,12 +496,15 @@ public class EdmManifestMapping {
         return result;
     }
 
+    /**
+     * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That is done later
+     */
     private static eu.europeana.iiif.model.v2.Canvas getCanvas(ManifestSettings settings,
                                                                String europeanaId,
                                                                int order,
                                                                WebResource webResource,
                                                                Map<String, Object>[] services) {
-        eu.europeana.iiif.model.v2.Canvas c = new eu.europeana.iiif.model.v2.Canvas(settings, getCanvasId(europeanaId, order));
+        eu.europeana.iiif.model.v2.Canvas c = new eu.europeana.iiif.model.v2.Canvas(settings, getCanvasId(europeanaId, order), order);
 
         c.setLabel("p. "+order);
 
@@ -597,10 +600,10 @@ public class EdmManifestMapping {
             //String json = s.getRecordJson("/9200408/BibliographicResource_3000123630009", apiKey, new URL("https://ing-prod-preview-api.eanadev.org"));
             //String json = "";
 
-            ManifestV2 m2 = s.generateManifestV2(json);
+            ManifestV2 m2 = s.generateManifestV2(json, new URL("https://fulltext-test.eanadev.org"));
             LOG.debug("jsonld V2 = \n{}", s.serializeManifest(m2));
 
-            ManifestV3 m3 = s.generateManifestV3(json);
+            ManifestV3 m3 = s.generateManifestV3(json, new URL("https://fulltext-test.eanadev.org"));
             LOG.debug("jsonld V3 = \n{}", s.serializeManifest(m3));
         } catch (IIIFException | MalformedURLException e) {
             LOG.error("Error generating manifest", e);

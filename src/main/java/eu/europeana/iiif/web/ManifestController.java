@@ -2,12 +2,12 @@ package eu.europeana.iiif.web;
 
 import eu.europeana.iiif.model.Definitions;
 import eu.europeana.iiif.service.ManifestService;
+import eu.europeana.iiif.service.ValidateUtils;
 import eu.europeana.iiif.service.exception.IIIFException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -39,31 +39,42 @@ public class ManifestController {
     }
 
     /**
-     * Handles manifest requests for version 2
+     * Handles manifest requests
      * @param collectionId (required field)
      * @param recordId (required field)
      * @param wskey apikey (required field)
-     * @param version
-     * @param recordApi
-     * @param request
+     * @param version (optional) indicates which IIIF version to generate, either '2' or '3'
+     * @param recordApi (optional) alternative recordApi baseUrl to use for retrieving record data
+     * @param fullTextApi (optional) alternative fullTextApi baseUrl to use for retrieving record data
      * @return JSON-LD string containing manifest
      * @throws IIIFException when something goes wrong during processing
      */
-    @RequestMapping(value = "/presentation/{collectionId}/{recordId}/manifest", method = RequestMethod.GET,
+    @SuppressWarnings("squid:S00107") // too many parameters -> we cannot avoid it.
+    @GetMapping(value = "/presentation/{collectionId}/{recordId}/manifest",
             produces = {Definitions.MEDIA_TYPE_IIIF_JSONLD_V2,
                         Definitions.MEDIA_TYPE_IIIF_JSONLD_V3,
                         Definitions.MEDIA_TYPE_JSONLD,
                         MediaType.APPLICATION_JSON_VALUE})
-    public String manifest(@PathVariable String collectionId,
+    public String manifestRequest(@PathVariable String collectionId,
                            @PathVariable String recordId,
                            @RequestParam(value = "wskey", required = true) String wskey,
                            @RequestParam(value = "format", required = false) String version,
                            @RequestParam(value = "recordApi", required = false) URL recordApi,
+                           @RequestParam(value = "fullTextApi", required = false) URL fullTextApi,
                            HttpServletRequest request,
                            HttpServletResponse response)
                     throws IIIFException {
         // TODO integrate with apikey service?? (or leave it like this?)
+
         String id = "/"+collectionId+"/"+recordId;
+        ValidateUtils.validateWskeyFormat(wskey);
+        ValidateUtils.validateRecordIdFormat(id);
+        if (recordApi != null) {
+            ValidateUtils.validateApiUrlFormat(recordApi);
+        }
+        if (fullTextApi != null) {
+            ValidateUtils.validateApiUrlFormat(fullTextApi);
+        }
         String json = manifestService.getRecordJson(id, wskey, recordApi);
 
         // if no version was provided as request param, then we check the accept header for a profiles= value
@@ -74,10 +85,10 @@ public class ManifestController {
 
         Object manifest;
         if ("3".equalsIgnoreCase(iiifVersion)) {
-            manifest = manifestService.generateManifestV3(json);
+            manifest = manifestService.generateManifestV3(json, fullTextApi);
             response.setContentType(Definitions.MEDIA_TYPE_IIIF_JSONLD_V3+";charset=UTF-8");
         } else {
-            manifest = manifestService.generateManifestV2(json); // fallback option
+            manifest = manifestService.generateManifestV2(json, fullTextApi); // fallback option
             response.setContentType(Definitions.MEDIA_TYPE_IIIF_JSONLD_V2+";charset=UTF-8");
         }
         return manifestService.serializeManifest(manifest);

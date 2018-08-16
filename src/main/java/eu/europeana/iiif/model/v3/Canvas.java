@@ -1,5 +1,6 @@
 package eu.europeana.iiif.model.v3;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import eu.europeana.iiif.service.ManifestSettings;
 
 import java.io.Serializable;
@@ -12,6 +13,9 @@ public class Canvas extends JsonLdIdType implements Serializable {
 
     private static final long serialVersionUID = 3925574023427671991L;
 
+    @JsonIgnore
+    private int pageNr; // for internal use
+
     private LanguageMap label;
     private Integer height;
     private Integer width;
@@ -19,10 +23,15 @@ public class Canvas extends JsonLdIdType implements Serializable {
     private Rights rights;
     private AnnotationPage[] items;
 
-    public Canvas(ManifestSettings settings, String id) {
+    public Canvas(ManifestSettings settings, String id, int pageNr) {
         super(id, "Canvas");
+        this.pageNr = pageNr;
         this.height = settings.getCanvasHeight();
         this.width = settings.getCanvasWidth();
+    }
+
+    public int getPageNr() {
+        return pageNr;
     }
 
     public LanguageMap getLabel() {

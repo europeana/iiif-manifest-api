@@ -26,7 +26,13 @@ public class ManifestSettings {
     @Value("${record-api.baseurl}")
     private String recordApiBaseUrl;
     @Value("${record-api.path}")
-    private String recordApiPath = "/api/v2/record"; // default value if we run this outside of Spring
+    private String recordApiPath;
+
+    @Value("${fulltext-api.baseurl}")
+    private String fullTextApiBaseUrl;
+    @Value("${fulltext-api.path}")
+    private String fullTextApiPath;
+
     @Value("${suppress-parse-exception}")
     private Boolean suppressParseException = Boolean.FALSE; // default value if we run this outside of Spring
 
@@ -50,9 +56,22 @@ public class ManifestSettings {
     }
 
     /**
+     * @return base url from where we can do a HEAD request to check if a full-text is available
+     */
+    public String getFullTextApiBaseUrl() {
+        return fullTextApiBaseUrl;
+    }
+
+    /**
+     * @return record resource path (note that <collectionId>, <itemId>, and <pageId> should be replaced with actual values
+     */
+    public String getFullTextApiPath() {
+        return fullTextApiPath;
+    }
+
+    /**
      * For production we want to suppress exceptions that arise from parsing record data, but for testing/debugging we
      * want to see those exceptions
-     * @return
      */
     public Boolean getSuppressParseException() {
         return suppressParseException;
@@ -76,6 +95,7 @@ public class ManifestSettings {
     private void logImportantSettings() {
         LOG.info("Manifest settings:");
         LOG.info("  Record API Url = {}{} ", this.getRecordApiBaseUrl(), this.getRecordApiPath());
+        LOG.info("  Full-Text API Url = {}{} ", this.getFullTextApiBaseUrl(), this.getFullTextApiPath());
         LOG.info("  Suppress parse exceptions = {}", this.getSuppressParseException());
     }
 }

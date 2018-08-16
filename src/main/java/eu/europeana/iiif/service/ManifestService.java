@@ -11,8 +11,11 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
+import eu.europeana.iiif.model.v2.FullText;
 import eu.europeana.iiif.model.v2.ManifestV2;
+import eu.europeana.iiif.model.v3.AnnotationPage;
 import eu.europeana.iiif.model.v3.ManifestV3;
+import eu.europeana.iiif.service.exception.FullTextCheckException;
 import eu.europeana.iiif.service.exception.IIIFException;
 import eu.europeana.iiif.service.exception.InvalidApiKeyException;
 import eu.europeana.iiif.service.exception.RecordNotFoundException;
@@ -23,6 +26,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -33,7 +37,10 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -50,7 +57,7 @@ public class ManifestService {
     // create a single objectMapper for efficiency purposes (see https://github.com/FasterXML/jackson-docs/wiki/Presentation:-Jackson-Performance)
     private static ObjectMapper mapper = new ObjectMapper();
 
-    private ManifestSettings settings = new ManifestSettings();
+    private ManifestSettings settings;
     private CloseableHttpClient httpClient = HttpClients.createDefault();
 
     public ManifestService(ManifestSettings settings) {
@@ -126,21 +133,17 @@ public class ManifestService {
      *
      */
     // TODO only use hysterix for default connection!? Not for custom recordApiUrls?
-//    @HystrixCommand(ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class}, commandProperties = {
-//            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "20000"),
-//            @HystrixProperty(name = "fallback.enabled", value="false")
-//    })
+    @HystrixCommand(ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class}, commandProperties = {
+            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "30000"),
+            @HystrixProperty(name = "fallback.enabled", value="false")
+    })
     public String getRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
         String result= null;
-
-        ValidateUtils.validateRecordIdFormat(recordId);
-        ValidateUtils.validateWskeyFormat(wsKey);
 
         StringBuilder url;
         if (recordApiUrl == null) {
             url = new StringBuilder(settings.getRecordApiBaseUrl());
         } else {
-            ValidateUtils.validateRecordApiUrlFormat(recordApiUrl.toString());
             url = new StringBuilder(recordApiUrl.toString());
         }
         url.append(settings.getRecordApiPath());
@@ -178,14 +181,72 @@ public class ManifestService {
     }
 
     /**
+     * Generates a url to a full text resource
+     * @param fullTextApiUrl optional, if not specified then the default Full-Text API specified in .properties is used
+     */
+    public String generateFullTextUrl(String europeanaId, String pageId, URL fullTextApiUrl) {
+        StringBuilder url;
+        if (fullTextApiUrl == null) {
+            url = new StringBuilder(settings.getFullTextApiBaseUrl());
+        } else {
+            url = new StringBuilder(fullTextApiUrl.toString());
+        }
+        String path = settings.getFullTextApiPath().replace("/<collectionId>/<itemId>", europeanaId).replace("<pageId>", pageId);
+        url.append(path);
+        return url.toString();
+    }
+
+    /**
+     * Performs a HEAD request for a particular annotation page to see if the full text page exists or not
+     * @param fullTextUrl url to which HEAD request is sent
+     * @return true if it exists, false if it doesn't exists, null if we got no response
+     */
+    @HystrixCommand(commandProperties = {
+            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "5000"),
+            @HystrixProperty(name = "fallback.enabled", value="true")
+    }, fallbackMethod = "fallbackExistsFullText")
+    public Boolean existsFullText(String fullTextUrl) throws IIIFException {
+        Boolean result;
+        try {
+            try (CloseableHttpResponse response = httpClient.execute(new HttpHead(fullTextUrl))) {
+                int responseCode = response.getStatusLine().getStatusCode();
+                LOG.debug("Full-Text head request: {}, status code = {}", fullTextUrl, responseCode);
+                if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
+                    throw new InvalidApiKeyException("API key is not valid");
+                } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
+                    result = false;
+                } else if (responseCode == HttpStatus.SC_OK) {
+                    result = true;
+                } else {
+                    throw new FullTextCheckException("Error checking if full text exists: "+response.getStatusLine().getReasonPhrase());
+                }
+            }
+        } catch (IOException e) {
+            throw new FullTextCheckException("Error checking if full text exists", e);
+        }
+        return result;
+    }
+
+    @SuppressWarnings({"unused", "squid:S2447"}) // prevent false positive, method is used by hysterix as fallback
+    private Boolean fallbackExistsFullText() {
+        return null; // we return null, meaning that we were not able to check if a full text exists or not.
+    }
+
+    /**
      * Generates a manifest object for IIIF v2 filled with data that is extracted from the provided JSON
      * @param json record data in JSON format
+     * @param fullTextApi optional, if provided this url will be used to check if a full text is available or not
      * @return Manifest v2 object
      */
-    public ManifestV2 generateManifestV2 (String json)  {
+    public ManifestV2 generateManifestV2 (String json, URL fullTextApi)   {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
         ManifestV2 result = EdmManifestMapping.getManifestV2(settings, document);
+        try {
+            fillInFullTextLinks(result, fullTextApi);
+        } catch (IIIFException ie) {
+            LOG.error("Error adding full text links", ie);
+        }
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Generated in {} ms", System.currentTimeMillis() - start);
@@ -196,17 +257,99 @@ public class ManifestService {
     /**
      * Generates a manifest object for IIIF v3 filled with data that is extracted from the provided JSON
      * @param json record data in JSON format
+     * @param fullTextApi optional, if provided this url will be used to check if a full text is available or not
      * @return Manifest v3 object
      */
-    public ManifestV3 generateManifestV3 (String json)  {
+    public ManifestV3 generateManifestV3 (String json, URL fullTextApi)  {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
         ManifestV3 result = EdmManifestMapping.getManifestV3(settings, document);
+        try {
+            fillInFullTextLinks(result, fullTextApi);
+        } catch (IIIFException ie) {
+            LOG.error("Error adding full text links", ie);
+        }
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Generated in {} ms ", System.currentTimeMillis() - start);
         }
         return result;
+    }
+
+    /**
+     * We generate all full text links in one place, so we can raise a timeout if retrieving the necessary
+     * data for all full texts is too slow.
+     * @return manifest with for each canvas one full text link provided that full text is available
+     */
+    @HystrixCommand(commandProperties = {
+            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "25000"),
+            @HystrixProperty(name = "fallback.enabled", value="false")
+    })
+    private ManifestV2 fillInFullTextLinks(ManifestV2 manifest, URL fullTextApi) throws IIIFException {
+        if (manifest.getSequences() != null) {
+            for (eu.europeana.iiif.model.v2.Sequence s : manifest.getSequences()) {
+
+                if (s.getCanvases() != null) {
+                    for (eu.europeana.iiif.model.v2.Canvas c : s.getCanvases()) {
+                        String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(),
+                                Integer.toString(c.getPageNr()),
+                                fullTextApi);
+
+                        Boolean exists = existsFullText(fullTextUrl);
+                        LOG.debug("fullTextUrl {} exists = {}", fullTextUrl, exists);
+                        if (Boolean.TRUE.equals(exists)) {
+                            // always 1 value in array
+                            FullText[] ft = new FullText[1];
+                            ft[0] = new FullText(fullTextUrl);
+                            c.setOtherContent(ft);
+                        }
+                    }
+                }
+
+            }
+        }
+        return manifest;
+    }
+
+    /**
+     * We generate all full text links in one place, so we can raise a timeout if retrieving the necessary
+     * data for all full texts is too slow.
+     * @return manifest with for each canvas an additional annotationpage with full text link provided that full text is
+     * available
+     */
+    @HystrixCommand(commandProperties = {
+            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "25000"),
+            @HystrixProperty(name = "fallback.enabled", value="false")
+    })
+    private ManifestV3 fillInFullTextLinks(ManifestV3 manifest, URL fullTextApi) throws IIIFException {
+        if (manifest.getItems() != null) {
+            for (eu.europeana.iiif.model.v3.Sequence s : manifest.getItems()) {
+
+                if (s.getItems() != null) {
+                    for (eu.europeana.iiif.model.v3.Canvas c : s.getItems()) {
+                        String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(),
+                                Integer.toString(c.getPageNr()),
+                                fullTextApi);
+
+                        Boolean exists = existsFullText(fullTextUrl);
+                        LOG.debug("fullTextUrl {} exists = {}", fullTextUrl, exists);
+                        if (Boolean.TRUE.equals(exists)) {
+                            // we have to add another annotation page with just the full text url as id
+                            List<AnnotationPage> aps;
+                            if (c.getItems() == null || c.getItems().length == 0) {
+                                aps = new ArrayList<>();
+                            } else {
+                                aps = Arrays.asList(c.getItems());
+                            }
+                            aps.add(new AnnotationPage(fullTextUrl));
+                            c.setItems(aps.toArray(new AnnotationPage[0]));
+                        }
+                    }
+                }
+
+            }
+        }
+        return manifest;
     }
 
    /**
