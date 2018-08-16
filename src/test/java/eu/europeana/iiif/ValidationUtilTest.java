@@ -4,6 +4,9 @@ import eu.europeana.iiif.service.ValidateUtils;
 import eu.europeana.iiif.service.exception.IllegalArgumentException;
 import org.junit.Test;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -33,12 +36,17 @@ public class ValidationUtilTest {
     }
 
     @Test
-    public void testRecordApiUrl() throws IllegalArgumentException {
-        assertTrue(ValidateUtils.validateRecordApiUrlFormat("https://search-api-test.eanadev.org"));
+    public void testRecordApiUrl() throws IllegalArgumentException, MalformedURLException {
+        assertTrue(ValidateUtils.validateApiUrlFormat(new URL("https://search-api-test.eanadev.org")));
+    }
+
+    @Test
+    public void testFullTextApiUrl() throws IllegalArgumentException, MalformedURLException {
+        assertTrue(ValidateUtils.validateApiUrlFormat(new URL("https://fulltext-api-test.eanadev.org")));
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testRecordApiUrlFalse() throws IllegalArgumentException {
-        assertTrue(ValidateUtils.validateRecordApiUrlFormat("https://search-api-test.google.nl"));
+    public void testRecordApiUrlFalse() throws IllegalArgumentException, MalformedURLException {
+        assertTrue(ValidateUtils.validateApiUrlFormat(new URL("https://search-api-test.google.nl")));
     }
 }

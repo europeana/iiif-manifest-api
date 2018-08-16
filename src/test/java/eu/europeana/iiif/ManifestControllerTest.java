@@ -20,6 +20,8 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -52,10 +54,10 @@ public class ManifestControllerTest {
         ManifestV3 manifest3 = new ManifestV3("/1/2");
         given(manifestService.getRecordJson("/1/2", "test")).willReturn("testJson");
         given(manifestService.getRecordJson("/1/2", "test", null)).willReturn("testJson");
-        given(manifestService.generateManifestV2("testJson")).willReturn(manifest2);
-        given(manifestService.generateManifestV3("testJson")).willReturn(manifest3);
-        given(manifestService.serializeManifest((Object) manifest2)).willReturn(JSONLD_V2_OUTPUT);
-        given(manifestService.serializeManifest((Object) manifest3)).willReturn(JSONLD_V3_OUTPUT);
+        given(manifestService.generateManifestV2(eq("testJson"), any())).willReturn(manifest2);
+        given(manifestService.generateManifestV3(eq("testJson"), any())).willReturn(manifest3);
+        given(manifestService.serializeManifest(manifest2)).willReturn(JSONLD_V2_OUTPUT);
+        given(manifestService.serializeManifest(manifest3)).willReturn(JSONLD_V3_OUTPUT);
     }
 
     /**
