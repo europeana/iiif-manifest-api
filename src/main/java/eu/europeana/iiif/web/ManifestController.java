@@ -28,11 +28,10 @@ import java.util.regex.Pattern;
 @RestController
 public class ManifestController {
 
-    private ManifestService manifestService;
-
     /* for parsing accept headers */
-    private Pattern acceptProfilePattern = Pattern.compile("profile=\"(.*?)\"");
+    private static final Pattern acceptProfilePattern = Pattern.compile("profile=\"(.*?)\"");
 
+    private ManifestService manifestService;
 
     public ManifestController(ManifestService manifestService) {
         this.manifestService = manifestService;
@@ -60,6 +59,7 @@ public class ManifestController {
                            @RequestParam(value = "wskey", required = true) String wskey,
                            @RequestParam(value = "format", required = false) String version,
                            @RequestParam(value = "recordApi", required = false) URL recordApi,
+                           @RequestParam(value = "fullText", required = false, defaultValue = "true") Boolean addFullText,
                            @RequestParam(value = "fullTextApi", required = false) URL fullTextApi,
                            HttpServletRequest request,
                            HttpServletResponse response)
@@ -85,10 +85,10 @@ public class ManifestController {
 
         Object manifest;
         if ("3".equalsIgnoreCase(iiifVersion)) {
-            manifest = manifestService.generateManifestV3(json, fullTextApi);
+            manifest = manifestService.generateManifestV3(json, addFullText, fullTextApi);
             response.setContentType(Definitions.MEDIA_TYPE_IIIF_JSONLD_V3+";charset=UTF-8");
         } else {
-            manifest = manifestService.generateManifestV2(json, fullTextApi); // fallback option
+            manifest = manifestService.generateManifestV2(json, addFullText, fullTextApi); // fallback option
             response.setContentType(Definitions.MEDIA_TYPE_IIIF_JSONLD_V2+";charset=UTF-8");
         }
         return manifestService.serializeManifest(manifest);

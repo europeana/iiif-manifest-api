@@ -235,17 +235,24 @@ public class ManifestService {
     /**
      * Generates a manifest object for IIIF v2 filled with data that is extracted from the provided JSON
      * @param json record data in JSON format
+     * @param addFullText if true then for each canvas we will check if a full text exists and add the link to it's
+     *                   annotation page
      * @param fullTextApi optional, if provided this url will be used to check if a full text is available or not
      * @return Manifest v2 object
      */
-    public ManifestV2 generateManifestV2 (String json, URL fullTextApi)   {
+    public ManifestV2 generateManifestV2 (String json, boolean addFullText, URL fullTextApi)    {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
         ManifestV2 result = EdmManifestMapping.getManifestV2(settings, document);
-        try {
-            fillInFullTextLinks(result, fullTextApi);
-        } catch (IIIFException ie) {
-            LOG.error("Error adding full text links", ie);
+
+        if (addFullText) {
+            try {
+                fillInFullTextLinksV2(result, fullTextApi);
+            } catch (IIIFException ie) {
+                LOG.error("Error adding full text links", ie);
+            }
+        } else {
+            LOG.debug("Skipping full text link generation");
         }
 
         if (LOG.isDebugEnabled()) {
@@ -257,17 +264,24 @@ public class ManifestService {
     /**
      * Generates a manifest object for IIIF v3 filled with data that is extracted from the provided JSON
      * @param json record data in JSON format
+     * @param addFullText if true then for each canvas we will check if a full text exists and add the link to it's
+     *                   annotation page
      * @param fullTextApi optional, if provided this url will be used to check if a full text is available or not
      * @return Manifest v3 object
      */
-    public ManifestV3 generateManifestV3 (String json, URL fullTextApi)  {
+    public ManifestV3 generateManifestV3 (String json, boolean addFullText, URL fullTextApi)  {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
         ManifestV3 result = EdmManifestMapping.getManifestV3(settings, document);
-        try {
-            fillInFullTextLinks(result, fullTextApi);
-        } catch (IIIFException ie) {
-            LOG.error("Error adding full text links", ie);
+
+        if (addFullText) {
+            try {
+                fillInFullTextLinksV3(result, fullTextApi);
+            } catch (IIIFException ie) {
+                LOG.error("Error adding full text links", ie);
+            }
+        } else {
+            LOG.debug("Skipping full text link generation");
         }
 
         if (LOG.isDebugEnabled()) {
@@ -285,7 +299,7 @@ public class ManifestService {
             @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "25000"),
             @HystrixProperty(name = "fallback.enabled", value="false")
     })
-    private ManifestV2 fillInFullTextLinks(ManifestV2 manifest, URL fullTextApi) throws IIIFException {
+    private ManifestV2 fillInFullTextLinksV2(ManifestV2 manifest, URL fullTextApi) throws IIIFException {
         if (manifest.getSequences() != null) {
             for (eu.europeana.iiif.model.v2.Sequence s : manifest.getSequences()) {
 
@@ -321,7 +335,7 @@ public class ManifestService {
             @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "25000"),
             @HystrixProperty(name = "fallback.enabled", value="false")
     })
-    private ManifestV3 fillInFullTextLinks(ManifestV3 manifest, URL fullTextApi) throws IIIFException {
+    private ManifestV3 fillInFullTextLinksV3(ManifestV3 manifest, URL fullTextApi) throws IIIFException {
         if (manifest.getItems() != null) {
             for (eu.europeana.iiif.model.v3.Sequence s : manifest.getItems()) {
 

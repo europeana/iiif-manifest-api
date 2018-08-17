@@ -129,14 +129,14 @@ public class ManifestServiceTest {
     }
 
     private ManifestV2 getManifestV2(String recordId) throws IIIFException{
-        ManifestV2 m = ms.generateManifestV2(getRecord(recordId), getFullTextApiUrl());
+        ManifestV2 m = ms.generateManifestV2(getRecord(recordId), true, getFullTextApiUrl());
         assertNotNull(m);
         assertTrue(m.getId().contains(recordId));
         return m;
     }
 
     private ManifestV3 getManifestV3(String recordId) throws IIIFException {
-        ManifestV3 m = ms.generateManifestV3(getRecord(recordId), getFullTextApiUrl());
+        ManifestV3 m = ms.generateManifestV3(getRecord(recordId), true, getFullTextApiUrl());
         assertNotNull(m);
         assertTrue(m.getId().contains(recordId));
         return m;
