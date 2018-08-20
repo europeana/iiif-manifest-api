@@ -26,53 +26,50 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 @PropertySource(value = "classpath:build.properties", ignoreResourceNotFound = true)
 public class IiifApplication extends SpringBootServletInitializer {
 
-	/**
-	 * Setup CORS for all requests
-	 * @return
-	 */
-	@Bean
-	public WebMvcConfigurer corsConfigurer() {
-		return new WebMvcConfigurerAdapter() {
-			@Override
-			public void addCorsMappings(CorsRegistry registry) {
-				registry.addMapping("/**").allowedOrigins("*").maxAge(1000);
-			}
-		};
+    /**
+     * Setup CORS for all requests
+     * @return
+     */
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurerAdapter() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**").allowedOrigins("*").maxAge(1000);
+            }
+        };
+    }
 
-	}
+    @Bean
+    public ManifestSettings manifestSettings() {
+        return new ManifestSettings();
+    }
 
-	@Bean
-	public ManifestSettings manifestSettings() {
-		return new ManifestSettings();
-	}
+    /**
+     * Manifest service that does all the 'dirty work'; retrieving records, converting to data, serializing to json-ld
+     * @return
+     */
+    @Bean
+    public ManifestService manifestService() {
+        return new ManifestService(manifestSettings());
+    }
 
-	/**
-	 * Manifest service that does all the 'dirty work'; retrieving records, converting to data, serializing to json-ld
-	 * @return
-	 */
-	@Bean
-	public ManifestService manifestService() {
-		return new ManifestService(manifestSettings());
-	}
+    /**
+     * Rest controller that handles manifest requests
+     * @return
+     */
+    @Bean
+    public ManifestController manifestController() {
+        return new ManifestController(manifestService());
+    }
 
-	/**
-	 * Rest controller that handles manifest requests
-	 * @return
-	 */
-	@Bean
-	public ManifestController manifestController() {
-		return new ManifestController(manifestService());
-	}
-
-	/**
-	 * This method is called when starting as a Spring-Boot application (e.g. from your IDE)
-	 * @param args
-	 */
-	@SuppressWarnings("squid:S2095") // to avoid sonarqube false positive (see https://stackoverflow.com/a/37073154/741249)
-	public static void main(String[] args) {
-		SpringApplication.run(IiifApplication.class, args);
-	}
-
-
-
+    /**
+     * This method is called when starting as a Spring-Boot application (e.g. from your IDE)
+     * @param args
+     */
+    @SuppressWarnings("squid:S2095") // to avoid sonarqube false positive (see https://stackoverflow.com/a/37073154/741249)
+    public static void main(String[] args) {
+        SpringApplication.run(IiifApplication.class, args);
+    }
+    
 }

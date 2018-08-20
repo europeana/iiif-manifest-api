@@ -17,10 +17,12 @@ public class LanguageMap extends LinkedHashMap<String, String[]> implements Seri
     private static final String NO_LANGUAGE_KEY = "@none";
 
     public LanguageMap() {
+        super();
         // empty constructor to allow deserializing
     }
 
     public LanguageMap(String language, String[] value) {
+        super();
         if (language == null || language.isEmpty() || "def".equalsIgnoreCase(language)) {
             this.put(NO_LANGUAGE_KEY, value);
         } else {
@@ -29,6 +31,7 @@ public class LanguageMap extends LinkedHashMap<String, String[]> implements Seri
     }
 
     public LanguageMap(String language, String value) {
+        super();
         String[] values = new String[1];
         values[0] = value;
         if (language == null || language.isEmpty() || "def".equalsIgnoreCase(language)) {
@@ -39,10 +42,12 @@ public class LanguageMap extends LinkedHashMap<String, String[]> implements Seri
     }
 
     public LanguageMap(String[] values) {
+        super();
         this.put(NO_LANGUAGE_KEY, values);
     }
 
     public LanguageMap(String value) {
+        super();
         String[] values = new String[1];
         values[0] = value;
         this.put(NO_LANGUAGE_KEY, values);

@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -13,7 +14,7 @@ import java.util.TimeZone;
  * @author Patrick Ehlert
  * Created on 13-02-2018
  */
-public class EdmDateUtils {
+public final class EdmDateUtils {
 
     private static final Logger LOG = LogManager.getLogger(EdmDateUtils.class);
 
@@ -42,7 +43,7 @@ public class EdmDateUtils {
     private static Date tryParseFormat(String format, String edmDate) {
         Date result = null;
         // TODO use something more robust (and thread-safe) instead of SimpleDateFormat (see EA-990)
-        SimpleDateFormat formatter = new SimpleDateFormat(format);
+        SimpleDateFormat formatter = new SimpleDateFormat(format, Locale.GERMAN);
         formatter.setTimeZone(TimeZone.getTimeZone("Europea/Amsterdam"));
         try {
             result = formatter.parse(edmDate);

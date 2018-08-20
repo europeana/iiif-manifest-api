@@ -35,9 +35,10 @@ public class ManifestV3 extends JsonLdIdType implements Serializable {
     /**
      * Create a new empty manifest (only id, context and logo ar filled in)
      * @param europeanaId
+     * @param manifestId
      */
-    public ManifestV3(String europeanaId) {
-        super(EdmManifestMapping.getManifestId(europeanaId), "Manifest");
+    public ManifestV3(String europeanaId, String manifestId) {
+        super(manifestId, "Manifest");
         this.europeanaId = europeanaId;
         logo = new Image[1];
         // TODO set height & width?

@@ -11,14 +11,11 @@ import eu.europeana.iiif.model.v3.Collection;
 import eu.europeana.iiif.model.v3.LanguageMap;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.exception.DataInconsistentException;
-import eu.europeana.iiif.service.exception.IIIFException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -35,7 +32,7 @@ import java.util.Map;
  * Created on 08-02-2018
  */
 @SuppressWarnings("squid:S1168") // ignore sonarqube rule: we return null on purpose in this class
-public class EdmManifestMapping {
+public final class EdmManifestMapping {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestMapping.class);
 
@@ -51,7 +48,7 @@ public class EdmManifestMapping {
      */
     public static ManifestV2 getManifestV2(ManifestSettings settings, Object jsonDoc) {
         String europeanaId = getEuropeanaId(jsonDoc);
-        ManifestV2 manifest = new ManifestV2(europeanaId);
+        ManifestV2 manifest = new ManifestV2(europeanaId, getManifestId(europeanaId));
         manifest.setWithin(getWithinV2(jsonDoc));
         manifest.setLabel(getLabelsV2(jsonDoc));
         manifest.setDescription(getDescriptionV2(jsonDoc));
@@ -73,7 +70,7 @@ public class EdmManifestMapping {
      */
     public static ManifestV3 getManifestV3(ManifestSettings settings, Object jsonDoc) {
         String europeanaId = getEuropeanaId(jsonDoc);
-        ManifestV3 manifest = new ManifestV3(europeanaId);
+        ManifestV3 manifest = new ManifestV3(europeanaId, getManifestId(europeanaId));
         manifest.setWithin(EdmManifestMapping.getWithinV3(jsonDoc));
         manifest.setLabel(EdmManifestMapping.getLabelsV3(jsonDoc));
         manifest.setDescription(EdmManifestMapping.getDescriptionV3(jsonDoc));
@@ -450,7 +447,7 @@ public class EdmManifestMapping {
         try {
             sorted = WebResourceSorter.sort(webResources);
         } catch (DataInconsistentException e) {
-            LOG.error("Error trying to sort webresources for {}. Cause: {}", europeanaId, e.getMessage());
+            LOG.error("Error trying to sort webresources for {}. Cause: {}", europeanaId, e);
             sorted = webResources;
         }
         int order = 1;

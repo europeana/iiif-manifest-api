@@ -41,9 +41,10 @@ public class ManifestV2 extends JsonLdId implements Serializable {
     /**
      * Create a new empty manifest (only id is filled)
      * @param europeanaId
+     * @param manifestId
      */
-    public ManifestV2(String europeanaId) {
-        super(EdmManifestMapping.getManifestId(europeanaId));
+    public ManifestV2(String europeanaId, String manifestId) {
+        super(manifestId);
         this.europeanaId = europeanaId;
     }
 

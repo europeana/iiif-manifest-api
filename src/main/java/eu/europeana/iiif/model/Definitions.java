@@ -4,7 +4,7 @@ package eu.europeana.iiif.model;
  * @author Patrick Ehlert
  * Created on 26-01-2018
  */
-public class Definitions {
+public final class Definitions {
 
     /**
      * Place holder for the dataset and record part of an ID. This is used in various places in the manifest

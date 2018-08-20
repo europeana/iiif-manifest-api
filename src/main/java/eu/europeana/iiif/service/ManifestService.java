@@ -214,9 +214,9 @@ public class ManifestService {
                 if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
                     throw new InvalidApiKeyException("API key is not valid");
                 } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
-                    result = false;
+                    result = Boolean.FALSE;
                 } else if (responseCode == HttpStatus.SC_OK) {
-                    result = true;
+                    result = Boolean.TRUE;
                 } else {
                     throw new FullTextCheckException("Error checking if full text exists: "+response.getStatusLine().getReasonPhrase());
                 }
@@ -228,7 +228,7 @@ public class ManifestService {
     }
 
     @SuppressWarnings({"unused", "squid:S2447"}) // prevent false positive, method is used by hysterix as fallback
-    private Boolean fallbackExistsFullText() {
+    private Boolean fallbackExistsFullText(String fullTextUrl) {
         return null; // we return null, meaning that we were not able to check if a full text exists or not.
     }
 
@@ -348,15 +348,7 @@ public class ManifestService {
                         Boolean exists = existsFullText(fullTextUrl);
                         LOG.debug("fullTextUrl {} exists = {}", fullTextUrl, exists);
                         if (Boolean.TRUE.equals(exists)) {
-                            // we have to add another annotation page with just the full text url as id
-                            List<AnnotationPage> aps;
-                            if (c.getItems() == null || c.getItems().length == 0) {
-                                aps = new ArrayList<>();
-                            } else {
-                                aps = Arrays.asList(c.getItems());
-                            }
-                            aps.add(new AnnotationPage(fullTextUrl));
-                            c.setItems(aps.toArray(new AnnotationPage[0]));
+                            addFullTextAnnotationPage(c, fullTextUrl);
                         }
                     }
                 }
@@ -365,6 +357,21 @@ public class ManifestService {
         }
         return manifest;
     }
+
+    /**
+     *  If there is a full text available we have to add a new annotation page with just the full text url as id
+     */
+    private void addFullTextAnnotationPage(eu.europeana.iiif.model.v3.Canvas c, String fullTextUrl) {
+        List<AnnotationPage> aps;
+        if (c.getItems() == null || c.getItems().length == 0) {
+            aps = new ArrayList<>();
+        } else {
+            aps = Arrays.asList(c.getItems());
+        }
+        aps.add(new AnnotationPage(fullTextUrl));
+        c.setItems(aps.toArray(new AnnotationPage[aps.size()]));
+    }
+
 
    /**
      * Serialize manifest to JSON-LD

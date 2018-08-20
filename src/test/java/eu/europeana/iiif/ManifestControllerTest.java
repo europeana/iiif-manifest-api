@@ -19,6 +19,7 @@ import static org.hamcrest.CoreMatchers.is;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -50,12 +51,12 @@ public class ManifestControllerTest {
     @Before
     public void setup() throws Exception {
         // mock v2 and v3 manifest responses
-        ManifestV2 manifest2 = new ManifestV2("/1/2");
-        ManifestV3 manifest3 = new ManifestV3("/1/2");
+        ManifestV2 manifest2 = new ManifestV2("/1/2", "/1/2");
+        ManifestV3 manifest3 = new ManifestV3("/1/2", "/1/2");
         given(manifestService.getRecordJson("/1/2", "test")).willReturn("testJson");
         given(manifestService.getRecordJson("/1/2", "test", null)).willReturn("testJson");
-        given(manifestService.generateManifestV2(eq("testJson"), any(), any())).willReturn(manifest2);
-        given(manifestService.generateManifestV3(eq("testJson"), any(), any())).willReturn(manifest3);
+        given(manifestService.generateManifestV2(eq("testJson"), anyBoolean(), any())).willReturn(manifest2);
+        given(manifestService.generateManifestV3(eq("testJson"), anyBoolean(), any())).willReturn(manifest3);
         given(manifestService.serializeManifest(manifest2)).willReturn(JSONLD_V2_OUTPUT);
         given(manifestService.serializeManifest(manifest3)).willReturn(JSONLD_V3_OUTPUT);
     }
@@ -126,4 +127,5 @@ public class ManifestControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Access-Control-Allow-Origin", anyOf(is("test"), is("*"))));
     }
+
 }
