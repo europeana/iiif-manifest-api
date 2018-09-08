@@ -303,15 +303,16 @@ public class ManifestService {
         if (manifest.getSequences() != null) {
             for (eu.europeana.iiif.model.v2.Sequence s : manifest.getSequences()) {
 
-                if (s.getCanvases() != null) {
-                    for (eu.europeana.iiif.model.v2.Canvas c : s.getCanvases()) {
-                        String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(),
-                                Integer.toString(c.getPageNr()),
-                                fullTextApi);
+                if (s.getCanvases() != null && s.getIsShownBy() != null) {
 
-                        Boolean exists = existsFullText(fullTextUrl);
-                        LOG.debug("fullTextUrl {} exists = {}", fullTextUrl, exists);
-                        if (Boolean.TRUE.equals(exists)) {
+                    // we don't want to check for all images if they are a fulltext because that takes too long
+                    // instead we check if the edmIsShownBy is a fulltext and if so assume all images are fulltexts
+                    if (existsFullText(s.getIsShownBy())) {
+                        // add fulllink to all items
+                        for (eu.europeana.iiif.model.v2.Canvas c : s.getCanvases()) {
+                            String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(),
+                                    Integer.toString(c.getPageNr()),
+                                    fullTextApi);
                             // always 1 value in array
                             FullText[] ft = new FullText[1];
                             ft[0] = new FullText(fullTextUrl);
@@ -339,16 +340,17 @@ public class ManifestService {
         if (manifest.getItems() != null) {
             for (eu.europeana.iiif.model.v3.Sequence s : manifest.getItems()) {
 
-                if (s.getItems() != null) {
-                    for (eu.europeana.iiif.model.v3.Canvas c : s.getItems()) {
-                        String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(),
-                                Integer.toString(c.getPageNr()),
-                                fullTextApi);
+                if (s.getItems() != null && s.getIsShownBy() != null) {
 
-                        Boolean exists = existsFullText(fullTextUrl);
-                        LOG.debug("fullTextUrl {} exists = {}", fullTextUrl, exists);
-                        if (Boolean.TRUE.equals(exists)) {
-                            addFullTextAnnotationPage(c, fullTextUrl);
+                    // we don't want to check for all images if they are a fulltext because that takes too long
+                    // instead we check if the edmIsShownBy is a fulltext and if so assume all images are fulltexts
+                    if (existsFullText(s.getIsShownBy())) {
+                        // add fulllink to all items
+                        for (eu.europeana.iiif.model.v3.Canvas c : s.getItems()) {
+                            String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(),
+                                    Integer.toString(c.getPageNr()),
+                                    fullTextApi);
+                            addFullTextAnnotationPageV3(c, fullTextUrl);
                         }
                     }
                 }
@@ -361,7 +363,7 @@ public class ManifestService {
     /**
      *  If there is a full text available we have to add a new annotation page with just the full text url as id
      */
-    private void addFullTextAnnotationPage(eu.europeana.iiif.model.v3.Canvas c, String fullTextUrl) {
+    private void addFullTextAnnotationPageV3(eu.europeana.iiif.model.v3.Canvas c, String fullTextUrl) {
         List<AnnotationPage> aps;
         if (c.getItems() == null || c.getItems().length == 0) {
             aps = new ArrayList<>();
