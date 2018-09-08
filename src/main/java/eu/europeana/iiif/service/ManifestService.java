@@ -295,10 +295,6 @@ public class ManifestService {
      * data for all full texts is too slow.
      * @return manifest with for each canvas one full text link provided that full text is available
      */
-    @HystrixCommand(commandProperties = {
-            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "25000"),
-            @HystrixProperty(name = "fallback.enabled", value="false")
-    })
     private ManifestV2 fillInFullTextLinksV2(ManifestV2 manifest, URL fullTextApi) throws IIIFException {
         if (manifest.getSequences() != null) {
             for (eu.europeana.iiif.model.v2.Sequence s : manifest.getSequences()) {
@@ -332,10 +328,6 @@ public class ManifestService {
      * @return manifest with for each canvas an additional annotationpage with full text link provided that full text is
      * available
      */
-    @HystrixCommand(commandProperties = {
-            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "25000"),
-            @HystrixProperty(name = "fallback.enabled", value="false")
-    })
     private ManifestV3 fillInFullTextLinksV3(ManifestV3 manifest, URL fullTextApi) throws IIIFException {
         if (manifest.getItems() != null) {
             for (eu.europeana.iiif.model.v3.Sequence s : manifest.getItems()) {
