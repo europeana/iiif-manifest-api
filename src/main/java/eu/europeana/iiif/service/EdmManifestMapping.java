@@ -439,7 +439,9 @@ public final class EdmManifestMapping {
      * @return
      */
     public static eu.europeana.iiif.model.v2.Sequence[] getSequencesV2(ManifestSettings settings, String europeanaId, Object jsonDoc) {
-        List<WebResource> webResources = getWebResources(jsonDoc);
+        String edmIsShownBy = (String) getFirstValueArray("edmIsShownBy", europeanaId,
+                JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmIsShownBy", String[].class));
+        List<WebResource> webResources = getWebResources(edmIsShownBy, jsonDoc);
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
 
         // create canvases in a particular order
@@ -460,7 +462,7 @@ public final class EdmManifestMapping {
         if (!canvases.isEmpty()) {
             // there should be only 1 sequence, so order number is always 1
             eu.europeana.iiif.model.v2.Sequence[] result = new eu.europeana.iiif.model.v2.Sequence[1];
-            result[0] = new eu.europeana.iiif.model.v2.Sequence(getSequenceId(europeanaId, 1));
+            result[0] = new eu.europeana.iiif.model.v2.Sequence(getSequenceId(europeanaId, 1), edmIsShownBy);
             result[0].setStartCanvas(getCanvasId(europeanaId, 1));
             result[0].setCanvases(canvases.toArray(new eu.europeana.iiif.model.v2.Canvas[canvases.size()]));
             return result;
@@ -468,13 +470,18 @@ public final class EdmManifestMapping {
         return null;
     }
 
-    private static List<WebResource> getWebResources(Object jsonDoc) {
-        // we should only generate a canvas for webresources that are either in the edmIsShownBy or in the hasViews
-        String[] edmIsShownBys = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmIsShownBy", String[].class);
+    /**
+     * We should only generate a canvas for webresources that are either in the edmIsShownBy or in the hasViews
+     * @param edmIsShownBy
+     * @param jsonDoc
+     * @return list of webresourcs that are either edmIsShownBy or hasView
+     */
+    private static List<WebResource> getWebResources(String edmIsShownBy, Object jsonDoc) {
+
         String[][] hasViews = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].hasView", String[][].class);
 
         List<String> validWebResources = new ArrayList<>();
-        validWebResources.addAll(Arrays.asList(edmIsShownBys));
+        validWebResources.add(edmIsShownBy);
         for (String[] hasView : hasViews) {
             validWebResources.addAll(Arrays.asList(hasView));
         }
