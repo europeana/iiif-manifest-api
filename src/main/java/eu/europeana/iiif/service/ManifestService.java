@@ -32,11 +32,15 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -382,6 +386,29 @@ public class ManifestService {
         catch (IOException e) {
             throw new RecordParseException("Error serializing data: "+e.getMessage(), e);
         }
+    }
+
+    public String getSHA256Hash(String updated, String iiifVersion){
+        MessageDigest digest = null;
+        try {
+            digest = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            LOG.error("Error creating SHA-265 hash from record timestamp_update", e);
+        }
+        byte[] encodedhash = digest.digest(
+                (iiifVersion + updated).getBytes(StandardCharsets.UTF_8));
+        return bytesToHex(encodedhash);
+
+    }
+
+    private static String bytesToHex(byte[] hash) {
+        StringBuffer hexString = new StringBuffer();
+        for (int i = 0; i < hash.length; i++) {
+            String hex = Integer.toHexString(0xff & hash[i]);
+            if(hex.length() == 1) hexString.append('0');
+            hexString.append(hex);
+        }
+        return hexString.toString();
     }
 
     /**

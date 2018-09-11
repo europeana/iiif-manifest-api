@@ -59,6 +59,7 @@ public final class EdmManifestMapping {
         manifest.setLicense(getLicense(europeanaId, jsonDoc));
         manifest.setSeeAlso(getDataSetsV2(europeanaId));
         manifest.setSequences(getSequencesV2(settings, europeanaId, jsonDoc));
+        manifest.setTimestampUpdated(getTimestampUpdated(jsonDoc));
         return manifest;
     }
 
@@ -82,6 +83,7 @@ public final class EdmManifestMapping {
         //manifest.setRights(getRights(europeanaId, jsonDoc));
         manifest.setSeeAlso(getDataSetsV3(europeanaId));
         //manifest.setSequences(getSequencesV3(settings, europeanaId, jsonDoc));
+        manifest.setTimestampUpdated(getTimestampUpdated(jsonDoc));
         return manifest;
     }
 
@@ -592,4 +594,7 @@ public final class EdmManifestMapping {
         return null;
     }
 
+    private static Date getTimestampUpdated(Object jsonDoc){
+        return EdmDateUtils.updateStringToDate(JsonPath.parse(jsonDoc).read("$.object.timestamp_update", String.class));
+    }
 }

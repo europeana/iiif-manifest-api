@@ -1,19 +1,19 @@
 package eu.europeana.iiif.web;
 
 import eu.europeana.iiif.model.Definitions;
+import eu.europeana.iiif.model.EdmDateUtils;
+import eu.europeana.iiif.model.IsUpdated;
 import eu.europeana.iiif.service.ManifestService;
 import eu.europeana.iiif.service.ValidateUtils;
 import eu.europeana.iiif.service.exception.IIIFException;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.net.URL;
+import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,6 +49,8 @@ public class ManifestController {
      * @throws IIIFException when something goes wrong during processing
      */
     @SuppressWarnings("squid:S00107") // too many parameters -> we cannot avoid it.
+
+    @CrossOrigin(maxAge = 600)
     @GetMapping(value = "/presentation/{collectionId}/{recordId}/manifest",
             produces = {Definitions.MEDIA_TYPE_IIIF_JSONLD_V2,
                         Definitions.MEDIA_TYPE_IIIF_JSONLD_V3,
@@ -91,7 +93,37 @@ public class ManifestController {
             manifest = manifestService.generateManifestV2(json, addFullText, fullTextApi); // fallback option
             response.setContentType(Definitions.MEDIA_TYPE_IIIF_JSONLD_V2+";charset=UTF-8");
         }
-        return manifestService.serializeManifest(manifest);
+
+        Date updated = ((IsUpdated) manifest).getTimestampUpdated();
+        String eTag = manifestService.getSHA256Hash(EdmDateUtils.updateDateToString(updated), iiifVersion);
+        response.setHeader("eTag", "\"" + eTag + "\"");
+        response.setHeader("Cache-Control", "no-cache");
+        response.setHeader("Last-Modified", EdmDateUtils.headerDateToString(updated));
+
+        // this may not be very useful: https://www.smashingmagazine.com/2017/11/understanding-vary-header/
+        response.setHeader("Vary", "Accept");
+
+        if (StringUtils.isNotEmpty(request.getHeader("Origin"))){
+            response.setHeader("Access-Control-Expose-Headers", "Allow, Vary, ETag, Last-Modified");
+            response.setHeader("Access-Control-Allow-Credentials", "true");
+            response.setHeader("Access-Control-Allow-Origin", "*");
+        }
+
+        if (( StringUtils.isNotEmpty(request.getHeader("If-Modified-Since")) &&
+              EdmDateUtils.headerStringToDate(request.getHeader("If-Modified-Since")).compareTo(updated) > 0 )
+            ||
+            ( StringUtils.isNotEmpty(request.getHeader("If-None-Match")) &&
+              StringUtils.equalsIgnoreCase(request.getHeader("If-None-Match"), eTag))){
+            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+            return null;
+        } else if (StringUtils.isNotEmpty(request.getHeader("If-Match")) &&
+                    (!StringUtils.equalsIgnoreCase(request.getHeader("If-Match"), eTag) &&
+                     !StringUtils.equalsIgnoreCase(request.getHeader("If-Match"), "*"))){
+            response.setStatus(HttpServletResponse.SC_PRECONDITION_FAILED);
+            return null;
+        } else {
+            return manifestService.serializeManifest(manifest);
+        }
     }
 
 

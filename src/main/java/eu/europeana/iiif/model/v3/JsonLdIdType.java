@@ -1,5 +1,7 @@
 package eu.europeana.iiif.model.v3;
 
+import eu.europeana.iiif.model.IsUpdated;
+
 import java.io.Serializable;
 
 /**
@@ -8,7 +10,7 @@ import java.io.Serializable;
  * @author Patrick Ehlert
  * Created on 24-01-2018
  */
-public class JsonLdIdType implements Serializable{
+public class JsonLdIdType extends IsUpdated implements Serializable{
 
     private static final long serialVersionUID = -2716881573824312952L;
 
