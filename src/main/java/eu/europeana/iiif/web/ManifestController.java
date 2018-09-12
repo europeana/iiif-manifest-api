@@ -50,7 +50,6 @@ public class ManifestController {
      */
     @SuppressWarnings("squid:S00107") // too many parameters -> we cannot avoid it.
 
-    @CrossOrigin(maxAge = 600)
     @GetMapping(value = "/presentation/{collectionId}/{recordId}/manifest",
             produces = {Definitions.MEDIA_TYPE_IIIF_JSONLD_V2,
                         Definitions.MEDIA_TYPE_IIIF_JSONLD_V3,
@@ -97,17 +96,12 @@ public class ManifestController {
         Date updated = ((IsUpdated) manifest).getTimestampUpdated();
         String eTag = manifestService.getSHA256Hash(EdmDateUtils.updateDateToString(updated), iiifVersion);
         response.setHeader("eTag", "\"" + eTag + "\"");
-        response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Last-Modified", EdmDateUtils.headerDateToString(updated));
-
-        // this may not be very useful: https://www.smashingmagazine.com/2017/11/understanding-vary-header/
+        // TODO move Cache control to the Spring Boot security configuration when that's implemented
+        response.setHeader("Cache-Control", "no-cache");
+        // using the Vary header is debatable: https://www.smashingmagazine.com/2017/11/understanding-vary-header/
         response.setHeader("Vary", "Accept");
 
-        if (StringUtils.isNotEmpty(request.getHeader("Origin"))){
-            response.setHeader("Access-Control-Expose-Headers", "Allow, Vary, ETag, Last-Modified");
-            response.setHeader("Access-Control-Allow-Credentials", "true");
-            response.setHeader("Access-Control-Allow-Origin", "*");
-        }
 
         if (( StringUtils.isNotEmpty(request.getHeader("If-Modified-Since")) &&
               EdmDateUtils.headerStringToDate(request.getHeader("If-Modified-Since")).compareTo(updated) > 0 )
