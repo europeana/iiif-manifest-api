@@ -2,7 +2,6 @@ package eu.europeana.iiif.web;
 
 import eu.europeana.iiif.model.Definitions;
 import eu.europeana.iiif.model.EdmDateUtils;
-import eu.europeana.iiif.model.IsUpdated;
 import eu.europeana.iiif.service.ManifestService;
 import eu.europeana.iiif.service.ValidateUtils;
 import eu.europeana.iiif.service.exception.IIIFException;
@@ -70,18 +69,45 @@ public class ManifestController {
         String id = "/"+collectionId+"/"+recordId;
         ValidateUtils.validateWskeyFormat(wskey);
         ValidateUtils.validateRecordIdFormat(id);
+
         if (recordApi != null) {
             ValidateUtils.validateApiUrlFormat(recordApi);
         }
         if (fullTextApi != null) {
             ValidateUtils.validateApiUrlFormat(fullTextApi);
         }
-        String json = manifestService.getRecordJson(id, wskey, recordApi);
 
         // if no version was provided as request param, then we check the accept header for a profiles= value
         String iiifVersion = version;
         if (iiifVersion == null) {
             iiifVersion = versionFromAcceptHeader(request);
+        }
+
+        String json    = manifestService.getRecordJson(id, wskey, recordApi);
+        Date   updated = manifestService.getTimestampUpdate();
+        String eTag    = manifestService.getSHA256Hash(iiifVersion);
+
+        response.setHeader("eTag", "\"" + eTag + "\"");
+        response.setHeader("Last-Modified", EdmDateUtils.headerDateToString(updated));
+        // TODO move Cache control to the Spring Boot security configuration when that's implemented
+        response.setHeader("Cache-Control", "no-cache");
+        // using the Vary header is debatable: https://www.smashingmagazine.com/2017/11/understanding-vary-header/
+        response.setHeader("Vary", "Accept");
+
+        // chosen this implementation instead of the 'shallow' out-of-the-box spring boot version because that does not
+        // offer the advantage of saving on processing time
+        if (( StringUtils.isNotEmpty(request.getHeader("If-Modified-Since")) &&
+              EdmDateUtils.headerStringToDate(request.getHeader("If-Modified-Since")).compareTo(updated) > 0 )
+            ||
+            ( StringUtils.isNotEmpty(request.getHeader("If-None-Match")) &&
+              StringUtils.equalsIgnoreCase(request.getHeader("If-None-Match"), eTag))){
+            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+            return null;
+        } else if (StringUtils.isNotEmpty(request.getHeader("If-Match")) &&
+                   (!StringUtils.equalsIgnoreCase(request.getHeader("If-Match"), eTag) &&
+                    !StringUtils.equalsIgnoreCase(request.getHeader("If-Match"), "*"))){
+            response.setStatus(HttpServletResponse.SC_PRECONDITION_FAILED);
+            return null;
         }
 
         Object manifest;
@@ -93,31 +119,7 @@ public class ManifestController {
             response.setContentType(Definitions.MEDIA_TYPE_IIIF_JSONLD_V2+";charset=UTF-8");
         }
 
-        Date updated = ((IsUpdated) manifest).getTimestampUpdated();
-        String eTag = manifestService.getSHA256Hash(EdmDateUtils.updateDateToString(updated), iiifVersion);
-        response.setHeader("eTag", "\"" + eTag + "\"");
-        response.setHeader("Last-Modified", EdmDateUtils.headerDateToString(updated));
-        // TODO move Cache control to the Spring Boot security configuration when that's implemented
-        response.setHeader("Cache-Control", "no-cache");
-        // using the Vary header is debatable: https://www.smashingmagazine.com/2017/11/understanding-vary-header/
-        response.setHeader("Vary", "Accept");
-
-
-        if (( StringUtils.isNotEmpty(request.getHeader("If-Modified-Since")) &&
-              EdmDateUtils.headerStringToDate(request.getHeader("If-Modified-Since")).compareTo(updated) > 0 )
-            ||
-            ( StringUtils.isNotEmpty(request.getHeader("If-None-Match")) &&
-              StringUtils.equalsIgnoreCase(request.getHeader("If-None-Match"), eTag))){
-            response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
-            return null;
-        } else if (StringUtils.isNotEmpty(request.getHeader("If-Match")) &&
-                    (!StringUtils.equalsIgnoreCase(request.getHeader("If-Match"), eTag) &&
-                     !StringUtils.equalsIgnoreCase(request.getHeader("If-Match"), "*"))){
-            response.setStatus(HttpServletResponse.SC_PRECONDITION_FAILED);
-            return null;
-        } else {
-            return manifestService.serializeManifest(manifest);
-        }
+        return manifestService.serializeManifest(manifest);
     }
 
 

@@ -59,15 +59,14 @@ public class ManifestControllerTest {
         // mock v2 and v3 manifest responses
         ManifestV2 manifest2 = new ManifestV2("/1/2", "/1/2");
         ManifestV3 manifest3 = new ManifestV3("/1/2", "/1/2");
-        manifest2.setTimestampUpdated(EdmDateUtils.headerStringToDate(TIMESTAMP_UPDATE));
-        manifest3.setTimestampUpdated(EdmDateUtils.headerStringToDate(TIMESTAMP_UPDATE));
         given(manifestService.getRecordJson("/1/2", "test")).willReturn("testJson");
         given(manifestService.getRecordJson("/1/2", "test", null)).willReturn("testJson");
         given(manifestService.generateManifestV2(eq("testJson"), anyBoolean(), any())).willReturn(manifest2);
         given(manifestService.generateManifestV3(eq("testJson"), anyBoolean(), any())).willReturn(manifest3);
         given(manifestService.serializeManifest(manifest2)).willReturn(JSONLD_V2_OUTPUT);
         given(manifestService.serializeManifest(manifest3)).willReturn(JSONLD_V3_OUTPUT);
-        given(manifestService.getSHA256Hash(any(), any())).willReturn(SAME_ETAG_HEADER);
+        given(manifestService.getSHA256Hash(any())).willReturn(SAME_ETAG_HEADER);
+        given(manifestService.getTimestampUpdate()).willReturn(EdmDateUtils.headerStringToDate(TIMESTAMP_UPDATE));
     }
 
     /**

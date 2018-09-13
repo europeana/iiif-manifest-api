@@ -2,12 +2,21 @@ package eu.europeana.iiif.service;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnResource;
+import org.springframework.boot.info.BuildProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 /**
  * Container for all manifest settings that we load from the iiif.properties file. Note that we also have hard-coded
@@ -40,6 +49,9 @@ public class ManifestSettings {
     private Integer canvasHeight;
     @Value("${canvas.width}")
     private Integer canvasWidth;
+
+    @Autowired
+    private Environment environment;
 
     /**
      * @return base url from where we should retrieve record json data
@@ -89,6 +101,22 @@ public class ManifestSettings {
      */
     public Integer getCanvasWidth() {
         return canvasWidth;
+    }
+
+    /**
+     * Note: this does not work when running the exploded build from the IDE because the values in the build.properties
+     * are substituted only in the .war file. It returns 'default' in that case.
+     * @return String containing app version, used in the eTag SHA hash generation
+     */
+    public String getAppVersion() {
+        Properties buildProperties = new Properties();
+        InputStream resourceAsStream = this.getClass().getResourceAsStream("/build.properties");
+        try {
+            buildProperties.load(resourceAsStream);
+            return environment.getProperty("info.app.version");
+        } catch (Exception e) {
+            return "default";
+        }
     }
 
     @PostConstruct

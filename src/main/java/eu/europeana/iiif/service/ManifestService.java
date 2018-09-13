@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
@@ -11,6 +12,7 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
+import eu.europeana.iiif.model.EdmDateUtils;
 import eu.europeana.iiif.model.v2.FullText;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.AnnotationPage;
@@ -41,11 +43,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Service that loads record data, uses that to generate a Manifest object and serializes the manifest in JSON-LD
@@ -63,6 +61,7 @@ public class ManifestService {
 
     private ManifestSettings settings;
     private CloseableHttpClient httpClient = HttpClients.createDefault();
+    private Date timestampUpdate;
 
     public ManifestService(ManifestSettings settings) {
         this.settings = settings;
@@ -180,8 +179,18 @@ public class ManifestService {
         } catch (IOException e) {
             throw new RecordRetrieveException("Error retrieving record", e);
         }
-
+        setTimestampUpdate(result);
         return result;
+    }
+
+    private void setTimestampUpdate(String json){
+        Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
+        this.timestampUpdate = EdmDateUtils.updateStringToDate(
+                JsonPath.parse(document).read("$.object.timestamp_update", String.class));
+    }
+
+    public Date getTimestampUpdate(){
+        return timestampUpdate;
     }
 
     /**
@@ -388,7 +397,13 @@ public class ManifestService {
         }
     }
 
-    public String getSHA256Hash(String updated, String iiifVersion){
+    /**
+     * Calculates SHA256 hash based on (1) the info.app.version (build.properties) as set in pom.xml; (2) the String
+     * representation of the timestamp_updated of the record json and (3) the iiifVersion (2 or 3)
+     * @param  iiifVersion  String
+     * @return SHA256Hash   String
+     */
+    public String getSHA256Hash(String iiifVersion){
         MessageDigest digest = null;
         try {
             digest = MessageDigest.getInstance("SHA-256");
@@ -396,9 +411,9 @@ public class ManifestService {
             LOG.error("Error creating SHA-265 hash from record timestamp_update", e);
         }
         byte[] encodedhash = digest.digest(
-                (iiifVersion + updated).getBytes(StandardCharsets.UTF_8));
+                (settings.getAppVersion() + iiifVersion + EdmDateUtils.updateDateToString(timestampUpdate))
+                        .getBytes(StandardCharsets.UTF_8));
         return bytesToHex(encodedhash);
-
     }
 
     private static String bytesToHex(byte[] hash) {
