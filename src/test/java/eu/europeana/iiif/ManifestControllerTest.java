@@ -125,8 +125,6 @@ public class ManifestControllerTest {
                 .andExpect(status().isNotAcceptable());
     }
 
-
-
     /**
      * Test if the controller also returns the proper Content-type if the version is passed through the 'format' GET
      * parameter instead of via the Accept Header (fixed in #EA-978_fix+EA-1200-changes)
