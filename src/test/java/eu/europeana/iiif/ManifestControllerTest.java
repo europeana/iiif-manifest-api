@@ -125,6 +125,36 @@ public class ManifestControllerTest {
                 .andExpect(status().isNotAcceptable());
     }
 
+
+
+    /**
+     * Test if the controller also returns the proper Content-type if the version is passed through the 'format' GET
+     * parameter instead of via the Accept Header (fixed in #EA-978_fix+EA-1200-changes)
+     * @throws Exception
+     */
+    @Test
+    public void testContentTypeHeaderWithFormat() throws Exception {
+        // first try format=2
+        this.mockMvc.perform(get("/presentation/1/2/manifest")
+                                     .param("wskey", "test")
+                                     .param("format", "2")
+                                     .header("Accept", "application/ld+json"))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string("Content-Type", containsString("profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\"")))
+                    .andExpect(header().string("eTag", notNullValue()))
+                    .andExpect(content().json(JSONLD_V2_OUTPUT));
+
+        // then try format=3
+        this.mockMvc.perform(get("/presentation/1/2/manifest")
+                                     .param("wskey", "test")
+                                     .param("format", "3")
+                                     .header("Accept", "application/ld+json"))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string("Content-Type", containsString("profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\"")))
+                    .andExpect(header().string("eTag", notNullValue()))
+                    .andExpect(content().json(JSONLD_V3_OUTPUT)).andDo(print());
+    }
+
     /**
      * Check if we get the proper cross origin headers
      * @throws Exception
