@@ -59,15 +59,24 @@ public final class Definitions {
      */
     public static final String MEDIA_TYPE_IIIF_V3 = "http://iiif.io/api/presentation/3/context.json";
 
-    /**
-     * Default Content-type returned on manifest requests for version 3
-     */
-    public static final String MEDIA_TYPE_IIIF_JSONLD_V3 = MEDIA_TYPE_JSONLD + ";profile=\""+MEDIA_TYPE_IIIF_V3+"\"";
 
     /**
      * Default Content-type returned on manifest requests for version 2
      */
-    public static final String MEDIA_TYPE_IIIF_JSONLD_V2 = MEDIA_TYPE_JSONLD + ";profile=\""+MEDIA_TYPE_IIIF_V2+"\"";
+    public static final String MEDIA_TYPE_IIIF_JSONLD_V2 = MEDIA_TYPE_JSONLD
+                                                           + ";profile=\""
+                                                           + MEDIA_TYPE_IIIF_V2
+                                                           + "\""
+                                                           + ";charset=UTF-8";
+
+    /**
+     * Default Content-type returned on manifest requests for version 3
+     */
+    public static final String MEDIA_TYPE_IIIF_JSONLD_V3 = MEDIA_TYPE_JSONLD
+                                                           + ";profile=\""
+                                                           + MEDIA_TYPE_IIIF_V3
+                                                           + "\""
+                                                           + ";charset=UTF-8";
 
     /**
      * Media type for rdf

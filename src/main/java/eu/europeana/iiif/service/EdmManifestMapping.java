@@ -591,5 +591,4 @@ public final class EdmManifestMapping {
         }
         return null;
     }
-
 }
