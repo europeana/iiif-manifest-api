@@ -1,21 +1,21 @@
 package eu.europeana.iiif.web;
 
 import eu.europeana.iiif.model.Definitions;
-import eu.europeana.iiif.model.EdmDateUtils;
+import eu.europeana.iiif.service.EdmManifestMapping;
+import eu.europeana.iiif.service.CacheUtils;
 import eu.europeana.iiif.service.ManifestService;
 import eu.europeana.iiif.service.ValidateUtils;
 import eu.europeana.iiif.service.exception.IIIFException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.net.URL;
-import java.util.Date;
+import java.time.ZonedDateTime;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,12 +43,13 @@ public class ManifestController {
 
     /**
      * Handles manifest requests
+     *
      * @param collectionId (required field)
-     * @param recordId (required field)
-     * @param wskey apikey (required field)
-     * @param version (optional) indicates which IIIF version to generate, either '2' or '3'
-     * @param recordApi (optional) alternative recordApi baseUrl to use for retrieving record data
-     * @param fullTextApi (optional) alternative fullTextApi baseUrl to use for retrieving record data
+     * @param recordId     (required field)
+     * @param wskey        apikey (required field)
+     * @param version      (optional) indicates which IIIF version to generate, either '2' or '3'
+     * @param recordApi    (optional) alternative recordApi baseUrl to use for retrieving record data
+     * @param fullTextApi  (optional) alternative fullTextApi baseUrl to use for retrieving record data
      * @return JSON-LD string containing manifest
      * @throws IIIFException when something goes wrong during processing
      */
@@ -56,18 +57,18 @@ public class ManifestController {
 
     @GetMapping(value = "/presentation/{collectionId}/{recordId}/manifest")
     public ResponseEntity<String> manifestRequest(
-                @PathVariable String collectionId,
-                @PathVariable String recordId,
-                @RequestParam(value = "wskey", required = true) String wskey,
-                @RequestParam(value = "format", required = false) String version,
-                @RequestParam(value = "recordApi", required = false) URL recordApi,
-                @RequestParam(value = "fullText", required = false, defaultValue = "true") Boolean addFullText,
-                @RequestParam(value = "fullTextApi", required = false) URL fullTextApi,
-                HttpServletRequest request,
-                HttpServletResponse response) throws IIIFException {
+            @PathVariable String collectionId,
+            @PathVariable String recordId,
+            @RequestParam(value = "wskey", required = true) String wskey,
+            @RequestParam(value = "format", required = false) String version,
+            @RequestParam(value = "recordApi", required = false) URL recordApi,
+            @RequestParam(value = "fullText", required = false, defaultValue = "true") Boolean addFullText,
+            @RequestParam(value = "fullTextApi", required = false) URL fullTextApi,
+            HttpServletRequest request,
+            HttpServletResponse response) throws IIIFException {
         // TODO integrate with apikey service?? (or leave it like this?)
 
-        String id = "/"+collectionId+"/"+recordId;
+        String id = "/" + collectionId + "/" + recordId;
         ValidateUtils.validateWskeyFormat(wskey);
         ValidateUtils.validateRecordIdFormat(id);
 
@@ -78,8 +79,7 @@ public class ManifestController {
             ValidateUtils.validateApiUrlFormat(fullTextApi);
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        if (!isAcceptHeaderOK(request)){
+        if (!isAcceptHeaderOK(request)) {
             return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
         }
         // if no version was provided as request param, then we check the accept header for a profiles= value
@@ -88,29 +88,13 @@ public class ManifestController {
             iiifVersion = versionFromAcceptHeader(request);
         }
 
-        String json    = manifestService.getRecordJson(id, wskey, recordApi);
-        Date   updated = manifestService.getTimestampUpdate();
-        String eTag    = manifestService.getSHA256Hash(iiifVersion);
-
-        headers.add("eTag", "\"" + eTag + "\"");
-        headers.add("Last-Modified", EdmDateUtils.headerDateToString(updated));
-        // TODO move Cache control to the Spring Boot security configuration when that's implemented
-        headers.add("Cache-Control", "no-cache");
-        // using the Vary header is debatable: https://www.smashingmagazine.com/2017/11/understanding-vary-header/
-        headers.add("Vary", "Accept");
-
-        // chosen this implementation instead of the 'shallow' out-of-the-box spring boot version because that does not
-        // offer the advantage of saving on processing time
-        if (( StringUtils.isNotEmpty(request.getHeader("If-Modified-Since")) &&
-              EdmDateUtils.headerStringToDate(request.getHeader("If-Modified-Since")).compareTo(updated) > 0 )
-            ||
-            ( StringUtils.isNotEmpty(request.getHeader("If-None-Match")) &&
-              StringUtils.equalsIgnoreCase(request.getHeader("If-None-Match"), eTag))){
-            return new ResponseEntity<>(headers, HttpStatus.NOT_MODIFIED);
-        } else if (StringUtils.isNotEmpty(request.getHeader("If-Match")) &&
-                   (!StringUtils.equalsIgnoreCase(request.getHeader("If-Match"), eTag) &&
-                    !StringUtils.equalsIgnoreCase(request.getHeader("If-Match"), "*"))){
-            return new ResponseEntity<>(headers, HttpStatus.PRECONDITION_FAILED);
+        String json = manifestService.getRecordJson(id, wskey, recordApi);
+        ZonedDateTime lastModified = EdmManifestMapping.getRecordTimestampUpdate(json);
+        String           eTag = generateETag(id, lastModified, iiifVersion);
+        HttpHeaders   headers = CacheUtils.generateCacheHeaders("no-cache", eTag, lastModified, "Accept");
+        ResponseEntity cached = CacheUtils.checkCached(request, headers, lastModified, eTag);
+        if (cached != null) {
+            return cached;
         }
 
         Object manifest;
@@ -121,10 +105,7 @@ public class ManifestController {
             manifest = manifestService.generateManifestV2(json, addFullText, fullTextApi); // fallback option
             headers.add("Content-Type", MEDIA_TYPE_IIIF_JSONLD_V2);
         }
-
-        return new ResponseEntity<>(manifestService.serializeManifest(manifest),
-                                    headers,
-                                    HttpStatus.OK);
+        return new ResponseEntity<>(manifestService.serializeManifest(manifest), headers, HttpStatus.OK);
     }
 
     private String versionFromAcceptHeader(HttpServletRequest request) {
@@ -144,11 +125,20 @@ public class ManifestController {
         return result;
     }
 
-    private boolean isAcceptHeaderOK(HttpServletRequest request){
+    private boolean isAcceptHeaderOK(HttpServletRequest request) {
         String accept = request.getHeader("Accept");
         return (StringUtils.isBlank(accept)) ||
-               (StringUtils.containsIgnoreCase(accept, "*/*")) ||
-               (StringUtils.containsIgnoreCase(accept, "application/json")) ||
-               (StringUtils.containsIgnoreCase(accept, "application/ld+json"));
+                (StringUtils.containsIgnoreCase(accept, "*/*")) ||
+                (StringUtils.containsIgnoreCase(accept, "application/json")) ||
+                (StringUtils.containsIgnoreCase(accept, "application/ld+json"));
     }
+
+    private String generateETag(String recordId, ZonedDateTime recordUpdated, String iiifVersion) {
+        StringBuilder hashData = new StringBuilder(recordId);
+        hashData.append(recordUpdated.toString());
+        hashData.append(manifestService.getSettings().getAppVersion());
+        hashData.append(iiifVersion);
+        return CacheUtils.generateETag(hashData.toString(), true);
+    }
+
 }

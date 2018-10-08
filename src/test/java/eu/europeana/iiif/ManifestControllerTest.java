@@ -1,12 +1,11 @@
 package eu.europeana.iiif;
 
 import eu.europeana.iiif.model.Definitions;
-import eu.europeana.iiif.model.EdmDateUtils;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.ManifestService;
+import eu.europeana.iiif.service.ManifestSettings;
 import eu.europeana.iiif.web.ManifestController;
-import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,33 +39,38 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(ManifestController.class)
 public class ManifestControllerTest {
 
+    private static final String JSON_RECORD = "{ \"object\": {\"timestamp_update\":\"2015-10-28T07:28:00Z\"} }";
     private static final String JSONLD_V2_OUTPUT = "{Manifest : JSONLD-V2}";
     private static final String JSONLD_V3_OUTPUT = "{Manifest : JSONLD-V3}";
     private static final String TIMESTAMP_UPDATE = "Wed, 28 Oct 2015 07:28:00 GMT";
     private static final String TIMESTAMP_AFTER  = "Tue, 12 Jul 2016 11:07:32 GMT";
     private static final String TIMESTAMP_BEFORE = "Wed, 18 Apr 2012 04:54:16 GMT";
-    private static final String SAME_ETAG_HEADER = "10a4cd320ab0cd3c47a0708df23d67df3e4b4ee7a66443ece353fea383557cd7";
-    private static final String FAUX_ETAG_HEADER = "ca3d67df3ee77ece353fd070203c47a43ea383558df10a4ab0cd2ce4b46d7643";
+    private static final String ETAG_HEADER_V2 = "W/\"f0524d47eba1d4f83dbc02cd1786a4e12edfa2a187b0dab730ec9310fa01868d\"";
+    private static final String ETAG_HEADER_V3 = "W/\"545f96ddfbdef6a91d60d0176229e8a2abb73f20694b425bd428573f522e0bbe\"";
+    private static final String ETAG_HEADER_FALSE = "W/\"ca3d67df3ee77ece353fd070203c47a43ea383558df10a4ab0cd2ce4b46d7643\"";
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
     private ManifestService manifestService;
+    @MockBean
+    private ManifestSettings manifestSettings;
 
     @Before
     public void setup() throws Exception {
+        given(manifestSettings.getAppVersion()).willReturn("v1.0-test");
+
         // mock v2 and v3 manifest responses
         ManifestV2 manifest2 = new ManifestV2("/1/2", "/1/2");
         ManifestV3 manifest3 = new ManifestV3("/1/2", "/1/2");
-        given(manifestService.getRecordJson("/1/2", "test")).willReturn("testJson");
-        given(manifestService.getRecordJson("/1/2", "test", null)).willReturn("testJson");
-        given(manifestService.generateManifestV2(eq("testJson"), anyBoolean(), any())).willReturn(manifest2);
-        given(manifestService.generateManifestV3(eq("testJson"), anyBoolean(), any())).willReturn(manifest3);
+        given(manifestService.getRecordJson("/1/2", "test")).willReturn(JSON_RECORD);
+        given(manifestService.getRecordJson("/1/2", "test", null)).willReturn(JSON_RECORD);
+        given(manifestService.generateManifestV2(eq(JSON_RECORD), anyBoolean(), any())).willReturn(manifest2);
+        given(manifestService.generateManifestV3(eq(JSON_RECORD), anyBoolean(), any())).willReturn(manifest3);
         given(manifestService.serializeManifest(manifest2)).willReturn(JSONLD_V2_OUTPUT);
         given(manifestService.serializeManifest(manifest3)).willReturn(JSONLD_V3_OUTPUT);
-        given(manifestService.getSHA256Hash(any())).willReturn(SAME_ETAG_HEADER);
-        given(manifestService.getTimestampUpdate()).willReturn(EdmDateUtils.headerStringToDate(TIMESTAMP_UPDATE));
+        given(manifestService.getSettings()).willReturn(manifestSettings);
     }
 
     /**
@@ -197,21 +201,21 @@ public class ManifestControllerTest {
         MvcResult result = this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
                     .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\""))
                     .andReturn();
-        String eTag = StringUtils.remove(result.getResponse().getHeader("eTag"), "\"");
+        String eTag = result.getResponse().getHeader("eTag");
 
-        // supply the same eTag value, working around quoting hell, expect HTTP 304
+        // supply the same eTag value, expect HTTP 304
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
                     .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\"")
                     .header("If-None-Match", eTag))
-                    .andExpect(status().isNotModified())
-                    .andExpect(header().string("eTag", equalTo("\"" + SAME_ETAG_HEADER + "\"")));
+                    .andExpect(header().string("eTag", equalTo(ETAG_HEADER_V2)))
+                    .andExpect(status().isNotModified());
 
         // supply another eTag value will result in HTTP 200
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
                     .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\"")
-                    .header("If-None-Match", FAUX_ETAG_HEADER))
-                    .andExpect(status().isOk())
-                    .andExpect(header().string("eTag", equalTo("\"" + SAME_ETAG_HEADER + "\"")));
+                    .header("If-None-Match", ETAG_HEADER_FALSE))
+                    .andExpect(header().string("eTag", equalTo(ETAG_HEADER_V2)))
+                    .andExpect(status().isOk());
     }
 
 
@@ -225,20 +229,21 @@ public class ManifestControllerTest {
         MvcResult result = this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
                     .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\""))
                     .andReturn();
-        String eTag = StringUtils.remove(result.getResponse().getHeader("eTag"), "\"");
+        String eTag = result.getResponse().getHeader("eTag");
+        System.err.println("first eTag = "+eTag);
 
-        // supply the same eTag value, working around quoting hell, expect HTTP 200
+        // supply the same eTag value, expect HTTP 200
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
                     .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\"")
                     .header("If-Match", eTag))
-                    .andExpect(status().isOk())
-                    .andExpect(header().string("eTag", equalTo("\"" + SAME_ETAG_HEADER + "\"")));
+                    .andExpect(header().string("eTag", equalTo(ETAG_HEADER_V3)))
+                    .andExpect(status().isOk());
 
         // supply another eTag value will result in HTTP 412
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
                     .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\"")
-                    .header("If-Match", FAUX_ETAG_HEADER))
-                    .andExpect(status().isPreconditionFailed())
-                    .andExpect(header().string("eTag", equalTo("\"" + SAME_ETAG_HEADER + "\"")));
+                    .header("If-Match", ETAG_HEADER_FALSE))
+                    .andExpect(header().string("eTag", equalTo(ETAG_HEADER_V3)))
+                    .andExpect(status().isPreconditionFailed());
     }
 }

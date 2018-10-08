@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
@@ -12,7 +11,6 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
-import eu.europeana.iiif.model.EdmDateUtils;
 import eu.europeana.iiif.model.v2.FullText;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.AnnotationPage;
@@ -34,16 +32,16 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Service that loads record data, uses that to generate a Manifest object and serializes the manifest in JSON-LD
@@ -61,7 +59,6 @@ public class ManifestService {
 
     private ManifestSettings settings;
     private CloseableHttpClient httpClient = HttpClients.createDefault();
-    private Date timestampUpdate;
 
     public ManifestService(ManifestSettings settings) {
         this.settings = settings;
@@ -179,18 +176,8 @@ public class ManifestService {
         } catch (IOException e) {
             throw new RecordRetrieveException("Error retrieving record", e);
         }
-        setTimestampUpdate(result);
+
         return result;
-    }
-
-    private void setTimestampUpdate(String json){
-        Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        this.timestampUpdate = EdmDateUtils.updateStringToDate(
-                JsonPath.parse(document).read("$.object.timestamp_update", String.class));
-    }
-
-    public Date getTimestampUpdate(){
-        return timestampUpdate;
     }
 
     /**
@@ -312,21 +299,18 @@ public class ManifestService {
         if (manifest.getSequences() != null) {
             for (eu.europeana.iiif.model.v2.Sequence s : manifest.getSequences()) {
 
-                if (s.getCanvases() != null && s.getIsShownBy() != null) {
-
-                    // we don't want to check for all images if they are a fulltext because that takes too long
-                    // instead we check if the edmIsShownBy is a fulltext and if so assume all images are fulltexts
-                    if (existsFullText(s.getIsShownBy())) {
-                        // add fulllink to all items
-                        for (eu.europeana.iiif.model.v2.Canvas c : s.getCanvases()) {
-                            String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(),
-                                    Integer.toString(c.getPageNr()),
-                                    fullTextApi);
-                            // always 1 value in array
-                            FullText[] ft = new FullText[1];
-                            ft[0] = new FullText(fullTextUrl);
-                            c.setOtherContent(ft);
-                        }
+                // we don't want to check for all images if they are a fulltext because that takes too long
+                // instead we check if the edmIsShownBy is a fulltext and if so assume all images are fulltexts
+                if (s.getCanvases() != null && s.getIsShownBy() != null && existsFullText(s.getIsShownBy())) {
+                    // add fulllink to all items
+                    for (eu.europeana.iiif.model.v2.Canvas c : s.getCanvases()) {
+                        String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(),
+                                Integer.toString(c.getPageNr()),
+                                fullTextApi);
+                        // always 1 value in array
+                        FullText[] ft = new FullText[1];
+                        ft[0] = new FullText(fullTextUrl);
+                        c.setOtherContent(ft);
                     }
                 }
 
@@ -345,18 +329,15 @@ public class ManifestService {
         if (manifest.getItems() != null) {
             for (eu.europeana.iiif.model.v3.Sequence s : manifest.getItems()) {
 
-                if (s.getItems() != null && s.getIsShownBy() != null) {
-
-                    // we don't want to check for all images if they are a fulltext because that takes too long
-                    // instead we check if the edmIsShownBy is a fulltext and if so assume all images are fulltexts
-                    if (existsFullText(s.getIsShownBy())) {
-                        // add fulllink to all items
-                        for (eu.europeana.iiif.model.v3.Canvas c : s.getItems()) {
-                            String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(),
-                                    Integer.toString(c.getPageNr()),
-                                    fullTextApi);
-                            addFullTextAnnotationPageV3(c, fullTextUrl);
-                        }
+                // we don't want to check for all images if they are a fulltext because that takes too long
+                // instead we check if the edmIsShownBy is a fulltext and if so assume all images are fulltexts
+                if (s.getItems() != null && s.getIsShownBy() != null && existsFullText(s.getIsShownBy())) {
+                    // add fulllink to all items
+                    for (eu.europeana.iiif.model.v3.Canvas c : s.getItems()) {
+                        String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(),
+                                Integer.toString(c.getPageNr()),
+                                fullTextApi);
+                        addFullTextAnnotationPageV3(c, fullTextUrl);
                     }
                 }
 
@@ -395,35 +376,6 @@ public class ManifestService {
         catch (IOException e) {
             throw new RecordParseException("Error serializing data: "+e.getMessage(), e);
         }
-    }
-
-    /**
-     * Calculates SHA256 hash based on (1) the info.app.version (build.properties) as set in pom.xml; (2) the String
-     * representation of the timestamp_updated of the record json and (3) the iiifVersion (2 or 3)
-     * @param  iiifVersion  String
-     * @return SHA256Hash   String
-     */
-    public String getSHA256Hash(String iiifVersion){
-        MessageDigest digest = null;
-        try {
-            digest = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            LOG.error("Error creating SHA-265 hash from record timestamp_update", e);
-        }
-        byte[] encodedhash = digest.digest(
-                (settings.getAppVersion() + iiifVersion + EdmDateUtils.updateDateToString(timestampUpdate))
-                        .getBytes(StandardCharsets.UTF_8));
-        return bytesToHex(encodedhash);
-    }
-
-    private static String bytesToHex(byte[] hash) {
-        StringBuffer hexString = new StringBuffer();
-        for (int i = 0; i < hash.length; i++) {
-            String hex = Integer.toHexString(0xff & hash[i]);
-            if(hex.length() == 1) hexString.append('0');
-            hexString.append(hex);
-        }
-        return hexString.toString();
     }
 
     /**
