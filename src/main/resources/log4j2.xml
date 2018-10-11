@@ -14,6 +14,6 @@
             <AppenderRef ref="Console"/>
         </Root>
         <Logger name="org.apache.http" level="INFO"/>
-        <Logger name="eu.europeana.iiif" level="DEBUG"/>
+        <Logger name="eu.europeana.iiif" level="INFO"/>
     </Loggers>
 </Configuration>

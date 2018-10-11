@@ -35,7 +35,8 @@ public class IiifApplication extends SpringBootServletInitializer {
         return new WebMvcConfigurerAdapter() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**").allowedOrigins("*").maxAge(1000);
+                registry.addMapping("/**").allowedOrigins("*").maxAge(1000)
+                        .exposedHeaders("Allow, Vary, ETag, Last-Modified");
             }
         };
     }

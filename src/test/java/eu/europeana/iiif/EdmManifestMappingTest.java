@@ -19,6 +19,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -381,6 +384,13 @@ public class EdmManifestMappingTest {
     private static class ExpectedServiceValues {
         String id;
         String profile;
+    }
+
+    @Test
+    public void testRetrieveRecordUpdate() {
+        assertEquals(LocalDateTime.of(2017, 6, 6, 19, 40, 18, 82000000).atZone(ZoneOffset.UTC),
+                EdmManifestMapping.getRecordTimestampUpdate(
+                "{\"object\":{\"timestamp_update\":\"2017-06-06T19:40:18.082Z\"}}"));
     }
 
 }

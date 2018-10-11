@@ -299,21 +299,18 @@ public class ManifestService {
         if (manifest.getSequences() != null) {
             for (eu.europeana.iiif.model.v2.Sequence s : manifest.getSequences()) {
 
-                if (s.getCanvases() != null && s.getIsShownBy() != null) {
-
-                    // we don't want to check for all images if they are a fulltext because that takes too long
-                    // instead we check if the edmIsShownBy is a fulltext and if so assume all images are fulltexts
-                    if (existsFullText(s.getIsShownBy())) {
-                        // add fulllink to all items
-                        for (eu.europeana.iiif.model.v2.Canvas c : s.getCanvases()) {
-                            String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(),
-                                    Integer.toString(c.getPageNr()),
-                                    fullTextApi);
-                            // always 1 value in array
-                            FullText[] ft = new FullText[1];
-                            ft[0] = new FullText(fullTextUrl);
-                            c.setOtherContent(ft);
-                        }
+                // we don't want to check for all images if they are a fulltext because that takes too long
+                // instead we check if the edmIsShownBy is a fulltext and if so assume all images are fulltexts
+                if (s.getCanvases() != null && s.getIsShownBy() != null && existsFullText(s.getIsShownBy())) {
+                    // add fulllink to all items
+                    for (eu.europeana.iiif.model.v2.Canvas c : s.getCanvases()) {
+                        String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(),
+                                Integer.toString(c.getPageNr()),
+                                fullTextApi);
+                        // always 1 value in array
+                        FullText[] ft = new FullText[1];
+                        ft[0] = new FullText(fullTextUrl);
+                        c.setOtherContent(ft);
                     }
                 }
 
@@ -332,18 +329,15 @@ public class ManifestService {
         if (manifest.getItems() != null) {
             for (eu.europeana.iiif.model.v3.Sequence s : manifest.getItems()) {
 
-                if (s.getItems() != null && s.getIsShownBy() != null) {
-
-                    // we don't want to check for all images if they are a fulltext because that takes too long
-                    // instead we check if the edmIsShownBy is a fulltext and if so assume all images are fulltexts
-                    if (existsFullText(s.getIsShownBy())) {
-                        // add fulllink to all items
-                        for (eu.europeana.iiif.model.v3.Canvas c : s.getItems()) {
-                            String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(),
-                                    Integer.toString(c.getPageNr()),
-                                    fullTextApi);
-                            addFullTextAnnotationPageV3(c, fullTextUrl);
-                        }
+                // we don't want to check for all images if they are a fulltext because that takes too long
+                // instead we check if the edmIsShownBy is a fulltext and if so assume all images are fulltexts
+                if (s.getItems() != null && s.getIsShownBy() != null && existsFullText(s.getIsShownBy())) {
+                    // add fulllink to all items
+                    for (eu.europeana.iiif.model.v3.Canvas c : s.getItems()) {
+                        String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(),
+                                Integer.toString(c.getPageNr()),
+                                fullTextApi);
+                        addFullTextAnnotationPageV3(c, fullTextUrl);
                     }
                 }
 

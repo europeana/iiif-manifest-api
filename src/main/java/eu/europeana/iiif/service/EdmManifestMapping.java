@@ -16,9 +16,13 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -343,7 +347,7 @@ public final class EdmManifestMapping {
      * @return date string in xsd:datetime format (i.e. YYYY-MM-DDThh:mm:ssZ)
      */
     public static String getNavDate(String europeanaId, Object jsonDoc) {
-        Date navDate = null;
+        LocalDate navDate = null;
         LanguageMap[] proxiesLangDates = JsonPath.parse(jsonDoc).read("$.object.proxies[*].dctermsIssued", LanguageMap[].class);
         for (LanguageMap langDates : proxiesLangDates) {
             for (String[] dates : langDates.values()) {
@@ -363,7 +367,8 @@ public final class EdmManifestMapping {
         if (navDate == null) {
             return null;
         }
-        return navDate.toInstant().toString();
+        ZonedDateTime zdt = Timestamp.valueOf(navDate.atStartOfDay()).toLocalDateTime().atZone(ZoneOffset.UTC);
+        return zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     }
 
     /**
@@ -592,4 +597,16 @@ public final class EdmManifestMapping {
         return null;
     }
 
+    /**
+     * Parses record information in json format and returns the record's 'timestamp_update' value
+     * @param json
+     * @return LocalDateTime object with the record's 'timestamp_update' value (UTC)
+     */
+    public static ZonedDateTime getRecordTimestampUpdate(String json) {
+       String date = JsonPath.parse(json).read("$.object.timestamp_update", String.class);
+       if (StringUtils.isEmpty(date)) {
+           return null;
+       }
+       return EdmDateUtils.recordTimestampToDateTime(date);
+    }
 }
