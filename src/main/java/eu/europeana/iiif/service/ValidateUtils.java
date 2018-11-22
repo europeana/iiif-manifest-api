@@ -1,8 +1,8 @@
 package eu.europeana.iiif.service;
 
 import eu.europeana.iiif.service.exception.IllegalArgumentException;
-import org.apache.logging.log4j.LogManager;
 
+import java.net.URL;
 import java.util.regex.Pattern;
 
 /**
@@ -12,12 +12,12 @@ import java.util.regex.Pattern;
  */
 public final class ValidateUtils {
 
+    private static final Pattern RECORD_ID = Pattern.compile("^/[a-zA-Z0-9_]*/[a-zA-Z0-9_]*$");
 
-    public static final Pattern RECORD_ID = Pattern.compile("^/[a-zA-Z0-9_]*/[a-zA-Z0-9_]*$");
+    private static final Pattern WSKEY = Pattern.compile("^[a-zA-Z0-9]*$");
 
-    public static final Pattern WSKEY = Pattern.compile("^[a-zA-Z0-9]*$");
+    private static final Pattern API_URL = Pattern.compile("^(https?://)[a-zA-Z0-9_-]+\\.(eanadev.org|europeana.eu)$");
 
-    public static final Pattern RECORD_API_URL = Pattern.compile("^(https?://)[a-zA-Z0-9_-]+\\.(eanadev.org|europeana.eu)$");
 
     private ValidateUtils() {
         // empty constructor to prevent initialization
@@ -25,13 +25,13 @@ public final class ValidateUtils {
 
     /**
      * Checks if the provided recordId has the correct format (no illegal characters that may mess up the query)
-     * @param recordId
-     * @return
-     * @throws IllegalArgumentException
+     * @param europeanaId string that should consist of "/<collectionId>/<itemId>"
+     * @return true if it has a valid format
+     * @throws IllegalArgumentException thrown when the provided recordId doesn't adhere to the expected format
      */
-    public static final boolean validateRecordIdFormat(String recordId) throws IllegalArgumentException {
-        if (!RECORD_ID.matcher(recordId).matches()) {
-            throw new IllegalArgumentException("Illegal recordId "+ recordId);
+    public static final boolean validateRecordIdFormat(String europeanaId) throws IllegalArgumentException {
+        if (!RECORD_ID.matcher(europeanaId).matches()) {
+            throw new IllegalArgumentException("Illegal recordId "+ europeanaId);
         }
         return true;
     }
@@ -39,9 +39,9 @@ public final class ValidateUtils {
     /**
      * This checks if the provided API key has the correct format (no illegal characters that may mess up the query)
      * WARNING! This does not check if the API itself is a valid key!
-     * @param wsKey
-     * @return
-     * @throws IllegalArgumentException
+     * @param wsKey string that should consist of characters and numbers only
+     * @return true if it has a valid format
+     * @throws IllegalArgumentException thrown when the provided recordId doesn't adhere to the expected format
      */
     public static final boolean validateWskeyFormat(String wsKey) throws IllegalArgumentException {
         if (!WSKEY.matcher(wsKey).matches()) {
@@ -51,15 +51,14 @@ public final class ValidateUtils {
     }
 
     /**
-     * Check if the provided recordApi url is a valid Europeana record API url
-     * @param recordApiUrl
-     * @return
-     * @throws IllegalArgumentException
+     * Check if the provided API url is a valid Europeana API url (*.eanadev.org or *.europeana.eu)
+     * @param apiUrl URL to a particular Europeana API
+     * @return true if it has a valid format
+     * @throws IllegalArgumentException thrown when the provided string doesn't adhere to the expected format
      */
-    public static final boolean validateRecordApiUrlFormat(String recordApiUrl) throws IllegalArgumentException {
-        if (!RECORD_API_URL.matcher(recordApiUrl).matches()) {
-            LogManager.getLogger(ValidateUtils.class).error("validate recordAPI");
-            throw new IllegalArgumentException("Illegal Record API url "+ recordApiUrl);
+    public static final boolean validateApiUrlFormat(URL apiUrl) throws IllegalArgumentException {
+        if (!API_URL.matcher(apiUrl.toString()).matches()) {
+            throw new IllegalArgumentException("Illegal API url "+ apiUrl);
         }
         return true;
     }

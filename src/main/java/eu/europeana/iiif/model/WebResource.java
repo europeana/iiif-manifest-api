@@ -11,10 +11,14 @@ import java.util.HashMap;
  */
 public class WebResource extends HashMap<String, Object> {
 
+    private static final long serialVersionUID = -1726986203390766226L;
+
     private static final String EDM_ID = "about";
     private static final String EDM_NEXT_IN_SEQUENCE = "isNextInSequence";
 
+
     public WebResource() {
+        super();
         // default constructor
     }
 
@@ -24,6 +28,7 @@ public class WebResource extends HashMap<String, Object> {
      * @param isNextInSequence
      */
     public WebResource(String id, String isNextInSequence) {
+        super();
         this.put(EDM_ID, id);
         this.put(EDM_NEXT_IN_SEQUENCE, isNextInSequence);
     }

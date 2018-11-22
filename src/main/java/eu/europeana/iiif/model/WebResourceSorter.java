@@ -28,7 +28,7 @@ import java.util.Set;
  * @author Patrick Ehlert
  * Created on 07-03-2018
  */
-public class WebResourceSorter {
+public final class WebResourceSorter {
 
     private static final Logger LOG = LogManager.getLogger(WebResourceSorter.class);
 
@@ -44,7 +44,7 @@ public class WebResourceSorter {
      * @throws DataInconsistentException when
      * @return sorted array of webResources
      */
-    public static ArrayList<WebResource> sort(List<WebResource> webResources) throws DataInconsistentException {
+    public static List<WebResource> sort(List<WebResource> webResources) throws DataInconsistentException {
         LOG.debug("WebResources = {}", webResources);
 
         // to simplify/speed up processing we generate a hashmap that links all ids to the appropriate webResource object
@@ -116,7 +116,7 @@ public class WebResourceSorter {
         String nextInSequenceId = idsSequences.get(webResourceId);
         if (StringUtils.isNotEmpty(nextInSequenceId)) {
             // verify the nextInSequence webresource is available
-            if (nextInSequenceId != null && !idsSequences.keySet().contains(nextInSequenceId)) {
+            if (!idsSequences.keySet().contains(nextInSequenceId)) {
                 throw new DataInconsistentException("Inconsistent data: webresource " +webResourceId+ " hasNextInSequence "
                         +nextInSequenceId+ " but that webresource cannot be found!");
             }

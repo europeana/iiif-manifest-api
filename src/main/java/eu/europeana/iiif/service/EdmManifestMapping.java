@@ -11,17 +11,18 @@ import eu.europeana.iiif.model.v3.Collection;
 import eu.europeana.iiif.model.v3.LanguageMap;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.exception.DataInconsistentException;
-import eu.europeana.iiif.service.exception.IIIFException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,7 +36,7 @@ import java.util.Map;
  * Created on 08-02-2018
  */
 @SuppressWarnings("squid:S1168") // ignore sonarqube rule: we return null on purpose in this class
-public class EdmManifestMapping {
+public final class EdmManifestMapping {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestMapping.class);
 
@@ -51,7 +52,7 @@ public class EdmManifestMapping {
      */
     public static ManifestV2 getManifestV2(ManifestSettings settings, Object jsonDoc) {
         String europeanaId = getEuropeanaId(jsonDoc);
-        ManifestV2 manifest = new ManifestV2(getManifestId(europeanaId));
+        ManifestV2 manifest = new ManifestV2(europeanaId, getManifestId(europeanaId));
         manifest.setWithin(getWithinV2(jsonDoc));
         manifest.setLabel(getLabelsV2(jsonDoc));
         manifest.setDescription(getDescriptionV2(jsonDoc));
@@ -73,7 +74,7 @@ public class EdmManifestMapping {
      */
     public static ManifestV3 getManifestV3(ManifestSettings settings, Object jsonDoc) {
         String europeanaId = getEuropeanaId(jsonDoc);
-        ManifestV3 manifest = new ManifestV3(getManifestId(europeanaId));
+        ManifestV3 manifest = new ManifestV3(europeanaId, getManifestId(europeanaId));
         manifest.setWithin(EdmManifestMapping.getWithinV3(jsonDoc));
         manifest.setLabel(EdmManifestMapping.getLabelsV3(jsonDoc));
         manifest.setDescription(EdmManifestMapping.getDescriptionV3(jsonDoc));
@@ -346,7 +347,7 @@ public class EdmManifestMapping {
      * @return date string in xsd:datetime format (i.e. YYYY-MM-DDThh:mm:ssZ)
      */
     public static String getNavDate(String europeanaId, Object jsonDoc) {
-        Date navDate = null;
+        LocalDate navDate = null;
         LanguageMap[] proxiesLangDates = JsonPath.parse(jsonDoc).read("$.object.proxies[*].dctermsIssued", LanguageMap[].class);
         for (LanguageMap langDates : proxiesLangDates) {
             for (String[] dates : langDates.values()) {
@@ -366,7 +367,8 @@ public class EdmManifestMapping {
         if (navDate == null) {
             return null;
         }
-        return navDate.toInstant().toString();
+        ZonedDateTime zdt = Timestamp.valueOf(navDate.atStartOfDay()).toLocalDateTime().atZone(ZoneOffset.UTC);
+        return zdt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     }
 
     /**
@@ -442,7 +444,9 @@ public class EdmManifestMapping {
      * @return
      */
     public static eu.europeana.iiif.model.v2.Sequence[] getSequencesV2(ManifestSettings settings, String europeanaId, Object jsonDoc) {
-        List<WebResource> webResources = getWebResources(jsonDoc);
+        String edmIsShownBy = (String) getFirstValueArray("edmIsShownBy", europeanaId,
+                JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmIsShownBy", String[].class));
+        List<WebResource> webResources = getWebResources(edmIsShownBy, jsonDoc);
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
 
         // create canvases in a particular order
@@ -450,7 +454,7 @@ public class EdmManifestMapping {
         try {
             sorted = WebResourceSorter.sort(webResources);
         } catch (DataInconsistentException e) {
-            LOG.error("Error trying to sort webresources for {}. Cause: {}", europeanaId, e.getMessage());
+            LOG.error("Error trying to sort webresources for {}. Cause: {}", europeanaId, e);
             sorted = webResources;
         }
         int order = 1;
@@ -463,7 +467,7 @@ public class EdmManifestMapping {
         if (!canvases.isEmpty()) {
             // there should be only 1 sequence, so order number is always 1
             eu.europeana.iiif.model.v2.Sequence[] result = new eu.europeana.iiif.model.v2.Sequence[1];
-            result[0] = new eu.europeana.iiif.model.v2.Sequence(getSequenceId(europeanaId, 1));
+            result[0] = new eu.europeana.iiif.model.v2.Sequence(getSequenceId(europeanaId, 1), edmIsShownBy);
             result[0].setStartCanvas(getCanvasId(europeanaId, 1));
             result[0].setCanvases(canvases.toArray(new eu.europeana.iiif.model.v2.Canvas[canvases.size()]));
             return result;
@@ -471,13 +475,18 @@ public class EdmManifestMapping {
         return null;
     }
 
-    private static List<WebResource> getWebResources(Object jsonDoc) {
-        // we should only generate a canvas for webresources that are either in the edmIsShownBy or in the hasViews
-        String[] edmIsShownBys = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmIsShownBy", String[].class);
+    /**
+     * We should only generate a canvas for webresources that are either in the edmIsShownBy or in the hasViews
+     * @param edmIsShownBy
+     * @param jsonDoc
+     * @return list of webresourcs that are either edmIsShownBy or hasView
+     */
+    private static List<WebResource> getWebResources(String edmIsShownBy, Object jsonDoc) {
+
         String[][] hasViews = JsonPath.parse(jsonDoc).read("$.object.aggregations[*].hasView", String[][].class);
 
         List<String> validWebResources = new ArrayList<>();
-        validWebResources.addAll(Arrays.asList(edmIsShownBys));
+        validWebResources.add(edmIsShownBy);
         for (String[] hasView : hasViews) {
             validWebResources.addAll(Arrays.asList(hasView));
         }
@@ -496,12 +505,15 @@ public class EdmManifestMapping {
         return result;
     }
 
+    /**
+     * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That is done later
+     */
     private static eu.europeana.iiif.model.v2.Canvas getCanvas(ManifestSettings settings,
                                                                String europeanaId,
                                                                int order,
                                                                WebResource webResource,
                                                                Map<String, Object>[] services) {
-        eu.europeana.iiif.model.v2.Canvas c = new eu.europeana.iiif.model.v2.Canvas(settings, getCanvasId(europeanaId, order));
+        eu.europeana.iiif.model.v2.Canvas c = new eu.europeana.iiif.model.v2.Canvas(settings, getCanvasId(europeanaId, order), order);
 
         c.setLabel("p. "+order);
 
@@ -586,25 +598,15 @@ public class EdmManifestMapping {
     }
 
     /**
-     * Main method for testing/debugging purposes only
-     * @param args
+     * Parses record information in json format and returns the record's 'timestamp_update' value
+     * @param json
+     * @return LocalDateTime object with the record's 'timestamp_update' value (UTC)
      */
-    public static void main(String[] args) {
-        String apiKey = "REMOVED";
-        ManifestService s = new ManifestService(new ManifestSettings());
-        try {
-            String json = s.getRecordJson("/9200356/BibliographicResource_3000118390149", apiKey, new URL("https://ing-prod-preview-api.eanadev.org"));
-            //String json = s.getRecordJson("/9200408/BibliographicResource_3000123630009", apiKey, new URL("https://ing-prod-preview-api.eanadev.org"));
-            //String json = "";
-
-            ManifestV2 m2 = s.generateManifestV2(json);
-            LOG.debug("jsonld V2 = \n{}", s.serializeManifest(m2));
-
-            ManifestV3 m3 = s.generateManifestV3(json);
-            LOG.debug("jsonld V3 = \n{}", s.serializeManifest(m3));
-        } catch (IIIFException | MalformedURLException e) {
-            LOG.error("Error generating manifest", e);
-        }
+    public static ZonedDateTime getRecordTimestampUpdate(String json) {
+       String date = JsonPath.parse(json).read("$.object.timestamp_update", String.class);
+       if (StringUtils.isEmpty(date)) {
+           return null;
+       }
+       return EdmDateUtils.recordTimestampToDateTime(date);
     }
-
 }

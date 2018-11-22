@@ -1,7 +1,9 @@
 package eu.europeana.iiif.model.v3;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.europeana.iiif.model.Definitions;
+import eu.europeana.iiif.service.EdmManifestMapping;
 
 import java.io.Serializable;
 
@@ -12,6 +14,9 @@ import java.io.Serializable;
 public class ManifestV3 extends JsonLdIdType implements Serializable {
 
     private static final long serialVersionUID = -4087877560219592406L;
+
+    @JsonIgnore
+    private String europeanaId; // for internal use only
 
     @JsonProperty("@context")
     private String[] context = {"http://www.w3.org/ns/anno.jsonld", "http://iiif.io/api/presentation/3/context.json"};
@@ -27,11 +32,22 @@ public class ManifestV3 extends JsonLdIdType implements Serializable {
     private DataSet[] seeAlso;
     private Sequence[] items;
 
-    public ManifestV3(String id) {
-        super(id, "Manifest");
+    /**
+     * Create a new empty manifest (only id, context and logo ar filled in)
+     * @param europeanaId
+     * @param manifestId
+     */
+    public ManifestV3(String europeanaId, String manifestId) {
+        super(manifestId, "Manifest");
+        this.europeanaId = europeanaId;
         logo = new Image[1];
         // TODO set height & width?
         logo[0] = new Image(Definitions.EUROPEANA_LOGO_URL, null, null);
+    }
+
+
+    public String getEuropeanaId() {
+        return europeanaId;
     }
 
     public String[] getContext() {

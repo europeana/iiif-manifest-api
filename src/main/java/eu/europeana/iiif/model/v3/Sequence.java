@@ -1,5 +1,7 @@
 package eu.europeana.iiif.model.v3;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.io.Serializable;
 
 /**
@@ -10,12 +12,21 @@ public class Sequence extends JsonLdIdType implements Serializable {
 
     private static final long serialVersionUID = 9146997370971854498L;
 
+    @JsonIgnore
+    // we keep track of the isShownBy for internal reasons (it's used to check if fulltexts exists)
+    private String isShownBy;
+
     private LanguageMap label = new LanguageMap("en", "Current page order");
     private String startCanvas;
     private Canvas[] items;
 
-    public Sequence(String id) {
+    public Sequence(String id, String isShownBy) {
         super(id, "Sequence");
+        this.isShownBy = isShownBy;
+    }
+
+    public String getIsShownBy() {
+        return this.isShownBy;
     }
 
     public LanguageMap getLabel() {
