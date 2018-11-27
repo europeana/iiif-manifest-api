@@ -45,7 +45,7 @@ public final class WebResourceSorter {
      * @return sorted array of webResources
      */
     public static List<WebResource> sort(List<WebResource> webResources) throws DataInconsistentException {
-        LOG.debug("WebResources = {}", webResources);
+        LOG.trace("WebResources = {}", webResources);
 
         // to simplify/speed up processing we generate a hashmap that links all ids to the appropriate webResource object
         // and a hashmap with all the id's (keys) and nextInSequence (values)
@@ -58,12 +58,12 @@ public final class WebResourceSorter {
             }
             String nextInSequence = wr.getNextInSequence();
             idsNextInSequence.put(wrId, nextInSequence);
-            LOG.debug("    {} -> {} ", wrId, nextInSequence);
+            LOG.trace("    {} -> {} ", wrId, nextInSequence);
         }
 
         // find all start nodes (order doesn't matter)
         Set<String> startNodes = getSequenceStartItems(idsNextInSequence);
-        LOG.debug("  StartNodes = {}", startNodes);
+        LOG.trace("  StartNodes = {}", startNodes);
 
         // for each start node, follow the sequence down to the end node and list webresource in reverse order
         ArrayList<WebResource> result = new ArrayList<>();
@@ -71,7 +71,7 @@ public final class WebResourceSorter {
         while (startNodeIds.hasNext()) {
             String startNodeId = startNodeIds.next();
             List<WebResource> sequence = getSequence(startNodeId, idsWebResources, idsNextInSequence);
-            LOG.debug("  Sequence = {}", sequence);
+            LOG.trace("  Sequence = {}", sequence);
             result.addAll(sequence);
         }
 
@@ -85,7 +85,7 @@ public final class WebResourceSorter {
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("RESULT = {}", result);
+            LOG.debug("Webresources = {}", result);
         }
         return result;
     }
