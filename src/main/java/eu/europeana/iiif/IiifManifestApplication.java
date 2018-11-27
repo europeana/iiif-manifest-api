@@ -21,10 +21,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
  * Created on 6-12-2017
  */
 @SpringBootApplication
-//@EnableHystrixDashboard
-//@EnableCircuitBreaker
+@EnableHystrixDashboard
+@EnableCircuitBreaker
 @PropertySource(value = "classpath:build.properties", ignoreResourceNotFound = true)
-public class IiifApplication extends SpringBootServletInitializer {
+public class IiifManifestApplication extends SpringBootServletInitializer {
 
     /**
      * Setup CORS for all requests
@@ -70,7 +70,7 @@ public class IiifApplication extends SpringBootServletInitializer {
      */
     @SuppressWarnings("squid:S2095") // to avoid sonarqube false positive (see https://stackoverflow.com/a/37073154/741249)
     public static void main(String[] args) {
-        SpringApplication.run(IiifApplication.class, args);
+        SpringApplication.run(IiifManifestApplication.class, args);
     }
     
 }
