@@ -446,10 +446,6 @@ public final class EdmManifestMapping {
     public static eu.europeana.iiif.model.v2.Sequence[] getSequencesV2(ManifestSettings settings, String europeanaId, Object jsonDoc) {
         String edmIsShownBy = (String) getFirstValueArray("edmIsShownBy", europeanaId,
                 JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmIsShownBy", String[].class));
-        // only save edmIsShownBy if it's a Europeana url!
-        if (!ValidateUtils.isEuropeanaUrl(edmIsShownBy)) {
-            edmIsShownBy = null;
-        }
         List<WebResource> webResources = getWebResources(edmIsShownBy, jsonDoc);
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
 
