@@ -7,6 +7,7 @@ import org.junit.Test;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -49,4 +50,15 @@ public class ValidationUtilTest {
     public void testRecordApiUrlFalse() throws IllegalArgumentException, MalformedURLException {
         assertTrue(ValidateUtils.validateApiUrlFormat(new URL("https://search-api-test.google.nl")));
     }
+
+    @Test
+    public void testEuropeanaUrl() {
+        assertTrue(ValidateUtils.isEuropeanaUrl("https://iiif.europeana.eu/image/GGDNOQYY5N35KNXL7PZBCNRWDJN6RCWLCKN6XXPRD5632RSEEQIA/presentation_images/c7aaa970-fd11-11e5-bc8a-fa163e60dd72/node-3/image/NLE/Edasi/1922/03/15/1/19220315_1-0001/full/full/0/default.jpg"));
+    }
+
+    @Test
+    public void testNotEuropeanaUrl() {
+        assertFalse(ValidateUtils.isEuropeanaUrl("http://gallica.bnf.fr/iiif/ark:/12148/bpt6k555339z/f1/full/full/0/native.jpg"));
+    }
+
 }

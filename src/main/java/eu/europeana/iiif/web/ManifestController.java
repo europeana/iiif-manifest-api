@@ -7,6 +7,8 @@ import eu.europeana.iiif.service.ManifestService;
 import eu.europeana.iiif.service.ValidateUtils;
 import eu.europeana.iiif.service.exception.IIIFException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +33,8 @@ import static eu.europeana.iiif.model.Definitions.MEDIA_TYPE_IIIF_JSONLD_V3;
  */
 @RestController
 public class ManifestController {
+
+    private static final Logger LOG = LogManager.getLogger(ManifestController.class);
 
     /* for parsing accept headers */
     private static final Pattern acceptProfilePattern = Pattern.compile("profile=\"(.*?)\"");
@@ -94,6 +98,7 @@ public class ManifestController {
         HttpHeaders   headers = CacheUtils.generateCacheHeaders("no-cache", eTag, lastModified, "Accept");
         ResponseEntity cached = CacheUtils.checkCached(request, headers, lastModified, eTag);
         if (cached != null) {
+            LOG.debug("Returning 304 response");
             return cached;
         }
 

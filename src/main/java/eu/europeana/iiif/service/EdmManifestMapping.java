@@ -497,7 +497,7 @@ public final class EdmManifestMapping {
         for (WebResource wr : webResources) {
             if (validWebResources.contains(wr.getId())) {
                 result.add(wr);
-                LOG.debug("Valid webresource {} ", wr.getId());
+                LOG.trace("Valid webresource {} ", wr.getId());
             } else {
                 LOG.debug("Skipping webresource {}", wr.getId());
             }
@@ -540,7 +540,7 @@ public final class EdmManifestMapping {
         List<String> serviceIds = (List<String>) webResource.get("svcsHasService");
         if (serviceIds != null && !serviceIds.isEmpty()) {
             String serviceId = (String) getFirstValueArray("service", europeanaId, serviceIds.toArray());
-            LOG.debug("WebResource {} has serviceId {}", webResource.getId(), serviceId);
+            LOG.trace("WebResource {} has serviceId {}", webResource.getId(), serviceId);
             eu.europeana.iiif.model.v2.Service service = new eu.europeana.iiif.model.v2.Service(serviceId);
             service.setProfile(lookupServiceDoapImplements(services, serviceId, europeanaId));
             body.setService(service);
