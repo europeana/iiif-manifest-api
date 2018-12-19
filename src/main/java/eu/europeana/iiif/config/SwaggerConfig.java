@@ -34,7 +34,7 @@ public class SwaggerConfig {
     @SuppressWarnings("squid:UnusedPrivateMethod")
     private ApiInfo apiInfo() {
         return new ApiInfo(
-                "IIIF API",
+                "IIIF Manifest API",
                 "Some custom description of API.",
                 null,
                 null,

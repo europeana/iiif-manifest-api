@@ -24,7 +24,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 @EnableHystrixDashboard
 @EnableCircuitBreaker
 @PropertySource(value = "classpath:build.properties", ignoreResourceNotFound = true)
-public class IiifManifestApplication extends SpringBootServletInitializer {
+public class ManifestApplication extends SpringBootServletInitializer {
 
     /**
      * Setup CORS for all requests
@@ -70,7 +70,7 @@ public class IiifManifestApplication extends SpringBootServletInitializer {
      */
     @SuppressWarnings("squid:S2095") // to avoid sonarqube false positive (see https://stackoverflow.com/a/37073154/741249)
     public static void main(String[] args) {
-        SpringApplication.run(IiifManifestApplication.class, args);
+        SpringApplication.run(ManifestApplication.class, args);
     }
     
 }
