@@ -17,11 +17,13 @@ import eu.europeana.iiif.model.v3.AnnotationPage;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.exception.FullTextCheckException;
 import eu.europeana.iiif.service.exception.IIIFException;
+import eu.europeana.iiif.service.exception.IllegalArgumentException;
 import eu.europeana.iiif.service.exception.InvalidApiKeyException;
 import eu.europeana.iiif.service.exception.RecordNotFoundException;
 import eu.europeana.iiif.service.exception.RecordParseException;
 import eu.europeana.iiif.service.exception.RecordRetrieveException;
 import ioinformarics.oss.jackson.module.jsonld.JsonldModule;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -206,6 +208,9 @@ public class ManifestService {
             @HystrixProperty(name = "fallback.enabled", value="true")
     }, fallbackMethod = "fallbackExistsFullText")
     public Boolean existsFullText(String fullTextUrl) throws IIIFException {
+        if (!ValidateUtils.isEuropeanaUrl(fullTextUrl)) {
+            throw new IllegalArgumentException("Provided full-text url (" + fullTextUrl + ") is not a europeana url");
+        }
         Boolean result;
         try {
             try (CloseableHttpResponse response = httpClient.execute(new HttpHead(fullTextUrl))) {
@@ -293,67 +298,96 @@ public class ManifestService {
     /**
      * We generate all full text links in one place, so we can raise a timeout if retrieving the necessary
      * data for all full texts is too slow.
-     * @return manifest with for each canvas one full text link provided that full text is available
      */
-    private ManifestV2 fillInFullTextLinksV2(ManifestV2 manifest, URL fullTextApi) throws IIIFException {
+    private void fillInFullTextLinksV2(ManifestV2 manifest, URL fullTextApi) throws IIIFException {
         if (manifest.getSequences() != null) {
             for (eu.europeana.iiif.model.v2.Sequence s : manifest.getSequences()) {
 
-                // we don't want to check for all images if they are a fulltext because that takes too long
-                // instead we check if the edmIsShownBy is a fulltext and if so assume all images are fulltexts
-                // note that the edmIsShownBy has to be a Europeana address!
-                if (s.getCanvases() != null && s.getIsShownBy() != null &&
-                        ValidateUtils.isEuropeanaUrl(s.getIsShownBy()) &&
-                        existsFullText(s.getIsShownBy())) {
-                    // add fulllink to all items
+                // We don't want to check for all images if they have a fulltext because that takes too long
+                // Instead we use only do a fulltext exists check for the canvas returned by findMatchingCanvas()
+                String canvasId = findMatchingCanvas(s.getIsShownBy(), s.getCanvases(), null);
+
+                // do the actual fulltext check
+                String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
+                if (canvasId != null && existsFullText(fullTextUrl)) {
+                    // loop over canvases to add full-text link to all
                     for (eu.europeana.iiif.model.v2.Canvas c : s.getCanvases()) {
-                        String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(),
-                                Integer.toString(c.getPageNr()),
+                        String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()),
                                 fullTextApi);
                         // always 1 value in array
                         FullText[] ft = new FullText[1];
-                        ft[0] = new FullText(fullTextUrl);
+                        ft[0] = new FullText(ftUrl);
                         c.setOtherContent(ft);
                     }
-                } else {
-                    LOG.debug("Skipping fulltext check");
                 }
-
             }
         }
-        return manifest;
+    }
+
+    /**
+     * Find the canvas that has an image with resource id that matches the provided edmIsShownBy.
+     * We do this because the number of this canvas will be used in doing the existsFullText check
+     * Note that we use this method both for v2 and v3 (only 1 at the time)
+     */
+    private String findMatchingCanvas(String edmIsShownBy, eu.europeana.iiif.model.v2.Canvas[] canvasesV2, eu.europeana.iiif.model.v3.Canvas[] canvasesV3) {
+        String result = null;
+        if (StringUtils.isEmpty(edmIsShownBy)) {
+            LOG.trace ("No full-text check because edmIsShownBy is empty");
+            return result;
+        } else if (canvasesV2 == null && canvasesV3 == null) {
+            LOG.trace ("No full-text check because there are no canvases");
+            return result;
+        }
+
+        if (canvasesV2 != null) {
+            for (eu.europeana.iiif.model.v2.Canvas c : canvasesV2) {
+                String canvasImageResourceId = c.getImages()[0].getResource().getId();
+                if (edmIsShownBy.equals(canvasImageResourceId)) {
+                    result = Integer.toString(c.getPageNr());
+                    LOG.trace("Canvas {} matches with edmIsShownBy", result);
+                    break;
+                }
+            }
+        } else {
+            for (eu.europeana.iiif.model.v3.Canvas c : canvasesV3) {
+                String canvasImageResourceId = c.getItems()[0].getItems()[0].getId();
+                if (edmIsShownBy.equals(canvasImageResourceId)) {
+                    result = Integer.toString(c.getPageNr());
+                    LOG.trace("Canvas {} matches with edmIsShownBy", result);
+                    break;
+                }
+            }
+        }
+        if (result == null) {
+            LOG.trace("No full-text check because there was no match with edmIsShownBy");
+        }
+        return result;
     }
 
     /**
      * We generate all full text links in one place, so we can raise a timeout if retrieving the necessary
      * data for all full texts is too slow.
-     * @return manifest with for each canvas an additional annotationpage with full text link provided that full text is
-     * available
      */
-    private ManifestV3 fillInFullTextLinksV3(ManifestV3 manifest, URL fullTextApi) throws IIIFException {
+    private void fillInFullTextLinksV3(ManifestV3 manifest, URL fullTextApi) throws IIIFException {
         if (manifest.getItems() != null) {
             for (eu.europeana.iiif.model.v3.Sequence s : manifest.getItems()) {
 
-                // we don't want to check for all images if they are a fulltext because that takes too long
-                // instead we check if the edmIsShownBy is a fulltext and if so assume all images are fulltexts
-                // note that the edmIsShownBy has to be a Europeana address!
-                if (s.getItems() != null && s.getIsShownBy() != null &&
-                        ValidateUtils.isEuropeanaUrl(s.getIsShownBy()) &&
-                        existsFullText(s.getIsShownBy())) {
-                    // add fulllink to all items
-                    for (eu.europeana.iiif.model.v3.Canvas c : s.getItems()) {
-                        String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(),
-                                Integer.toString(c.getPageNr()),
-                                fullTextApi);
-                        addFullTextAnnotationPageV3(c, fullTextUrl);
-                    }
-                } else {
-                    LOG.debug("Skipping fulltext check");
-                }
+                // We don't want to check for all images if they have a fulltext because that takes too long
+                // Instead we use only do a fulltext exists check for the canvas returned by findMatchingCanvas()
+                String canvasId = findMatchingCanvas(s.getIsShownBy(), null, s.getItems());
 
+                // do the actual fulltext check
+                String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
+                if (canvasId != null && existsFullText(fullTextUrl)) {
+                    // loop over canvases to add full-text link to all
+                    for (eu.europeana.iiif.model.v3.Canvas c : s.getItems()) {
+                        String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()),
+                                fullTextApi);
+                        addFullTextAnnotationPageV3(c, ftUrl);
+                    }
+                }
             }
         }
-        return manifest;
     }
 
     /**
@@ -367,7 +401,7 @@ public class ManifestService {
             aps = Arrays.asList(c.getItems());
         }
         aps.add(new AnnotationPage(fullTextUrl));
-        c.setItems(aps.toArray(new AnnotationPage[aps.size()]));
+        c.setItems(aps.toArray(new AnnotationPage[0]));
     }
 
 
