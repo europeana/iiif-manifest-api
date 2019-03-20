@@ -3,6 +3,7 @@ package eu.europeana.iiif;
 import eu.europeana.iiif.service.ManifestService;
 import eu.europeana.iiif.service.ManifestSettings;
 import eu.europeana.iiif.web.ManifestController;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.support.SpringBootServletInitializer;
@@ -70,6 +71,8 @@ public class ManifestApplication extends SpringBootServletInitializer {
      */
     @SuppressWarnings("squid:S2095") // to avoid sonarqube false positive (see https://stackoverflow.com/a/37073154/741249)
     public static void main(String[] args) {
+        LogManager.getLogger(ManifestApplication.class).info("CF_INSTANCE_INDEX  = {}, CF_INSTANCE_GUID = {}, CF_INSTANCE_IP  = {}",
+                System.getenv("CF_INSTANCE_INDEX"), System.getenv("CF_INSTANCE_GUID"), System.getenv("CF_INSTANCE_IP"));
         SpringApplication.run(ManifestApplication.class, args);
     }
     
