@@ -36,6 +36,7 @@ public class ManifestController {
 
     private static final Logger LOG = LogManager.getLogger(ManifestController.class);
 
+    private static final String ACCEPT_HEADER = "Accept";
     /* for parsing accept headers */
     private static final Pattern acceptProfilePattern = Pattern.compile("profile=\"(.*?)\"");
 
@@ -53,6 +54,7 @@ public class ManifestController {
      * @param wskey        apikey (required field)
      * @param version      (optional) indicates which IIIF version to generate, either '2' or '3'
      * @param recordApi    (optional) alternative recordApi baseUrl to use for retrieving record data
+     * @param addFullText  (optional) perform fulltext exists check or not`1
      * @param fullTextApi  (optional) alternative fullTextApi baseUrl to use for retrieving record data
      * @return JSON-LD string containing manifest
      * @throws IIIFException when something goes wrong during processing
@@ -95,7 +97,7 @@ public class ManifestController {
         String json = manifestService.getRecordJson(id, wskey, recordApi);
         ZonedDateTime lastModified = EdmManifestMapping.getRecordTimestampUpdate(json);
         String           eTag = generateETag(id, lastModified, iiifVersion);
-        HttpHeaders   headers = CacheUtils.generateCacheHeaders("no-cache", eTag, lastModified, "Accept");
+        HttpHeaders   headers = CacheUtils.generateCacheHeaders("no-cache", eTag, lastModified, ACCEPT_HEADER);
         ResponseEntity cached = CacheUtils.checkCached(request, headers, lastModified, eTag);
         if (cached != null) {
             LOG.debug("Returning 304 response");
@@ -115,7 +117,7 @@ public class ManifestController {
 
     private String versionFromAcceptHeader(HttpServletRequest request) {
         String result = "2"; // default version if no accept header is present
-        String accept = request.getHeader("Accept");
+        String accept = request.getHeader(ACCEPT_HEADER);
         if (StringUtils.isNotEmpty(accept)) {
             Matcher m = acceptProfilePattern.matcher(accept);
             if (m.find()) {
@@ -131,7 +133,7 @@ public class ManifestController {
     }
 
     private boolean isAcceptHeaderOK(HttpServletRequest request) {
-        String accept = request.getHeader("Accept");
+        String accept = request.getHeader(ACCEPT_HEADER);
         return (StringUtils.isBlank(accept)) ||
                 (StringUtils.containsIgnoreCase(accept, "*/*")) ||
                 (StringUtils.containsIgnoreCase(accept, "application/json")) ||
@@ -140,7 +142,7 @@ public class ManifestController {
 
     private String generateETag(String recordId, ZonedDateTime recordUpdated, String iiifVersion) {
         StringBuilder hashData = new StringBuilder(recordId);
-        hashData.append(recordUpdated.toString());
+        hashData.append(recordUpdated);
         hashData.append(manifestService.getSettings().getAppVersion());
         hashData.append(iiifVersion);
         return CacheUtils.generateETag(hashData.toString(), true);

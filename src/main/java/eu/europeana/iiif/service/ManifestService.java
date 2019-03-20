@@ -202,6 +202,7 @@ public class ManifestService {
      * Performs a HEAD request for a particular annotation page to see if the full text page exists or not
      * @param fullTextUrl url to which HEAD request is sent
      * @return true if it exists, false if it doesn't exists, null if we got no response
+     * @throws IIIFException when there is an error checking if a fulltext exists
      */
     @HystrixCommand(commandProperties = {
             @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "5000"),
@@ -416,8 +417,7 @@ public class ManifestService {
             return mapper.
                     writerWithDefaultPrettyPrinter().
                     writeValueAsString(m);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RecordParseException("Error serializing data: "+e.getMessage(), e);
         }
     }
