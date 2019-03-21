@@ -24,13 +24,13 @@ public class WebResource extends HashMap<String, Object> {
 
     /**
      * Create new webresource (for testing)
-     * @param id
-     * @param isNextInSequence
+     * @param id String containing this webresource's id
+     * @param isNextInSequence String containing the id of the webresource that's next in sequence
      */
     public WebResource(String id, String isNextInSequence) {
         super();
-        this.put(EDM_ID, id);
-        this.put(EDM_NEXT_IN_SEQUENCE, isNextInSequence);
+        super.put(EDM_ID, id);
+        super.put(EDM_NEXT_IN_SEQUENCE, isNextInSequence);
     }
 
     /**
