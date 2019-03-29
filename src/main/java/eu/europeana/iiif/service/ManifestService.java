@@ -209,9 +209,6 @@ public class ManifestService {
             @HystrixProperty(name = "fallback.enabled", value="true")
     }, fallbackMethod = "fallbackExistsFullText")
     public Boolean existsFullText(String fullTextUrl) throws IIIFException {
-        if (!ValidateUtils.isEuropeanaUrl(fullTextUrl)) {
-            throw new IllegalArgumentException("Provided full-text url (" + fullTextUrl + ") is not a europeana url");
-        }
         Boolean result;
         try {
             try (CloseableHttpResponse response = httpClient.execute(new HttpHead(fullTextUrl))) {
