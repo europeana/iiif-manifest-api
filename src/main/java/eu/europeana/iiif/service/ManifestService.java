@@ -135,10 +135,16 @@ public class ManifestService {
      *
      */
     // TODO only use hysterix for default connection!? Not for custom recordApiUrls?
-    @HystrixCommand(ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class}, commandProperties = {
+    @HystrixCommand(groupKey = "record", commandKey = "record", threadPoolKey = "record",
+                    ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class}, commandProperties = {
             @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "30000"),
-            @HystrixProperty(name = "fallback.enabled", value="false")
-    })
+            @HystrixProperty(name = "fallback.enabled", value="false") },
+            threadPoolProperties = {
+                    @HystrixProperty(name = "coreSize", value = "10"),
+                    @HystrixProperty(name = "maximumSize", value = "120"),
+                    @HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true")
+            }
+    )
     public String getRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
         String result= null;
 
