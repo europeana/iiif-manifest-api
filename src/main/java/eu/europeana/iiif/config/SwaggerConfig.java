@@ -39,6 +39,6 @@ public class SwaggerConfig {
                 null,
                 null,
                 new Contact("APIs team", "www.europeana.eu", "api@europeana.eu"),
-                "EUPL 1.1", "API license URL", Collections.emptyList());
+                "EUPL 1.2", "API license URL", Collections.emptyList());
     }
 }
