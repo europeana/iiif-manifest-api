@@ -31,12 +31,14 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -60,10 +62,17 @@ public class ManifestService {
     private static ObjectMapper mapper = new ObjectMapper();
 
     private ManifestSettings settings;
-    private CloseableHttpClient httpClient = HttpClients.createDefault();
+    private CloseableHttpClient httpClient;
 
     public ManifestService(ManifestSettings settings) {
         this.settings = settings;
+
+        // configure http client
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        cm.setMaxTotal(200);
+        cm.setDefaultMaxPerRoute(100);
+        httpClient = HttpClients.custom().setConnectionManager(cm).build();
+
         // configure jsonpath: we use jsonpath in combination with Jackson because that makes it easier to know what
         // type of objects are returned (see also https://stackoverflow.com/a/40963445)
         com.jayway.jsonpath.Configuration.setDefaults(new com.jayway.jsonpath.Configuration.Defaults() {
@@ -137,11 +146,11 @@ public class ManifestService {
     // TODO only use hysterix for default connection!? Not for custom recordApiUrls?
     @HystrixCommand(groupKey = "record", commandKey = "record", threadPoolKey = "record",
                     ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class}, commandProperties = {
-            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "30000"),
+            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "40000"),
             @HystrixProperty(name = "fallback.enabled", value="false") },
             threadPoolProperties = {
                     @HystrixProperty(name = "coreSize", value = "10"),
-                    @HystrixProperty(name = "maximumSize", value = "120"),
+                    @HystrixProperty(name = "maximumSize", value = "100"),
                     @HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true")
             }
     )
@@ -430,6 +439,14 @@ public class ManifestService {
      */
     public ManifestSettings getSettings() {
         return settings;
+    }
+
+    @PreDestroy
+    public void close() throws IOException {
+        if (this.httpClient != null) {
+            LOG.info("Closing http-client...");
+            this.httpClient.close();
+        }
     }
 
 }
