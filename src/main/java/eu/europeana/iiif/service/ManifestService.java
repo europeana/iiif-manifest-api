@@ -11,13 +11,13 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
+import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.v2.FullText;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.AnnotationPage;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.exception.FullTextCheckException;
 import eu.europeana.iiif.service.exception.IIIFException;
-import eu.europeana.iiif.service.exception.IllegalArgumentException;
 import eu.europeana.iiif.service.exception.InvalidApiKeyException;
 import eu.europeana.iiif.service.exception.RecordNotFoundException;
 import eu.europeana.iiif.service.exception.RecordParseException;
@@ -138,12 +138,14 @@ public class ManifestService {
     @HystrixCommand(groupKey = "record", commandKey = "record", threadPoolKey = "record",
                     ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class}, commandProperties = {
             @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "30000"),
-            @HystrixProperty(name = "fallback.enabled", value="false") },
-            threadPoolProperties = {
-                    @HystrixProperty(name = "coreSize", value = "10"),
-                    @HystrixProperty(name = "maximumSize", value = "120"),
-                    @HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true")
-            }
+            @HystrixProperty(name = "fallback.enabled", value="false") }
+
+            // TODO stress test!
+//          ,  threadPoolProperties = {
+//                    @HystrixProperty(name = "coreSize", value = "10"),
+//                    @HystrixProperty(name = "maximumSize", value = "120"),
+//                    @HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true")
+//            }
     )
     public String getRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
         String result= null;

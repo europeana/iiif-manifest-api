@@ -12,7 +12,7 @@ import eu.europeana.iiif.model.v2.Sequence;
 import eu.europeana.iiif.model.v2.Service;
 import eu.europeana.iiif.service.EdmManifestMapping;
 import eu.europeana.iiif.service.ManifestService;
-import eu.europeana.iiif.service.ManifestSettings;
+import eu.europeana.iiif.config.ManifestSettings;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -5,7 +5,7 @@ import com.netflix.hystrix.exception.HystrixRuntimeException;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.ManifestService;
-import eu.europeana.iiif.service.ManifestSettings;
+import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.service.exception.IIIFException;
 import eu.europeana.iiif.service.exception.InvalidApiKeyException;
 import eu.europeana.iiif.service.exception.RecordNotFoundException;

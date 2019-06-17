@@ -1,7 +1,7 @@
 package eu.europeana.iiif.model.v2;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import eu.europeana.iiif.service.ManifestSettings;
+import eu.europeana.iiif.config.ManifestSettings;
 import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldType;
 
 import java.io.Serializable;

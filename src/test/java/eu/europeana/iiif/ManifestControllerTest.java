@@ -4,7 +4,7 @@ import eu.europeana.iiif.model.Definitions;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.ManifestService;
-import eu.europeana.iiif.service.ManifestSettings;
+import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.web.ManifestController;
 import org.junit.Before;
 import org.junit.Test;
