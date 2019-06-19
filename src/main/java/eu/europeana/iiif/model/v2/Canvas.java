@@ -1,7 +1,6 @@
 package eu.europeana.iiif.model.v2;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import eu.europeana.iiif.config.ManifestSettings;
 import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldType;
 
 import java.io.Serializable;
@@ -26,11 +25,18 @@ public class Canvas extends JsonLdId implements Serializable {
     private Annotation[] images;
     private FullText[] otherContent; // only 1 value is expected (or null)
 
-    public Canvas(ManifestSettings settings, String id, int pageNr) {
+    /**
+     * Create a new canvas object
+     * @param id
+     * @param pageNr
+     * @param height
+     * @param width
+     */
+    public Canvas(String id, int pageNr, Integer height, Integer width) {
         super(id);
         this.pageNr = pageNr;
-        this.height = settings.getCanvasHeight();
-        this.width = settings.getCanvasWidth();
+        this.height = height;
+        this.width = width;
     }
 
     public int getPageNr() {

@@ -18,7 +18,7 @@ public class GlobalExceptionHandler {
     /**
      * Checks if we should log an error and rethrows it
      * @param e
-     * @throws IIIFException
+     * @throws IIIFException rethrown exception
      */
     @ExceptionHandler(IIIFException.class)
     public void handleIiifException(IIIFException e) throws IIIFException {

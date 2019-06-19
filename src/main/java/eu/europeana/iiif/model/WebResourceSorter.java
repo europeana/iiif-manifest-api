@@ -131,7 +131,9 @@ public final class WebResourceSorter {
      * Note that we remove all the webresources we found from the provided maps so we 1) know which ones we already
      * processed later and 2) can check data consistency
      */
-    private static ArrayList<WebResource> getSequence(String startNodeId, Map<String, WebResource> idsWebResources, Map<String, String> idsNextInSequence) throws DataInconsistentException {
+    private static ArrayList<WebResource> getSequence(String startNodeId,
+                                                      Map<String, WebResource> idsWebResources,
+                                                      Map<String, String> idsNextInSequence) throws DataInconsistentException {
         ArrayList<WebResource> result = new ArrayList<>();
         String nodeId = startNodeId;
         do {

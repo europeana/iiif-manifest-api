@@ -11,8 +11,10 @@ public class Annotation extends JsonLdIdType implements Serializable {
     private static final long serialVersionUID = -2420858050000556844L;
 
     private String motivation = "painting";
+    private String timeMode;
     private AnnotationBody body;
     private String target;
+
 
     public Annotation(String id) {
         super(id, "Annotation");
@@ -20,6 +22,14 @@ public class Annotation extends JsonLdIdType implements Serializable {
 
     public String getMotivation() {
         return motivation;
+    }
+
+    public String getTimeMode() {
+        return timeMode;
+    }
+
+    public void setTimeMode(String timeMode) {
+        this.timeMode = timeMode;
     }
 
     public AnnotationBody getBody() {

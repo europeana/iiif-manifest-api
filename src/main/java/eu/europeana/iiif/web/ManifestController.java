@@ -32,6 +32,7 @@ import static eu.europeana.iiif.model.Definitions.MEDIA_TYPE_IIIF_JSONLD_V3;
  * Created on 06-12-2017
  */
 @RestController
+@RequestMapping("/presentation")
 public class ManifestController {
 
     private static final Logger LOG = LogManager.getLogger(ManifestController.class);
@@ -61,7 +62,7 @@ public class ManifestController {
      */
     @SuppressWarnings("squid:S00107") // too many parameters -> we cannot avoid it.
 
-    @GetMapping(value = "/presentation/{collectionId}/{recordId}/manifest")
+    @GetMapping(value = "/{collectionId}/{recordId}/manifest")
     public ResponseEntity<String> manifestRequest(
             @PathVariable String collectionId,
             @PathVariable String recordId,

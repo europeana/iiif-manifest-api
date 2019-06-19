@@ -2,7 +2,6 @@ package eu.europeana.iiif.model.v3;
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -55,7 +54,7 @@ public class LanguageMap extends LinkedHashMap<String, String[]> implements Seri
 
     /* Added put as final because we use it in our constructor and constructors shouldn't call overridable methods, see squid:S1699 */
     @Override
-    public final String[] put(String key, String value[]) {
+    public final String[] put(String key, String[] value) {
         return super.put(key, value);
     }
 

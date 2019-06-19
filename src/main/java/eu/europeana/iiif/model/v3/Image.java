@@ -10,20 +10,8 @@ public class Image extends JsonLdIdType implements Serializable {
 
     private static final long serialVersionUID = 6964375170132552570L;
 
-    private Integer height;
-    private Integer width;
-
-    public Image(String id, Integer height, Integer width) {
+    public Image(String id) {
         super(id, "Image");
-        this.height = height;
-        this.width = width;
     }
 
-    public Integer getHeight() {
-        return height;
-    }
-
-    public Integer getWidth() {
-        return width;
-    }
 }

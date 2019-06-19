@@ -16,12 +16,7 @@ import eu.europeana.iiif.model.v2.FullText;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.AnnotationPage;
 import eu.europeana.iiif.model.v3.ManifestV3;
-import eu.europeana.iiif.service.exception.FullTextCheckException;
-import eu.europeana.iiif.service.exception.IIIFException;
-import eu.europeana.iiif.service.exception.InvalidApiKeyException;
-import eu.europeana.iiif.service.exception.RecordNotFoundException;
-import eu.europeana.iiif.service.exception.RecordParseException;
-import eu.europeana.iiif.service.exception.RecordRetrieveException;
+import eu.europeana.iiif.service.exception.*;
 import ioinformarics.oss.jackson.module.jsonld.JsonldModule;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
@@ -34,16 +29,11 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Service that loads record data, uses that to generate a Manifest object and serializes the manifest in JSON-LD
@@ -125,27 +115,26 @@ public class ManifestService {
      * @param recordId Europeana record id in the form of "/datasetid/recordid" (so with leading slash and without trailing slash)
      * @param wsKey api key to send to record API
      * @param recordApiUrl if not null we will use the provided URL as the address of the Record API instead of the default configured address
-     *f
-     * @return record information in json format
      * @throws IIIFException (
      *      IllegalArgumentException if a parameter has an illegal format,
      *      InvalidApiKeyException if the provide key is not valid,
      *      RecordNotFoundException if there was a 404,
      *      RecordRetrieveException on all other problems)
+     * @return record information in json format     *
      *
      */
     // TODO only use hysterix for default connection!? Not for custom recordApiUrls?
     @HystrixCommand(groupKey = "record", commandKey = "record", threadPoolKey = "record",
                     ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class}, commandProperties = {
-            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "30000"),
-            @HystrixProperty(name = "fallback.enabled", value="false") }
-
-            // TODO stress test!
-//          ,  threadPoolProperties = {
-//                    @HystrixProperty(name = "coreSize", value = "10"),
-//                    @HystrixProperty(name = "maximumSize", value = "120"),
-//                    @HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true")
-//            }
+                @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "30000"),
+                @HystrixProperty(name = "fallback.enabled", value="false"),
+                @HystrixProperty(name = "circuitBreaker.enabled", value="true"),
+                @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value="10") // short-circuit after 10 faulty requests
+            },
+            threadPoolProperties = {
+                    @HystrixProperty(name = "coreSize", value = "3"),
+                    @HystrixProperty(name = "maxQueueSize", value = "-1") // use SynchronousQueue instead of LinkedBlockingQueue
+            }
     )
     public String getRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
         String result= null;
@@ -156,7 +145,9 @@ public class ManifestService {
         } else {
             url = new StringBuilder(recordApiUrl.toString());
         }
-        url.append(settings.getRecordApiPath());
+        if (settings.getRecordApiPath() != null) {
+            url.append(settings.getRecordApiPath());
+        }
         url.append(recordId);
         url.append(".json?wskey=");
         url.append(wsKey);
@@ -311,7 +302,7 @@ public class ManifestService {
 
                 // We don't want to check for all images if they have a fulltext because that takes too long
                 // Instead we use only do a fulltext exists check for the canvas returned by findMatchingCanvas()
-                String canvasId = findMatchingCanvas(s.getIsShownBy(), s.getCanvases(), null);
+                String canvasId = findMatchingCanvas(manifest.getIsShownBy(), s.getCanvases(), null);
 
                 // do the actual fulltext check
                 String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
@@ -347,8 +338,8 @@ public class ManifestService {
 
         if (canvasesV2 != null) {
             for (eu.europeana.iiif.model.v2.Canvas c : canvasesV2) {
-                String canvasImageResourceId = c.getImages()[0].getResource().getId();
-                if (edmIsShownBy.equals(canvasImageResourceId)) {
+                String annotationBodyId = c.getImages()[0].getResource().getId();
+                if (edmIsShownBy.equals(annotationBodyId)) {
                     result = Integer.toString(c.getPageNr());
                     LOG.trace("Canvas {} matches with edmIsShownBy", result);
                     break;
@@ -356,8 +347,8 @@ public class ManifestService {
             }
         } else {
             for (eu.europeana.iiif.model.v3.Canvas c : canvasesV3) {
-                String canvasImageResourceId = c.getItems()[0].getItems()[0].getId();
-                if (edmIsShownBy.equals(canvasImageResourceId)) {
+                String annotationBodyId = c.getItems()[0].getItems()[0].getBody().getId();
+                if (edmIsShownBy.equals(annotationBodyId)) {
                     result = Integer.toString(c.getPageNr());
                     LOG.trace("Canvas {} matches with edmIsShownBy", result);
                     break;
@@ -375,22 +366,21 @@ public class ManifestService {
      * data for all full texts is too slow.
      */
     private void fillInFullTextLinksV3(ManifestV3 manifest, URL fullTextApi) throws IIIFException {
-        if (manifest.getItems() != null) {
-            for (eu.europeana.iiif.model.v3.Sequence s : manifest.getItems()) {
+        eu.europeana.iiif.model.v3.Canvas[] canvases = manifest.getItems();
+        if (canvases != null) {
 
-                // We don't want to check for all images if they have a fulltext because that takes too long
-                // Instead we use only do a fulltext exists check for the canvas returned by findMatchingCanvas()
-                String canvasId = findMatchingCanvas(s.getIsShownBy(), null, s.getItems());
+            // We don't want to check for all images if they have a fulltext because that takes too long
+            // Instead we use only do a fulltext exists check for the canvas returned by findMatchingCanvas()
+            String canvasId = findMatchingCanvas(manifest.getIsShownBy(), null, canvases);
 
-                // do the actual fulltext check
-                String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
-                if (canvasId != null && existsFullText(fullTextUrl)) {
-                    // loop over canvases to add full-text link to all
-                    for (eu.europeana.iiif.model.v3.Canvas c : s.getItems()) {
-                        String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()),
-                                fullTextApi);
-                        addFullTextAnnotationPageV3(c, ftUrl);
-                    }
+            // do the actual fulltext check
+            String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
+            if (canvasId != null && existsFullText(fullTextUrl)) {
+                // loop over canvases to add an extra annotation page
+                for (eu.europeana.iiif.model.v3.Canvas c : canvases) {
+                    String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()),
+                            fullTextApi);
+                    addFullTextAnnotationPageV3(c, ftUrl);
                 }
             }
         }

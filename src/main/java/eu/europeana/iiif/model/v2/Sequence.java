@@ -14,21 +14,12 @@ public class Sequence extends JsonLdId implements Serializable {
 
     private static final long serialVersionUID = -5249256267287170116L;
 
-    @JsonIgnore
-    // we keep track of the isShownBy for internal reasons (it's used to check if fulltexts exists)
-    private String isShownBy;
-
     private String label = "Current Page Order";
     private String startCanvas;
     private Canvas[] canvases;
 
-    public Sequence(String id, String isShownBy) {
+    public Sequence(String id) {
         super(id);
-        this.isShownBy = isShownBy;
-    }
-
-    public String getIsShownBy() {
-        return this.isShownBy;
     }
 
     public String getLabel() {

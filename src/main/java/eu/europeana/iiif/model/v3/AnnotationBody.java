@@ -13,8 +13,8 @@ public class AnnotationBody extends JsonLdIdType implements Serializable {
     private String format;
     private Service service;
 
-    public AnnotationBody(String id) {
-        super(id, "Image");
+    public AnnotationBody(String id, String type) {
+        super(id, type);
     }
 
     public String getFormat() {

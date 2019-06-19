@@ -1,6 +1,5 @@
-package eu.europeana.iiif;
+package eu.europeana.iiif.service;
 
-import eu.europeana.iiif.service.ValidateUtils;
 import eu.europeana.iiif.service.exception.IllegalArgumentException;
 import org.junit.Test;
 

@@ -2,8 +2,8 @@ package eu.europeana.iiif.model.v3;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import eu.europeana.iiif.model.Definitions;
-import eu.europeana.iiif.service.EdmManifestMapping;
 
 import java.io.Serializable;
 
@@ -11,12 +11,10 @@ import java.io.Serializable;
  * @author Patrick Ehlert
  * Created on 24-01-2018
  */
+@JsonPropertyOrder({"context", "id"})
 public class ManifestV3 extends JsonLdIdType implements Serializable {
 
     private static final long serialVersionUID = -4087877560219592406L;
-
-    @JsonIgnore
-    private String europeanaId; // for internal use only
 
     @JsonProperty("@context")
     private String[] context = {"http://www.w3.org/ns/anno.jsonld", "http://iiif.io/api/presentation/3/context.json"};
@@ -30,24 +28,32 @@ public class ManifestV3 extends JsonLdIdType implements Serializable {
     private Rights rights;
     private Image[] logo;
     private DataSet[] seeAlso;
-    private Sequence[] items;
+    private Canvas[] items;
+
+    @JsonIgnore
+    private String europeanaId; // for internal use only
+    @JsonIgnore
+    private String isShownBy;
 
     /**
      * Create a new empty manifest (only id, context and logo ar filled in)
      * @param europeanaId
      * @param manifestId
      */
-    public ManifestV3(String europeanaId, String manifestId) {
+    public ManifestV3(String europeanaId, String manifestId, String isShownBy) {
         super(manifestId, "Manifest");
         this.europeanaId = europeanaId;
-        logo = new Image[1];
-        // TODO set height & width?
-        logo[0] = new Image(Definitions.EUROPEANA_LOGO_URL, null, null);
+        this.isShownBy = isShownBy;
+        logo = new Image[] { new Image(Definitions.EUROPEANA_LOGO_URL) };
     }
 
 
     public String getEuropeanaId() {
         return europeanaId;
+    }
+
+    public String getIsShownBy() {
+        return isShownBy;
     }
 
     public String[] getContext() {
@@ -134,11 +140,11 @@ public class ManifestV3 extends JsonLdIdType implements Serializable {
         this.seeAlso = seeAlso;
     }
 
-    public Sequence[] getItems() {
+    public Canvas[] getItems() {
         return items;
     }
 
-    public void setItems(Sequence[] items) {
+    public void setItems(Canvas[] items) {
         this.items = items;
     }
 }

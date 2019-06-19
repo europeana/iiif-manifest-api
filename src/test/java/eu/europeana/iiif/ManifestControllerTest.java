@@ -6,6 +6,7 @@ import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.ManifestService;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.web.ManifestController;
+import org.apache.logging.log4j.LogManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -62,8 +63,8 @@ public class ManifestControllerTest {
         given(manifestSettings.getAppVersion()).willReturn("v1.0-test");
 
         // mock v2 and v3 manifest responses
-        ManifestV2 manifest2 = new ManifestV2("/1/2", "/1/2");
-        ManifestV3 manifest3 = new ManifestV3("/1/2", "/1/2");
+        ManifestV2 manifest2 = new ManifestV2("/1/2", "/1/2", "https://europeana.eu/test.jpg");
+        ManifestV3 manifest3 = new ManifestV3("/1/2", "/1/2", "https://europeana.eu/test.jpg");
         given(manifestService.getRecordJson("/1/2", "test")).willReturn(JSON_RECORD);
         given(manifestService.getRecordJson("/1/2", "test", null)).willReturn(JSON_RECORD);
         given(manifestService.generateManifestV2(eq(JSON_RECORD), anyBoolean(), any())).willReturn(manifest2);
@@ -96,7 +97,6 @@ public class ManifestControllerTest {
 
     /**
      * Test if we handle accept headers properly
-     * @throws Exception
      */
     @Test
     public void testManifestAcceptHeader() throws Exception {
@@ -132,7 +132,6 @@ public class ManifestControllerTest {
     /**
      * Test if the controller also returns the proper Content-type if the version is passed through the 'format' GET
      * parameter instead of via the Accept Header (fixed in #EA-978_fix+EA-1200-changes)
-     * @throws Exception
      */
     @Test
     public void testContentTypeHeaderWithFormat() throws Exception {
@@ -159,7 +158,6 @@ public class ManifestControllerTest {
 
     /**
      * Check if we get the proper cross origin headers
-     * @throws Exception
      */
     @Test
     public void testManifestCrossOrigin() throws Exception {
@@ -173,7 +171,6 @@ public class ManifestControllerTest {
 
     /**
      * Check if the If-Modified-Since header is handled properly
-     * @throws Exception
      */
     @Test
     public void testManifestIfModifiedSince() throws Exception {
@@ -193,7 +190,6 @@ public class ManifestControllerTest {
 
     /**
      * Check if the If-None-Match header is handled properly
-     * @throws Exception
      */
     @Test
     public void testManifestIfNoneMatch() throws Exception {
@@ -221,7 +217,6 @@ public class ManifestControllerTest {
 
     /**
      * Check if the If-Match header is handled properly
-     * @throws Exception
      */
     @Test
     public void testManifestIfMatch() throws Exception {
@@ -230,7 +225,7 @@ public class ManifestControllerTest {
                     .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\""))
                     .andReturn();
         String eTag = result.getResponse().getHeader("eTag");
-        System.err.println("first eTag = "+eTag);
+        LogManager.getLogger(ManifestController.class).info("First eTag = "+eTag);
 
         // supply the same eTag value, expect HTTP 200
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")

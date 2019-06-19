@@ -1,10 +1,10 @@
-package eu.europeana.iiif;
+package eu.europeana.iiif.service;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
+import eu.europeana.iiif.ExampleData;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.ManifestV3;
-import eu.europeana.iiif.service.ManifestService;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.service.exception.IIIFException;
 import eu.europeana.iiif.service.exception.InvalidApiKeyException;
@@ -83,7 +83,7 @@ public class ManifestServiceTest {
                         .withBody("{\"error\": \"Invalid record identifier\"}")));
 
         // Record API, parent record
-        stubFor(get(urlEqualTo("/api/v2/record" +ExampleData.EXAMPLE_RECORD_PARENT_ID+ ".json?wskey="+EXAMPLE_WSKEY))
+        stubFor(get(urlEqualTo("/api/v2/record" + ExampleData.EXAMPLE_RECORD_PARENT_ID+ ".json?wskey="+EXAMPLE_WSKEY))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json;charset=UTF-8")

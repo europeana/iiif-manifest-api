@@ -24,6 +24,9 @@
 
 		<spring-boot.version>2.1.4.RELEASE</spring-boot.version>
 		<spring-hysterix.version>2.1.1.RELEASE</spring-hysterix.version>
+		<!-- For now we use a snapshot version until there is an official 1.4 release
+		     This is because Metis team made certain classes and methods for us starting june 18th-->
+		<metis.version>1.4.0-20190618.135232-35</metis.version>
 	</properties>
 
 	<dependencyManagement>
@@ -93,6 +96,19 @@
 				<exclusion>
 					<artifactId>slf4j-api</artifactId>
 					<groupId>org.slf4j</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>eu.europeana.metis</groupId>
+			<artifactId>metis-media-service</artifactId>
+            <version>${metis.version}</version>
+			<exclusions>
+				<!-- exclude all other dependencies coming in from metis-media-service -->
+				<exclusion>
+					<groupId>*</groupId>
+					<artifactId>*</artifactId>
 				</exclusion>
 			</exclusions>
 		</dependency>
