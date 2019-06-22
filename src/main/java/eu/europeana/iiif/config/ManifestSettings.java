@@ -38,7 +38,7 @@ public class ManifestSettings {
     private String fullTextApiPath;
 
     @Value("${suppress-parse-exception}")
-    private Boolean suppressParseException = Boolean.FALSE; // default value if we run this outside of Spring
+    private Boolean suppressParseException = Boolean.FALSE; // default value if we run this outside of Spring (i.e. JUnit)
 
     @Value("${canvas.height}")
     private Integer canvasHeight;

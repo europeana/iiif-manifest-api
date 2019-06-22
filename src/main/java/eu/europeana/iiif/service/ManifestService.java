@@ -18,7 +18,7 @@ import eu.europeana.iiif.model.v3.AnnotationPage;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.exception.*;
 import ioinformarics.oss.jackson.module.jsonld.JsonldModule;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -390,11 +390,10 @@ public class ManifestService {
      *  If there is a full text available we have to add a new annotation page with just the full text url as id
      */
     private void addFullTextAnnotationPageV3(eu.europeana.iiif.model.v3.Canvas c, String fullTextUrl) {
-        List<AnnotationPage> aps;
-        if (c.getItems() == null || c.getItems().length == 0) {
-            aps = new ArrayList<>();
-        } else {
-            aps = Arrays.asList(c.getItems());
+        List<AnnotationPage> aps = new ArrayList<>();
+
+        if (c.getItems() != null && c.getItems().length > 0) {
+            aps.addAll(Arrays.asList(c.getItems()));
         }
         aps.add(new AnnotationPage(fullTextUrl));
         c.setItems(aps.toArray(new AnnotationPage[0]));

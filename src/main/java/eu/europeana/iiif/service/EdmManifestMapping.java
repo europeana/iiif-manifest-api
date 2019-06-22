@@ -9,6 +9,7 @@ import eu.europeana.iiif.model.WebResourceSorter;
 import eu.europeana.iiif.model.v2.LanguageObject;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.*;
+import eu.europeana.iiif.model.v3.Collection;
 import eu.europeana.iiif.service.exception.DataInconsistentException;
 import eu.europeana.metis.mediaprocessing.extraction.ResourceType;
 import org.apache.logging.log4j.LogManager;
@@ -21,12 +22,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 /**
  * This class contains all the methods for mapping EDM record data to IIIF Manifest data for both IIIF v2 and v3
@@ -38,8 +34,6 @@ import java.util.Map;
 public final class EdmManifestMapping {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestMapping.class);
-
-    private static final String LANGUAGE_ENGLISH = "@en";
 
     private EdmManifestMapping() {
         // private constructor to prevent initialization
@@ -154,30 +148,37 @@ public final class EdmManifestMapping {
     }
 
     /**
-     *
+     * Return first proxy.dctermsIsPartOf that starts with "http://data.theeuropeanlibrary.org/ that we can find
      * @param jsonDoc parsed json document
      * @return
      */
     static String getWithinV2(Object jsonDoc) {
-        // TODO wait until V2 implementation for 'within' is clear
-        return null;
+        List<String> result = getEuropeanaLibraryCollections(jsonDoc);
+        if (result.isEmpty()) {
+            return null;
+        }
+        return result.get(0);
     }
 
     /**
+     * Create a collection for all proxy.dctermsIsPartOf that start with "http://data.theeuropeanlibrary.org/
      * @param jsonDoc parsed json document
      * @return
      */
     static Collection[] getWithinV3(Object jsonDoc) {
         List<Collection> result = new ArrayList<>();
-        // TODO I think we can incorporate the startsWith into the JsonPath read
-        List<String> collections = JsonPath.parse(jsonDoc).read("$.object.proxies[*].dctermsIsPartOf.def[*]", List.class);
-        for (String collection : collections) {
-            if (collection.toLowerCase(Locale.getDefault()).startsWith("http://data.theeuropeanlibrary.org")
-                    || collection.toLowerCase(Locale.getDefault()).startsWith("https://data.theeuropeanlibrary.org")) {
-                result.add(new Collection(collection));
-            }
+        for (String collection : getEuropeanaLibraryCollections(jsonDoc)) {
+            result.add(new Collection(collection));
+        }
+        if (result.isEmpty()) {
+            return null;
         }
         return result.toArray(new Collection[0]);
+    }
+
+    private static List<String> getEuropeanaLibraryCollections(Object jsonDoc) {
+        return JsonPath.parse(jsonDoc).
+                read("$.object.proxies[*].dctermsIsPartOf.def[?(@ =~ /http(s)?:\\/\\/data.theeuropeanlibrary.org.*/i)]", List.class);
     }
 
     /**
@@ -331,7 +332,7 @@ public final class EdmManifestMapping {
     static void addMetaDataV3(List<eu.europeana.iiif.model.v3.MetaData> metaData, String fieldName, Object jsonDoc, String jsonPath) {
         LanguageMap data = mergeLanguageMaps(JsonPath.parse(jsonDoc).read(jsonPath, LanguageMap[].class));
         if (data != null) {
-            metaData.add(new eu.europeana.iiif.model.v3.MetaData(new LanguageMap(LANGUAGE_ENGLISH, fieldName), data));
+            metaData.add(new eu.europeana.iiif.model.v3.MetaData(new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, fieldName), data));
         }
     }
 
@@ -403,7 +404,6 @@ public final class EdmManifestMapping {
             for (String[] dates : langDates.values()) {
                 // we assume there is only 1 value here
                 String date = (String) getFirstValueArray("navDate", europeanaId, dates);
-                // TODO make EdmDateStringToDate handle more different date strings (see EA-990)
                 navDate = EdmDateUtils.dateStringToDate(date);
                 if (navDate != null) {
                     break;
@@ -446,7 +446,7 @@ public final class EdmManifestMapping {
         if (StringUtils.isEmpty(attribution)) {
             return null;
         }
-        return new LanguageMap(LANGUAGE_ENGLISH, attribution);
+        return new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, attribution);
     }
 
     private static String getAttributionSnippetEdmIsShownBy(String europeanaId, String edmIsShownBy, Object jsonDoc) {
@@ -541,15 +541,15 @@ public final class EdmManifestMapping {
             order++;
         }
 
-        if (!canvases.isEmpty()) {
-            // there should be only 1 sequence, so sequence number is always 1
-            eu.europeana.iiif.model.v2.Sequence[] result = new eu.europeana.iiif.model.v2.Sequence[1];
-            result[0] = new eu.europeana.iiif.model.v2.Sequence(getSequenceId(europeanaId, 1));
-            result[0].setStartCanvas(getCanvasId(europeanaId, 1));
-            result[0].setCanvases(canvases.toArray(new eu.europeana.iiif.model.v2.Canvas[0]));
-            return result;
+        if (canvases.isEmpty()) {
+            return null;
         }
-        return null;
+        // there should be only 1 sequence, so sequence number is always 1
+        eu.europeana.iiif.model.v2.Sequence[] result = new eu.europeana.iiif.model.v2.Sequence[1];
+        result[0] = new eu.europeana.iiif.model.v2.Sequence(getSequenceId(europeanaId, 1));
+        result[0].setStartCanvas(getCanvasId(europeanaId, 1));
+        result[0].setCanvases(canvases.toArray(new eu.europeana.iiif.model.v2.Canvas[0]));
+        return result;
     }
 
     static eu.europeana.iiif.model.v3.Canvas[] getItems(ManifestSettings settings, String europeanaId, String isShownBy, Object jsonDoc) {
@@ -561,6 +561,9 @@ public final class EdmManifestMapping {
         for (WebResource webResource: getSortedWebResources(europeanaId, isShownBy, jsonDoc)) {
             canvases.add(getCanvasV3(settings, europeanaId, order, webResource, services));
             order++;
+        }
+        if (canvases.isEmpty()) {
+            return null;
         }
         return canvases.toArray(new eu.europeana.iiif.model.v3.Canvas[0]);
     }
@@ -663,14 +666,15 @@ public final class EdmManifestMapping {
 
         c.setLabel(new LanguageMap(null, "p. "+order));
 
-        Long durationInMs = (Long) webResource.get("ebucoreDuration");
-        if (durationInMs != null) {
+        String durationText = (String) webResource.get("ebucoreDuration");
+        if (durationText != null) {
+            Long durationInMs = Long.valueOf(durationText);
             c.setDuration(durationInMs / 1000D);
         }
 
         String attributionText = (String) webResource.get("textAttributionSnippet");
         if (!StringUtils.isEmpty(attributionText)){
-            c.setAttribution(new LanguageMap(LANGUAGE_ENGLISH, attributionText));
+            c.setAttribution(new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, attributionText));
         }
 
         LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get("webResourceEdmRights");
@@ -686,7 +690,7 @@ public final class EdmManifestMapping {
         Annotation anno = new Annotation(null);
         annoPage.setItems(new Annotation[] { anno });
         // we use Metis to determine if it's an image, video, audio or text based on mimetype
-        ResourceType resourceType = ResourceType.getResourceType((String) webResource.get("mimeType"));
+        ResourceType resourceType = ResourceType.getResourceType((String) webResource.get("ebuCoreHasMimeType"));
         if (resourceType == ResourceType.AUDIO || resourceType == ResourceType.VIDEO) {
             anno.setTimeMode("trim");
         }
@@ -694,7 +698,7 @@ public final class EdmManifestMapping {
 
         // annotation has 1 annotationBody
         eu.europeana.iiif.model.v3.AnnotationBody annoBody = new AnnotationBody(
-                (String) webResource.get("about"),  StringUtils.capitalize(resourceType.toString()));
+                (String) webResource.get("about"),  StringUtils.capitalize(resourceType.toString().toLowerCase(Locale.GERMANY)));
         anno.setBody(annoBody);
 
         String ebuCoreMimeType = (String) webResource.get("ebuCoreHasMimeType");

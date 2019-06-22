@@ -13,6 +13,8 @@ import java.time.format.DateTimeFormatter;
  */
 public final class EdmDateUtils {
 
+    // TODO make EdmDateStringToDate handle more different date strings (see EA-990)
+
     private static final Logger LOG = LogManager.getLogger(EdmDateUtils.class);
 
     private static final DateTimeFormatter DATE_YEARFIRST = DateTimeFormatter.ofPattern("yyyy-MM-dd");

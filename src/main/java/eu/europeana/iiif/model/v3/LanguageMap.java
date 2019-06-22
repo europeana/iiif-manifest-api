@@ -1,9 +1,7 @@
 package eu.europeana.iiif.model.v3;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Patrick Ehlert
@@ -13,7 +11,8 @@ public class LanguageMap extends LinkedHashMap<String, String[]> implements Seri
 
     private static final long serialVersionUID = -7678917507346373456L;
 
-    private static final String NO_LANGUAGE_KEY = "@none";
+    public static final String NO_LANGUAGE_KEY = "@none";
+    public static final String DEFAULT_METADATA_KEY = "en";
 
     public LanguageMap() {
         super();
@@ -54,8 +53,21 @@ public class LanguageMap extends LinkedHashMap<String, String[]> implements Seri
 
     /* Added put as final because we use it in our constructor and constructors shouldn't call overridable methods, see squid:S1699 */
     @Override
-    public final String[] put(String key, String[] value) {
-        return super.put(key, value);
+    public final String[] put(final String key, final String[] values) {
+        String storeKey = key;
+        // can we use the current language key, or should we set @none?
+        if (storeKey == null || storeKey.isEmpty() || "def".equalsIgnoreCase(storeKey)) {
+            storeKey = NO_LANGUAGE_KEY;
+        }
+        // check if key already exists, if so we have to re-insert the values with the new value(s) added
+        String[] storeValues = values;
+        if (this.containsKey(storeKey)) {
+            List<String> newValues = new ArrayList<>();
+            newValues.addAll(Arrays.asList(this.get(storeKey)));
+            newValues.addAll(Arrays.asList(values));
+            storeValues = newValues.toArray(new String[0]);
+        }
+        return super.put(storeKey, storeValues);
     }
 
     /**
