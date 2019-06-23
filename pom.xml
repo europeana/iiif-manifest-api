@@ -26,7 +26,7 @@
 		<spring-hysterix.version>2.1.1.RELEASE</spring-hysterix.version>
 		<!-- For now we use a snapshot version until there is an official 1.4 release
 		     This is because Metis team made certain classes and methods for us starting june 18th-->
-		<metis.version>1.4.0-20190622.001800-40.jar</metis.version>
+		<metis.version>1.4.0-20190622.001800-40</metis.version>
 	</properties>
 
 	<dependencyManagement>
