@@ -637,7 +637,7 @@ public final class EdmManifestMapping {
 
         // annotation has 1 annotationBody
         eu.europeana.iiif.model.v2.AnnotationBody annoBody = new eu.europeana.iiif.model.v2.AnnotationBody((String) webResource.get("about"));
-        String ebuCoreMimeType = (String) webResource.get("ebuCoreHasMimeType");
+        String ebuCoreMimeType = (String) webResource.get("ebucoreHasMimeType");
         if (!StringUtils.isEmpty(ebuCoreMimeType)) {
             annoBody.setFormat(ebuCoreMimeType);
         }
@@ -690,7 +690,8 @@ public final class EdmManifestMapping {
         Annotation anno = new Annotation(null);
         annoPage.setItems(new Annotation[] { anno });
         // we use Metis to determine if it's an image, video, audio or text based on mimetype
-        ResourceType resourceType = ResourceType.getResourceType((String) webResource.get("ebuCoreHasMimeType"));
+        String ebucoreMimeType = (String) webResource.get("ebucoreHasMimeType");
+        ResourceType resourceType = ResourceType.getResourceType(ebucoreMimeType);
         if (resourceType == ResourceType.AUDIO || resourceType == ResourceType.VIDEO) {
             anno.setTimeMode("trim");
         }
@@ -701,9 +702,8 @@ public final class EdmManifestMapping {
                 (String) webResource.get("about"),  StringUtils.capitalize(resourceType.toString().toLowerCase(Locale.GERMANY)));
         anno.setBody(annoBody);
 
-        String ebuCoreMimeType = (String) webResource.get("ebuCoreHasMimeType");
-        if (!StringUtils.isEmpty(ebuCoreMimeType)) {
-            annoBody.setFormat(ebuCoreMimeType);
+        if (!StringUtils.isEmpty(ebucoreMimeType)) {
+            annoBody.setFormat(ebucoreMimeType);
         }
 
         // body can have a service
