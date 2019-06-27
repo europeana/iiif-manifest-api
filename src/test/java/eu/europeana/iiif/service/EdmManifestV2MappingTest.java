@@ -115,22 +115,35 @@ public class EdmManifestV2MappingTest {
      */
     @Test
     public void testMetaData() {
-        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_METADATA);
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_METADATA_SIMPLE);
         MetaData[] metaData = EdmManifestMapping.getMetaDataV2(document);
         assertNotNull(metaData);
         assertEquals(2, metaData.length);
 
-        assertNotNull(metaData[0]);
-        assertEquals("format", metaData[0].getLabel());
-        assertEquals(1, metaData[0].getValue().length);
-        assertNull(metaData[0].getValue()[0].getLanguage());
-        assertEquals("SomeFormat", metaData[0].getValue()[0].getValue());
+        MetaData meta1 = metaData[0];
+        assertNotNull(meta1);
+        assertEquals("format", meta1.getLabel());
+        assertEquals(1, meta1.getValue().length);
 
-        assertNotNull(metaData[1]);
-        assertEquals("type", metaData[1].getLabel());
-        assertEquals(1, metaData[1].getValue().length);
-        assertEquals("nl", metaData[1].getValue()[0].getLanguage());
-        assertEquals("Precies mijn type", metaData[1].getValue()[0].getValue());
+        LanguageObject meta1Value1 = meta1.getValue()[0];
+        assertNotNull(meta1Value1);
+        assertNull(meta1Value1.getLanguage());
+        assertEquals("SomeFormat", meta1Value1.getValue());
+
+        MetaData meta2 = metaData[1];
+        assertNotNull(meta2);
+        assertEquals("type", meta2.getLabel());
+        assertEquals(2, meta2.getValue().length);
+
+        LanguageObject meta2Value1 = meta2.getValue()[0];
+        assertNotNull(meta2Value1);
+        assertEquals("nl",meta2Value1.getLanguage());
+        assertEquals("Precies mijn type", meta2Value1.getValue());
+
+        LanguageObject meta2Value2 = meta2.getValue()[1];
+        assertNotNull(meta2Value2);
+        assertEquals("en", meta2Value2.getLanguage());
+        assertEquals("Exactly my type as well", meta2Value2.getValue());
     }
 
     /**

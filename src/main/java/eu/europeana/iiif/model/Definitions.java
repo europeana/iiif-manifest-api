@@ -93,6 +93,54 @@ public final class Definitions {
      */
     public static final String EDM_SCHEMA_URL = "http://www.europeana.eu/schemas/edm/";
 
+    /**
+     * Create the IIIF manifest ID
+     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
+     * @return string containing the IIIF manifest ID
+     */
+    public static String getManifestId(String europeanaId) {
+        return Definitions.MANIFEST_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId);
+    }
+
+    /**
+     * Create a sequence ID
+     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
+     * @param order number
+     * @return string containing the sequence ID
+     */
+    public static String getSequenceId(String europeanaId, int order) {
+        return Definitions.SEQUENCE_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId).concat(Integer.toString(order));
+    }
+
+    /**
+     * Create a canvas ID
+     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
+     * @param order number
+     * @return String containing the canvas ID
+     */
+    public static String getCanvasId(String europeanaId, int order) {
+        return Definitions.CANVAS_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId).concat(Integer.toString(order));
+    }
+
+    /**
+     * Create an annotation ID
+     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
+     * @param order number
+     * @return String containing the annotation ID
+     */
+    public static String getAnnotationId(String europeanaId, int order) {
+        return Definitions.ANNOTATION_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId).concat(Integer.toString(order));
+    }
+
+    /**
+     * Create a dataset ID (datasets information are part of the manifest)
+     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
+     * @return string containing the dataset ID consisting of a base url, Europeana ID and postfix (rdf/xml, json or json-ld)
+     */
+    public static String getDatasetId(String europeanaId, String postFix) {
+        return Definitions.DATASET_ID_BASE_URL + europeanaId + postFix;
+    }
+
     private Definitions() {
         // empty constructor to avoid initializationRE
     }

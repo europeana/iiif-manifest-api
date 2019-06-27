@@ -20,7 +20,13 @@ public class EdmManifestData {
     public static final String TEST_DESCRIPTION = "{\"object\": { \"proxies\":[{}, { \"dcDescription\":{\"def\":[\"Description\"]} }, {}] }}";
     public static final String TEST_TITLE_DESCRIPTION = "{\"object\": { \"proxies\":[ {\"dcTitle\":{\"en\":[\"Title\"]} }, { \"dcDescription\":{\"def\":[\"Description\"]} }, {}] }}";
     
-    public static final String TEST_METADATA = "{\"object\": { \"proxies\":[{ \"dcType\":{\"nl\":[\"Precies mijn type\"]}}, { \"dcFormat\":{\"def\":[\"SomeFormat\"]} }, {}] }}";
+    public static final String TEST_METADATA_SIMPLE = "{\"object\": { \"proxies\":[{ \"dcType\":{\"nl\":[\"Precies mijn type\"]}}, { \"dcFormat\":{\"def\":[\"SomeFormat\"]} }, {}," +
+                                                                                  "{ \"dcType\":{\"en\":[\"Exactly my type as well\"]}} ] }}";
+
+    public static final String TEST_METADATA_COMPLICATED = "{\"object\": { \"proxies\":[{ \"dcSource\":{\"def\":[\"http://data.europeana.eu/place/base/203206\"]}}, { \"dcFormat\":{\"en\":[\"SomeFormat\"]} }, {}," +
+                                                                                       "{ \"dcSource\":{\"def\" :[\"May the source be with you\"]}} ], " +
+                                                                          "\"concepts\": [{ \"about\":\"http://data.europeana.eu/place/base/203206\", " +
+                                                                                           "\"prefLabel\":{\"be\":[\"Bierbeek\"], \"bg\": [\"Бийрбек\"], \"zh\":[\"比尔贝克\"] }}]" + "}}";
     
     public static final String TEST_THUMBNAIL_ID = "https://www.europeana.eu/api/v2/thumbnail-by-url.json?uri=test&size=LARGE&type=IMAGE";
     public static final String TEST_THUMBNAIL = "{\"object\": {\"europeanaAggregation\" :{ \"edmPreview\":\""+TEST_THUMBNAIL_ID+"\"}}}";
@@ -38,14 +44,14 @@ public class EdmManifestData {
     
     public static final String TEST_SEQUENCE_2CANVAS_1SERVICE = "{\"object\": { \"aggregations\": [ {\"edmIsShownBy\": \"wr1Id\", \"hasView\": [\"wr2Id\"], \"webResources\": [ "+
             "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\", \"webResourceEdmRights\":"+
-            "{\"def\":[\"wr1License\"]}, \"ebuCoreHasMimeType\": \"video/mp4\", \"svcsHasService\": [\"service1Id\"], \"ebucoreDuration\": \"98765\"  },"+
+            "{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"video/mp4\", \"svcsHasService\": [\"service1Id\"], \"ebucoreDuration\": \"98765\"  },"+
             "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"webResourceEdmRights\":"+
-            "{\"def\":[\"wr2License\"]}, \"ebuCoreHasMimeType\": \"wr2MimeType\" }"+
+            "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"wr2MimeType\" }"+
             "] } ], \"services\": [{\"about\": \"service1Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
     public static final String TEST_SEQUENCE_2CANVAS_NOISSHOWNAT = "{\"object\": { \"aggregations\": [ { \"webResources\": [ "+
             "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\", \"webResourceEdmRights\":"+
-            "{\"def\":[\"wr1License\"]}, \"ebuCoreHasMimeType\": \"wr1MimeType\", \"svcsHasService\": [\"service1Id\"]  },"+
+            "{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"wr1MimeType\", \"svcsHasService\": [\"service1Id\"]  },"+
             "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"webResourceEdmRights\":"+
-            "{\"def\":[\"wr2License\"]}, \"ebuCoreHasMimeType\": \"wr2MimeType\", \"svcsHasService\": [\"service2Id\"]  }"+
+            "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"wr2MimeType\", \"svcsHasService\": [\"service2Id\"]  }"+
             "] } ], \"services\": [{\"about\": \"service1Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
 }

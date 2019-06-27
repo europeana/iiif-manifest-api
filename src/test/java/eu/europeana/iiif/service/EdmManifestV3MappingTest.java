@@ -99,11 +99,11 @@ public class EdmManifestV3MappingTest {
      * Test if we construct a metadata object properly
      */
     @Test
-    public void testMetaData() {
-        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_METADATA);
+    public void testMetaDataSimple() {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_METADATA_SIMPLE);
         MetaData[] metaData = EdmManifestMapping.getMetaDataV3(document);
         assertNotNull(metaData);
-        assertEquals(2, metaData.length);
+        assertEquals(3, metaData.length);
 
         assertNotNull(metaData[0]);
         LanguageMap label1 = metaData[0].getLabel();
@@ -116,6 +116,42 @@ public class EdmManifestV3MappingTest {
         LanguageMap value2 = metaData[1].getValue();
         testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"type"}, label2);
         testLanguageMap("nl", new String[]{"Precies mijn type"}, value2);
+
+        assertNotNull(metaData[2]);
+        LanguageMap label3 = metaData[2].getLabel();
+        LanguageMap value3 = metaData[2].getValue();
+        testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"type"}, label3);
+        testLanguageMap("en", new String[]{"Exactly my type as well"}, value3);
+    }
+
+    @Test
+    public void testMetaDataComplicated() {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_METADATA_COMPLICATED);
+        System.err.println("testdata = "+EdmManifestData.TEST_METADATA_COMPLICATED);
+        MetaData[] metaData = EdmManifestMapping.getMetaDataV3(document);
+        assertNotNull(metaData);
+        assertEquals(3, metaData.length);
+
+        assertNotNull(metaData[0]);
+        LanguageMap label1 = metaData[0].getLabel();
+        LanguageMap value1 = metaData[0].getValue();
+        testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"format"}, label1);
+        testLanguageMap("en", new String[]{"SomeFormat"}, value1);
+
+        assertNotNull(metaData[1]);
+        LanguageMap label2 = metaData[1].getLabel();
+        LanguageMap value2 = metaData[1].getValue();
+        testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"source"}, label2);
+        testLanguageMap(LanguageMap.NO_LANGUAGE_KEY, new String[]{"<a href='URI'>http://data.europeana.eu/place/base/203206</a>"}, value2);
+        testLanguageMap("be", new String[]{"Bierbeek"}, value2);
+        testLanguageMap("bg", new String[]{"Бийрбек"}, value2);
+        testLanguageMap("zh", new String[]{"比尔贝克"}, value2);
+
+        assertNotNull(metaData[2]);
+        LanguageMap label3 = metaData[2].getLabel();
+        LanguageMap value3 = metaData[2].getValue();
+        testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"source"}, label3);
+        testLanguageMap(LanguageMap.NO_LANGUAGE_KEY, new String[]{"May the source be with you"}, value3);
     }
 
     /**

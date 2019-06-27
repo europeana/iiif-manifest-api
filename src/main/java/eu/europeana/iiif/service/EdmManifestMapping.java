@@ -3,13 +3,12 @@ package eu.europeana.iiif.service;
 import com.jayway.jsonpath.JsonPath;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.Definitions;
-import eu.europeana.iiif.model.EdmDateUtils;
 import eu.europeana.iiif.model.WebResource;
 import eu.europeana.iiif.model.WebResourceSorter;
 import eu.europeana.iiif.model.v2.LanguageObject;
 import eu.europeana.iiif.model.v2.ManifestV2;
-import eu.europeana.iiif.model.v3.*;
 import eu.europeana.iiif.model.v3.Collection;
+import eu.europeana.iiif.model.v3.*;
 import eu.europeana.iiif.service.exception.DataInconsistentException;
 import eu.europeana.metis.mediaprocessing.extraction.ResourceType;
 import org.apache.logging.log4j.LogManager;
@@ -48,7 +47,7 @@ public final class EdmManifestMapping {
     public static ManifestV2 getManifestV2(ManifestSettings settings, Object jsonDoc) {
         String europeanaId = getEuropeanaId(jsonDoc);
         String isShownBy = getIsShownBy(europeanaId, jsonDoc);
-        ManifestV2 manifest = new ManifestV2(europeanaId, getManifestId(europeanaId), isShownBy);
+        ManifestV2 manifest = new ManifestV2(europeanaId, Definitions.getManifestId(europeanaId), isShownBy);
         manifest.setWithin(getWithinV2(jsonDoc));
         manifest.setLabel(getLabelsV2(jsonDoc));
         manifest.setDescription(getDescriptionV2(jsonDoc));
@@ -71,7 +70,7 @@ public final class EdmManifestMapping {
     public static ManifestV3 getManifestV3(ManifestSettings settings, Object jsonDoc) {
         String europeanaId = getEuropeanaId(jsonDoc);
         String isShownBy = getIsShownBy(europeanaId, jsonDoc);
-        ManifestV3 manifest = new ManifestV3(europeanaId, getManifestId(europeanaId), isShownBy);
+        ManifestV3 manifest = new ManifestV3(europeanaId, Definitions.getManifestId(europeanaId), isShownBy);
         manifest.setWithin(EdmManifestMapping.getWithinV3(jsonDoc));
         manifest.setLabel(EdmManifestMapping.getLabelsV3(jsonDoc));
         manifest.setDescription(EdmManifestMapping.getDescriptionV3(jsonDoc));
@@ -97,54 +96,6 @@ public final class EdmManifestMapping {
     static String getIsShownBy(String europeanaId, Object jsonDoc) {
         return (String) getFirstValueArray("edmIsShownBy", europeanaId,
                 JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmIsShownBy", String[].class));
-    }
-
-    /**
-     * Create the IIIF manifest ID
-     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
-     * @return string containing the IIIF manifest ID
-     */
-    static String getManifestId(String europeanaId) {
-        return Definitions.MANIFEST_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId);
-    }
-
-    /**
-     * Create a sequence ID
-     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
-     * @param order number
-     * @return string containing the sequence ID
-     */
-    static String getSequenceId(String europeanaId, int order) {
-        return Definitions.SEQUENCE_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId).concat(Integer.toString(order));
-    }
-
-    /**
-     * Create a canvas ID
-     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
-     * @param order number
-     * @return String containing the canvas ID
-     */
-    static String getCanvasId(String europeanaId, int order) {
-        return Definitions.CANVAS_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId).concat(Integer.toString(order));
-    }
-
-    /**
-     * Create an annotation ID
-     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
-     * @param order number
-     * @return String containing the annotation ID
-     */
-    static String getAnnotationId(String europeanaId, int order) {
-        return Definitions.ANNOTATION_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId).concat(Integer.toString(order));
-    }
-
-    /**
-     * Create a dataset ID (datasets information are part of the manifest)
-     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
-     * @return string containing the dataset ID consisting of a base url, Europeana ID and postfix (rdf/xml, json or json-ld)
-     */
-    static String getDatasetId(String europeanaId, String postFix) {
-        return Definitions.DATASET_ID_BASE_URL + europeanaId + postFix;
     }
 
     /**
@@ -191,7 +142,7 @@ public final class EdmManifestMapping {
         if (maps == null || maps.length == 0) {
             maps = JsonPath.parse(jsonDoc).read("$.object.proxies[*].dcDescription", LanguageMap[].class);
         }
-        return mergeLanguageMaps(maps);
+        return LanguageMapUtils.mergeLanguageMaps(maps);
     }
 
     /**
@@ -205,53 +156,7 @@ public final class EdmManifestMapping {
         if (labelsV3 == null) {
             return null;
         }
-        return EdmManifestMapping.langMapsToObjects(labelsV3);
-    }
-
-    /**
-     * This converts a LanguageMap array (v3) to a LanguageObject array (v2).
-     */
-    private static LanguageObject[] langMapsToObjects(LinkedHashMap<String, String[]> map) {
-        if (map == null) {
-            return null;
-        }
-        List<LanguageObject> result = new ArrayList<>();
-            for (Map.Entry<String, String[]> entry : map.entrySet()) {
-                String language = entry.getKey();
-                String[] values = entry.getValue();
-                for (String value: values) {
-                    result.add(new LanguageObject(language, value));
-                }
-            }
-        if (result.isEmpty()) {
-            return null;
-        }
-        return result.toArray(new LanguageObject[0]);
-    }
-
-    /**
-     * This merges an array of languagemaps into a single languagemap. We also check for empty maps and return null if
-     * the provided array is empty
-     */
-    private static LanguageMap mergeLanguageMaps(LanguageMap[] maps) {
-        if (maps == null || maps.length == 0) {
-            return null;
-        } else if (maps.length == 1) {
-            return maps[0];
-        }
-        LanguageMap result = new LanguageMap();
-        for (LanguageMap map : maps) {
-            // we should not have duplicate keys in our data, but we check for that if debug is enabled
-            if (LOG.isDebugEnabled()) {
-                for(String key : map.keySet()) {
-                    if (result.keySet().contains(key)) {
-                        LOG.warn("Duplicate key found when merging language maps: key = {}", key);
-                    }
-                }
-            }
-            result.putAll(map);
-        }
-        return result;
+        return LanguageMapUtils.langMapToObjects(labelsV3);
     }
 
     /**
@@ -261,7 +166,7 @@ public final class EdmManifestMapping {
      */
     static LanguageMap getDescriptionV3(Object jsonDoc) {
         if (JsonPath.parse(jsonDoc).read("$.object.proxies[*].dcTitle", LanguageMap[].class).length > 0) {
-            return mergeLanguageMaps(JsonPath.parse(jsonDoc).read("$.object.proxies[*].dcDescription", LanguageMap[].class));
+            return LanguageMapUtils.mergeLanguageMaps(JsonPath.parse(jsonDoc).read("$.object.proxies[*].dcDescription", LanguageMap[].class));
         }
         return null;
     }
@@ -277,7 +182,7 @@ public final class EdmManifestMapping {
         if (descriptionsV3 == null) {
             return null;
         }
-        return EdmManifestMapping.langMapsToObjects(getDescriptionV3(jsonDoc));
+        return LanguageMapUtils.langMapToObjects(getDescriptionV3(jsonDoc));
     }
 
     /**
@@ -329,18 +234,104 @@ public final class EdmManifestMapping {
         return null;
     }
 
-    static void addMetaDataV3(List<eu.europeana.iiif.model.v3.MetaData> metaData, String fieldName, Object jsonDoc, String jsonPath) {
-        LanguageMap data = mergeLanguageMaps(JsonPath.parse(jsonDoc).read(jsonPath, LanguageMap[].class));
-        if (data != null) {
-            metaData.add(new eu.europeana.iiif.model.v3.MetaData(new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, fieldName), data));
+    private static void addMetaDataV3(List<eu.europeana.iiif.model.v3.MetaData> metaData, String fieldName, Object jsonDoc, String jsonPath) {
+        // We go over all meta data values and check if it's an url or not.
+        // Non-url values are always included as is. If it's an url then we wrap that with an html anchor tag.
+        // Additionally we check if the url is also present in object.timespans, agents, concepts or places. If so we
+        // add the corresponding preflabels (in all available languages) as well.
+
+        LanguageMap[] metaDataValues = JsonPath.parse(jsonDoc).read(jsonPath, LanguageMap[].class);
+
+        for (LanguageMap metaDataValue : metaDataValues) {
+            LanguageMap metaDataLabel = new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, fieldName);
+            LOG.trace("START '{}' value map: {} ", fieldName, metaDataValue);
+
+            List<LanguageMap> extraPrefLabelMaps = new ArrayList<>(); // keep track of extra prefLabels we need to add
+            for (Object k : metaDataValue.keySet()) {
+                String key = (String) k;
+                String[] values = metaDataValue.get(key);
+                LOG.trace("  checking key {} with {} values", key, values.length);
+
+                List<String> newValues = new ArrayList<>(); // recreate all values (because we may change one)
+
+                for (String value : values) {
+                    LOG.trace("  processing value {}", value);
+                    if (isUrl(value)) {
+                        // 1. add html anchor tag to current value
+                        String newValue = "<a href='URI'>" + value + "</a>";
+                        LOG.trace("    isUrl -> newValue = {} ", newValue);
+                        newValues.add(newValue);
+
+                        // 2. check if we should add extra preflabels
+                        LanguageMap extraPrefLabelMap = getTimespanAgentConceptOrPlaceLabels(jsonDoc, value);
+                        if (extraPrefLabelMap != null) {
+                            LOG.trace("    isUrl -> extraLabels = {}", extraPrefLabelMap);
+                            extraPrefLabelMaps.add(extraPrefLabelMap);
+                        }
+                    } else {
+                        // no url, we keep it.
+                        newValues.add(value);
+                    }
+                }
+
+                // replace old values with new ones for the current key
+                LOG.trace("  done checking key = {}, new values = {}", key, newValues);
+                metaDataValue.replace(key, newValues.toArray(new String[0]));
+            }
+            // if there are extra prefLabel maps, we merge all into our metaDataValues map
+            if (!extraPrefLabelMaps.isEmpty()) {
+                // add the original languagemap
+                extraPrefLabelMaps.add(0, metaDataValue);
+                metaDataValue = LanguageMapUtils.mergeLanguageMaps(extraPrefLabelMaps.toArray(new LanguageMap[0]));
+            }
+            LOG.trace("FINISH '{}' value map = {}", fieldName, metaDataValue);
+
+            metaData.add(new eu.europeana.iiif.model.v3.MetaData(metaDataLabel, metaDataValue));
         }
+    }
+
+    /**
+     * Naive check if the provide string is an url
+     * @param s the url to check
+     * @return true if we consider it an url, otherwise false
+     */
+    private static boolean isUrl(String s) {
+        return StringUtils.startsWithIgnoreCase(s, "http://")
+                || StringUtils.startsWithIgnoreCase(s, "https://")
+                || StringUtils.startsWithIgnoreCase(s, "ftp://")
+                || StringUtils.startsWithIgnoreCase(s, "file://");
+    }
+
+    private static LanguageMap getTimespanAgentConceptOrPlaceLabels(Object jsonDoc, String value) {
+        LanguageMap result = getEntityPrefLabels(jsonDoc, "timespans", value);
+        if (result != null) {
+            return result;
+        }
+        result = getEntityPrefLabels(jsonDoc, "agents", value);
+        if (result != null) {
+            return result;
+        }
+        result = getEntityPrefLabels(jsonDoc, "concepts", value);
+        if (result != null) {
+            return result;
+        }
+        return getEntityPrefLabels(jsonDoc, "places", value);
+    }
+
+    private static LanguageMap getEntityPrefLabels(Object jsonDoc, String entityName, String value) {
+        LanguageMap[] labels = JsonPath.parse(jsonDoc).read("$.object[?(@." + entityName + ")]." + entityName +
+                "[?(@.about == '" + value + "')].prefLabel", LanguageMap[].class);
+        if (labels.length > 0) {
+            return labels[0];
+        }
+        return null;
     }
 
     /**
      * We read in metadata as a LanguageMap[], but we need to convert it to Map consisting of labels and List<LanguageObjects>
      * Also if the key is 'def' we should leave that out (for v2)
      */
-    static void addMetaDataV2(Map<String, List<LanguageObject>> metaData, LanguageMap[] dataToAdd, String fieldName) {
+    private static void addMetaDataV2(Map<String, List<LanguageObject>> metaData, LanguageMap[] dataToAdd, String fieldName) {
         for (LanguageMap map : dataToAdd) {
             for (Map.Entry<String, String[]> entry : map.entrySet()) {
                 String language = entry.getKey();
@@ -504,9 +495,9 @@ public final class EdmManifestMapping {
      */
     static eu.europeana.iiif.model.v2.DataSet[] getDataSetsV2(String europeanaId) {
         eu.europeana.iiif.model.v2.DataSet[] result = new eu.europeana.iiif.model.v2.DataSet[3];
-        result[0] = new eu.europeana.iiif.model.v2.DataSet(getDatasetId(europeanaId, ".json-ld"), Definitions.MEDIA_TYPE_JSONLD);
-        result[1] = new eu.europeana.iiif.model.v2.DataSet(getDatasetId(europeanaId, ".json"), MediaType.APPLICATION_JSON_VALUE);
-        result[2] = new eu.europeana.iiif.model.v2.DataSet(getDatasetId(europeanaId, ".rdf"), Definitions.MEDIA_TYPE_RDF);
+        result[0] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".json-ld"), Definitions.MEDIA_TYPE_JSONLD);
+        result[1] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".json"), MediaType.APPLICATION_JSON_VALUE);
+        result[2] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".rdf"), Definitions.MEDIA_TYPE_RDF);
         return result;
     }
 
@@ -517,9 +508,9 @@ public final class EdmManifestMapping {
      */
     static eu.europeana.iiif.model.v3.DataSet[] getDataSetsV3(String europeanaId) {
         eu.europeana.iiif.model.v3.DataSet[] result = new eu.europeana.iiif.model.v3.DataSet[3];
-        result[0] = new eu.europeana.iiif.model.v3.DataSet(getDatasetId(europeanaId, ".json-ld"), Definitions.MEDIA_TYPE_JSONLD);
-        result[1] = new eu.europeana.iiif.model.v3.DataSet(getDatasetId(europeanaId, ".json"), MediaType.APPLICATION_JSON_VALUE);
-        result[2] = new eu.europeana.iiif.model.v3.DataSet(getDatasetId(europeanaId, ".rdf"), Definitions.MEDIA_TYPE_RDF);
+        result[0] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json-ld"), Definitions.MEDIA_TYPE_JSONLD);
+        result[1] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json"), MediaType.APPLICATION_JSON_VALUE);
+        result[2] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".rdf"), Definitions.MEDIA_TYPE_RDF);
         return result;
     }
 
@@ -546,8 +537,8 @@ public final class EdmManifestMapping {
         }
         // there should be only 1 sequence, so sequence number is always 1
         eu.europeana.iiif.model.v2.Sequence[] result = new eu.europeana.iiif.model.v2.Sequence[1];
-        result[0] = new eu.europeana.iiif.model.v2.Sequence(getSequenceId(europeanaId, 1));
-        result[0].setStartCanvas(getCanvasId(europeanaId, 1));
+        result[0] = new eu.europeana.iiif.model.v2.Sequence(Definitions.getSequenceId(europeanaId, 1));
+        result[0].setStartCanvas(Definitions.getCanvasId(europeanaId, 1));
         result[0].setCanvases(canvases.toArray(new eu.europeana.iiif.model.v2.Canvas[0]));
         return result;
     }
@@ -615,8 +606,8 @@ public final class EdmManifestMapping {
                                                                  int order,
                                                                  WebResource webResource,
                                                                  Map<String, Object>[] services) {
-        eu.europeana.iiif.model.v2.Canvas c = new eu.europeana.iiif.model.v2.Canvas(getCanvasId(europeanaId, order), order,
-                settings.getCanvasHeight(), settings.getCanvasWidth());
+        eu.europeana.iiif.model.v2.Canvas c = new eu.europeana.iiif.model.v2.Canvas(Definitions.getCanvasId(europeanaId, order),
+                order, settings.getCanvasHeight(), settings.getCanvasWidth());
 
         c.setLabel("p. "+order);
 
@@ -632,7 +623,7 @@ public final class EdmManifestMapping {
 
         // canvas has 1 annotation (image field)
         c.setImages(new eu.europeana.iiif.model.v2.Annotation[1]);
-        c.getImages()[0] = new eu.europeana.iiif.model.v2.Annotation(getAnnotationId(europeanaId, order));
+        c.getImages()[0] = new eu.europeana.iiif.model.v2.Annotation(Definitions.getAnnotationId(europeanaId, order));
         c.getImages()[0].setOn(c.getId());
 
         // annotation has 1 annotationBody
@@ -661,7 +652,7 @@ public final class EdmManifestMapping {
                                                                  int order,
                                                                  WebResource webResource,
                                                                  Map<String, Object>[] services) {
-        eu.europeana.iiif.model.v3.Canvas c = new eu.europeana.iiif.model.v3.Canvas(getCanvasId(europeanaId, order), order,
+        eu.europeana.iiif.model.v3.Canvas c = new eu.europeana.iiif.model.v3.Canvas(Definitions.getCanvasId(europeanaId, order), order,
                 settings.getCanvasHeight(), settings.getCanvasWidth());
 
         c.setLabel(new LanguageMap(null, "p. "+order));
