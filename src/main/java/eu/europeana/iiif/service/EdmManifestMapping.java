@@ -117,12 +117,13 @@ public final class EdmManifestMapping {
      * @return
      */
     static Collection[] getWithinV3(Object jsonDoc) {
-        List<Collection> result = new ArrayList<>();
-        for (String collection : getEuropeanaLibraryCollections(jsonDoc)) {
-            result.add(new Collection(collection));
-        }
-        if (result.isEmpty()) {
+        List<String> collections = getEuropeanaLibraryCollections(jsonDoc);
+        if (collections.isEmpty()) {
             return null;
+        }
+        List<Collection> result = new ArrayList<>(collections.size());
+        for (String collection : collections) {
+            result.add(new Collection(collection));
         }
         return result.toArray(new Collection[0]);
     }
@@ -200,7 +201,7 @@ public final class EdmManifestMapping {
         addMetaDataV2(data, JsonPath.parse(jsonDoc).read("$.object.proxies[*].dcLanguage", LanguageMap[].class), "language");
         addMetaDataV2(data, JsonPath.parse(jsonDoc).read("$.object.proxies[*].dcSource", LanguageMap[].class), "source");
 
-        List<eu.europeana.iiif.model.v2.MetaData> result = new ArrayList<>();
+        List<eu.europeana.iiif.model.v2.MetaData> result = new ArrayList<>(data.entrySet().size());
         for (Map.Entry<String, List<LanguageObject>> entry : data.entrySet()) {
             String label = entry.getKey();
             List<LanguageObject> values = entry.getValue();
@@ -522,18 +523,18 @@ public final class EdmManifestMapping {
      * @return
      */
     static eu.europeana.iiif.model.v2.Sequence[] getSequencesV2(ManifestSettings settings, String europeanaId, String isShownBy, Object jsonDoc) {
-        Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
-
         // generate canvases in a same order as the web resources
-        int order = 1;
-        List<eu.europeana.iiif.model.v2.Canvas> canvases = new ArrayList<>();
-        for (WebResource webResource: getSortedWebResources(europeanaId, isShownBy, jsonDoc)) {
-            canvases.add(getCanvasV2(settings, europeanaId, order, webResource, services));
-            order++;
+        List<WebResource> sortedResources = getSortedWebResources(europeanaId, isShownBy, jsonDoc);
+        if (sortedResources.isEmpty()) {
+            return null;
         }
 
-        if (canvases.isEmpty()) {
-            return null;
+        int order = 1;
+        Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
+        List<eu.europeana.iiif.model.v2.Canvas> canvases = new ArrayList<>(sortedResources.size());
+        for (WebResource webResource: sortedResources) {
+            canvases.add(getCanvasV2(settings, europeanaId, order, webResource, services));
+            order++;
         }
         // there should be only 1 sequence, so sequence number is always 1
         eu.europeana.iiif.model.v2.Sequence[] result = new eu.europeana.iiif.model.v2.Sequence[1];
@@ -544,17 +545,18 @@ public final class EdmManifestMapping {
     }
 
     static eu.europeana.iiif.model.v3.Canvas[] getItems(ManifestSettings settings, String europeanaId, String isShownBy, Object jsonDoc) {
-        Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
-
         // generate canvases in a same order as the web resources
+        List<WebResource> sortedResources = getSortedWebResources(europeanaId, isShownBy, jsonDoc);
+        if (sortedResources.isEmpty()) {
+            return null;
+        }
+
         int order = 1;
-        List<eu.europeana.iiif.model.v3.Canvas> canvases = new ArrayList<>();
+        Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
+        List<eu.europeana.iiif.model.v3.Canvas> canvases = new ArrayList<>(sortedResources.size());
         for (WebResource webResource: getSortedWebResources(europeanaId, isShownBy, jsonDoc)) {
             canvases.add(getCanvasV3(settings, europeanaId, order, webResource, services));
             order++;
-        }
-        if (canvases.isEmpty()) {
-            return null;
         }
         return canvases.toArray(new eu.europeana.iiif.model.v3.Canvas[0]);
     }

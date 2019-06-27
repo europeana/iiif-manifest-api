@@ -1,4 +1,4 @@
-package eu.europeana.iiif.model;
+package eu.europeana.iiif.service;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,7 +56,7 @@ public final class EdmDateUtils {
     private static LocalDate tryParseFormat(String edmDate, DateTimeFormatter format, boolean logError) {
         try {
             return LocalDate.parse(edmDate, format);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             if (logError) {
                 LOG.error("Error parsing date {} (used formatter = {})", edmDate, format);
             }

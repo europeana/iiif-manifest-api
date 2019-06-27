@@ -2,14 +2,13 @@ package eu.europeana.iiif.config;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -44,9 +43,6 @@ public class ManifestSettings {
     private Integer canvasHeight;
     @Value("${canvas.width}")
     private Integer canvasWidth;
-
-    @Autowired
-    private Environment environment;
 
     /**
      * @return base url from where we should retrieve record json data
@@ -104,13 +100,17 @@ public class ManifestSettings {
      * @return String containing app version, used in the eTag SHA hash generation
      */
     public String getAppVersion() {
-        Properties buildProperties = new Properties();
         InputStream resourceAsStream = this.getClass().getResourceAsStream("/build.properties");
+        if (resourceAsStream == null) {
+            return "no version set";
+        }
         try {
+            Properties buildProperties = new Properties();
             buildProperties.load(resourceAsStream);
-            return environment.getProperty("info.app.version");
-        } catch (Exception e) {
-            return "default";
+            return buildProperties.getProperty("info.app.version");
+        } catch (IOException | RuntimeException e) {
+            LOG.warn("Error reading version from build.properties file", e);
+            return "no version set";
         }
     }
 

@@ -6,8 +6,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import eu.europeana.iiif.model.Definitions;
 import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldType;
 
-import java.io.Serializable;
-
 /**
  * IIIF Manifest version 2 (see also http://iiif.io/api/presentation/2.1/#manifest)
  *
@@ -16,7 +14,7 @@ import java.io.Serializable;
  */
 @JsonPropertyOrder({"id", "context"})
 @JsonldType(value = "sc:Manifest")
-public class ManifestV2 extends JsonLdId implements Serializable {
+public class ManifestV2 extends JsonLdId {
 
     private static final long serialVersionUID = -2645198128531918309L;
 

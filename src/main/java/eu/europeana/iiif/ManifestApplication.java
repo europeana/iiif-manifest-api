@@ -26,7 +26,7 @@ public class ManifestApplication extends SpringBootServletInitializer {
 
     /**
      * Setup CORS for all requests
-     * @return
+     * @return WebMvcConfigurer that exposes CORS headers
      */
     @Bean
     public WebMvcConfigurer corsConfigurer() {
@@ -41,7 +41,7 @@ public class ManifestApplication extends SpringBootServletInitializer {
 
     /**
      * This method is called when starting as a Spring-Boot application (e.g. from your IDE)
-     * @param args
+     * @param args main application paramaters
      */
     @SuppressWarnings("squid:S2095") // to avoid sonarqube false positive (see https://stackoverflow.com/a/37073154/741249)
     public static void main(String[] args) {

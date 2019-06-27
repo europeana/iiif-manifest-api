@@ -52,7 +52,7 @@ public final class LanguageMapUtils {
      */
     public static LanguageObject[] langMapToObjects(LanguageMap map) {
         if (map == null) {
-            return null;
+            return new LanguageObject[0];
         }
         List<LanguageObject> result = new ArrayList<>();
         for (Map.Entry<String, String[]> entry : map.entrySet()) {
@@ -63,7 +63,7 @@ public final class LanguageMapUtils {
             }
         }
         if (result.isEmpty()) {
-            return null;
+            return new LanguageObject[0];
         }
         return result.toArray(new LanguageObject[0]);
     }

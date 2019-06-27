@@ -5,14 +5,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import eu.europeana.iiif.model.Definitions;
 
-import java.io.Serializable;
-
 /**
  * @author Patrick Ehlert
  * Created on 24-01-2018
  */
 @JsonPropertyOrder({"context", "id"})
-public class ManifestV3 extends JsonLdIdType implements Serializable {
+public class ManifestV3 extends JsonLdIdType {
 
     private static final long serialVersionUID = -4087877560219592406L;
 

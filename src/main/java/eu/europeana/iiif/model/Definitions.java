@@ -93,6 +93,11 @@ public final class Definitions {
      */
     public static final String EDM_SCHEMA_URL = "http://www.europeana.eu/schemas/edm/";
 
+
+    private Definitions() {
+        // empty constructor to avoid initializationRE
+    }
+
     /**
      * Create the IIIF manifest ID
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
@@ -139,10 +144,6 @@ public final class Definitions {
      */
     public static String getDatasetId(String europeanaId, String postFix) {
         return Definitions.DATASET_ID_BASE_URL + europeanaId + postFix;
-    }
-
-    private Definitions() {
-        // empty constructor to avoid initializationRE
     }
 
 }

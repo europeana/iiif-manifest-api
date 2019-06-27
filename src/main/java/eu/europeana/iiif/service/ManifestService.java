@@ -14,6 +14,7 @@ import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.v2.FullText;
 import eu.europeana.iiif.model.v2.ManifestV2;
+import eu.europeana.iiif.model.v2.Sequence;
 import eu.europeana.iiif.model.v3.AnnotationPage;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.exception.*;
@@ -297,16 +298,17 @@ public class ManifestService {
      * data for all full texts is too slow.
      */
     private void fillInFullTextLinksV2(ManifestV2 manifest, URL fullTextApi) throws IIIFException {
-        if (manifest.getSequences() != null) {
-            for (eu.europeana.iiif.model.v2.Sequence s : manifest.getSequences()) {
+        if (manifest.getSequences() != null && manifest.getSequences().length > 0) {
+            // there is always only 1 sequence
+            Sequence s = manifest.getSequences()[0];
 
-                // We don't want to check for all images if they have a fulltext because that takes too long
-                // Instead we use only do a fulltext exists check for the canvas returned by findMatchingCanvas()
-                String canvasId = findMatchingCanvas(manifest.getIsShownBy(), s.getCanvases(), null);
-
+            // We don't want to check for all images if they have a fulltext because that takes too long
+            // Instead we use only do a fulltext exists check for the canvas returned by findMatchingCanvas()
+            String canvasId = findMatchingCanvas(manifest.getIsShownBy(), s.getCanvases(), null);
+            if (canvasId != null) {
                 // do the actual fulltext check
                 String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
-                if (canvasId != null && existsFullText(fullTextUrl)) {
+                if (existsFullText(fullTextUrl)) {
                     // loop over canvases to add full-text link to all
                     for (eu.europeana.iiif.model.v2.Canvas c : s.getCanvases()) {
                         String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()),
@@ -324,7 +326,7 @@ public class ManifestService {
     /**
      * Find the canvas that has an image with resource id that matches the provided edmIsShownBy.
      * We do this because the number of this canvas will be used in doing the existsFullText check
-     * Note that we use this method both for v2 and v3 (only 1 at the time)
+     * Note that we use this method both for either v2 and v3 (depending on which is parameter is set)
      */
     private String findMatchingCanvas(String edmIsShownBy, eu.europeana.iiif.model.v2.Canvas[] canvasesV2, eu.europeana.iiif.model.v3.Canvas[] canvasesV3) {
         String result = null;
@@ -372,15 +374,16 @@ public class ManifestService {
             // We don't want to check for all images if they have a fulltext because that takes too long
             // Instead we use only do a fulltext exists check for the canvas returned by findMatchingCanvas()
             String canvasId = findMatchingCanvas(manifest.getIsShownBy(), null, canvases);
-
-            // do the actual fulltext check
-            String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
-            if (canvasId != null && existsFullText(fullTextUrl)) {
-                // loop over canvases to add an extra annotation page
-                for (eu.europeana.iiif.model.v3.Canvas c : canvases) {
-                    String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()),
-                            fullTextApi);
-                    addFullTextAnnotationPageV3(c, ftUrl);
+            if (canvasId != null) {
+                // do the actual fulltext check
+                String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
+                if (existsFullText(fullTextUrl)) {
+                    // loop over canvases to add an extra annotation page
+                    for (eu.europeana.iiif.model.v3.Canvas c : canvases) {
+                        String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()),
+                                fullTextApi);
+                        addFullTextAnnotationPageV3(c, ftUrl);
+                    }
                 }
             }
         }

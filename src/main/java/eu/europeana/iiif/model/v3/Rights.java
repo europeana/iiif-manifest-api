@@ -1,12 +1,10 @@
 package eu.europeana.iiif.model.v3;
 
-import java.io.Serializable;
-
 /**
  * @author Patrick Ehlert
  * Created on 24-01-2018
  */
-public class Rights extends JsonLdIdType implements Serializable {
+public class Rights extends JsonLdIdType {
 
     private static final long serialVersionUID = -3102243950444778135L;
 

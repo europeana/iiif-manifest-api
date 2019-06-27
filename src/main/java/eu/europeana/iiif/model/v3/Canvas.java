@@ -2,13 +2,11 @@ package eu.europeana.iiif.model.v3;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import java.io.Serializable;
-
 /**
  * @author Patrick Ehlert
  * Created on 24-01-2018
  */
-public class Canvas extends JsonLdIdType implements Serializable {
+public class Canvas extends JsonLdIdType {
 
     private static final long serialVersionUID = 3925574023427671991L;
 

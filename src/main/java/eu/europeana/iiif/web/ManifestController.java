@@ -39,7 +39,7 @@ public class ManifestController {
 
     private static final String ACCEPT_HEADER = "Accept";
     /* for parsing accept headers */
-    private static final Pattern acceptProfilePattern = Pattern.compile("profile=\"(.*?)\"");
+    private static final Pattern ACCEPT_PROFILE_PATTERN = Pattern.compile("profile=\"(.*?)\"");
 
     private ManifestService manifestService;
 
@@ -120,7 +120,7 @@ public class ManifestController {
         String result = "2"; // default version if no accept header is present
         String accept = request.getHeader(ACCEPT_HEADER);
         if (StringUtils.isNotEmpty(accept)) {
-            Matcher m = acceptProfilePattern.matcher(accept);
+            Matcher m = ACCEPT_PROFILE_PATTERN.matcher(accept);
             if (m.find()) {
                 String profiles = m.group(1);
                 if (profiles.toLowerCase(Locale.getDefault()).contains(Definitions.MEDIA_TYPE_IIIF_V3)) {
