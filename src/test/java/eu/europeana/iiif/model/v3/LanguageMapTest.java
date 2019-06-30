@@ -1,5 +1,6 @@
 package eu.europeana.iiif.model.v3;
 
+import eu.europeana.iiif.service.LanguageMapUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -37,5 +38,18 @@ public class LanguageMapTest {
         assertEquals(2, l.size());
         assertEquals(1, l.get("en").length);
         assertEquals("({@none=[some test string, yet another test string, third one]}, {en=[are we done now?]})", l.toString());
+    }
+
+    @Test
+    public void mergeLanguageMap() {
+        LanguageMap l1 = new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"A string"});
+        l1.put("duplicateKey", new String[]{"value1", "value2"});
+        LanguageMap l2 = new LanguageMap("ru", new String[]{"Another string"});
+        l2.put("duplicateKey", new String[]{"value3", "value4"});
+
+        LanguageMap merged = LanguageMapUtils.mergeLanguageMaps(new LanguageMap[]{l1, l2});
+        assertEquals(3, merged.size());
+        assertEquals(3, merged.values().size());
+        assertEquals("({en=[A string]}, {duplicateKey=[value1, value2, value3, value4]}, {ru=[Another string]})", merged.toString());
     }
 }

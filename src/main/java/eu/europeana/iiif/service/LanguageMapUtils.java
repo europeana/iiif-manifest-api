@@ -2,8 +2,6 @@ package eu.europeana.iiif.service;
 
 import eu.europeana.iiif.model.v2.LanguageObject;
 import eu.europeana.iiif.model.v3.LanguageMap;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,8 +13,6 @@ import java.util.Map;
  * Created on 27-06-2019
  */
 public final class LanguageMapUtils {
-
-    private static final Logger LOG = LogManager.getLogger(LanguageMapUtils.class);
 
     private LanguageMapUtils() {
         // empty constructor to prevent initialization
@@ -34,21 +30,15 @@ public final class LanguageMapUtils {
         }
         LanguageMap result = new LanguageMap();
         for (LanguageMap map : maps) {
-            // we should not have duplicate keys in our data, but we check for that if debug is enabled
-            if (LOG.isDebugEnabled()) {
-                for(String key : map.keySet()) {
-                    if (result.keySet().contains(key)) {
-                        LOG.warn("Duplicate key found when merging language maps: key = {}", key);
-                    }
-                }
-            }
-            result.putAll(map);
+            result.put(map);
         }
         return result;
     }
 
     /**
      * This converts a LanguageMap array (v3) to a LanguageObject array (v2).
+     * @param map language map to change into language object
+     * @return array of language objects
      */
     public static LanguageObject[] langMapToObjects(LanguageMap map) {
         if (map == null) {

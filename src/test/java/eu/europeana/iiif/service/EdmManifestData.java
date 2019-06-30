@@ -24,9 +24,11 @@ public class EdmManifestData {
                                                                                   "{ \"dcType\":{\"en\":[\"Exactly my type as well\"]}} ] }}";
 
     public static final String TEST_METADATA_COMPLICATED = "{\"object\": { \"proxies\":[{ \"dcSource\":{\"def\":[\"http://data.europeana.eu/place/base/203206\"]}}, { \"dcFormat\":{\"en\":[\"SomeFormat\"]} }, {}," +
-                                                                                       "{ \"dcSource\":{\"def\" :[\"May the source be with you\"]}} ], " +
-                                                                          "\"concepts\": [{ \"about\":\"http://data.europeana.eu/place/base/203206\", " +
-                                                                                           "\"prefLabel\":{\"be\":[\"Bierbeek\"], \"bg\": [\"Бийрбек\"], \"zh\":[\"比尔贝克\"] }}]" + "}}";
+                                                                                       "{ \"dcSource\":{\"def\" :[\"May the source be with you\", \"https://some.url\"]}} ], " +
+                                                                          "\"concepts\":  [{ \"about\":\"http://data.europeana.eu/place/base/203206\", " +
+                                                                                            "\"prefLabel\":{\"be\":[\"Bierbeek\"], \"bg\": [\"Бийрбек\"], \"zh\":[\"比尔贝克\"] }}]," +
+                                                                          "\"timespans\": [{ \"about\":\"https://some.url\", " +
+                                                                                            "\"prefLabel\":{\"en\":[\"Just a test\"] }}]" + "}}";
     
     public static final String TEST_THUMBNAIL_ID = "https://www.europeana.eu/api/v2/thumbnail-by-url.json?uri=test&size=LARGE&type=IMAGE";
     public static final String TEST_THUMBNAIL = "{\"object\": {\"europeanaAggregation\" :{ \"edmPreview\":\""+TEST_THUMBNAIL_ID+"\"}}}";

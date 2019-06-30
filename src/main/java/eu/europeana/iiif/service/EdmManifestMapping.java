@@ -281,6 +281,7 @@ public final class EdmManifestMapping {
             }
             // if there are extra prefLabel maps, we merge all into our metaDataValues map
             if (!extraPrefLabelMaps.isEmpty()) {
+                LOG.trace("  adding extra preflabels = {}", extraPrefLabelMaps);
                 // add the original languagemap
                 extraPrefLabelMaps.add(0, metaDataValue);
                 metaDataValue = LanguageMapUtils.mergeLanguageMaps(extraPrefLabelMaps.toArray(new LanguageMap[0]));

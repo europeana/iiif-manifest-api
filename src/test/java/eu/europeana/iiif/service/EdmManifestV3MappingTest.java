@@ -3,6 +3,8 @@ package eu.europeana.iiif.service;
 import com.jayway.jsonpath.Configuration;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.v3.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,6 +23,8 @@ import static org.junit.Assert.*;
 @TestPropertySource("classpath:iiif-test.properties")
 @SpringBootTest
 public class EdmManifestV3MappingTest {
+
+    private static final Logger LOG = LogManager.getLogger(EdmManifestV3MappingTest.class);
 
     // Initialize the manifest service, because that will setup our default Jackson mapper configuration used in the tests
     private static final ManifestService ms = new ManifestService(new ManifestSettings());
@@ -127,17 +131,19 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testMetaDataComplicated() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_METADATA_COMPLICATED);
-        System.err.println("testdata = "+EdmManifestData.TEST_METADATA_COMPLICATED);
         MetaData[] metaData = EdmManifestMapping.getMetaDataV3(document);
         assertNotNull(metaData);
         assertEquals(3, metaData.length);
 
+        LOG.info("metaData1 = "+metaData[0]);
         assertNotNull(metaData[0]);
         LanguageMap label1 = metaData[0].getLabel();
         LanguageMap value1 = metaData[0].getValue();
         testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"format"}, label1);
         testLanguageMap("en", new String[]{"SomeFormat"}, value1);
+        assertEquals("label: ({en=[format]}) value: ({en=[SomeFormat]})", metaData[0].toString());
 
+        LOG.info("metaData2 = "+metaData[1]);
         assertNotNull(metaData[1]);
         LanguageMap label2 = metaData[1].getLabel();
         LanguageMap value2 = metaData[1].getValue();
@@ -146,12 +152,16 @@ public class EdmManifestV3MappingTest {
         testLanguageMap("be", new String[]{"Bierbeek"}, value2);
         testLanguageMap("bg", new String[]{"Бийрбек"}, value2);
         testLanguageMap("zh", new String[]{"比尔贝克"}, value2);
+        assertEquals("label: ({en=[source]}) value: ({@none=[<a href='URI'>http://data.europeana.eu/place/base/203206</a>]}, {be=[Bierbeek]}, {bg=[Бийрбек]}, {zh=[比尔贝克]})", metaData[1].toString());
 
+        LOG.info("metaData3 = "+metaData[2]);
         assertNotNull(metaData[2]);
         LanguageMap label3 = metaData[2].getLabel();
         LanguageMap value3 = metaData[2].getValue();
         testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"source"}, label3);
-        testLanguageMap(LanguageMap.NO_LANGUAGE_KEY, new String[]{"May the source be with you"}, value3);
+        testLanguageMap(LanguageMap.NO_LANGUAGE_KEY, new String[]{"May the source be with you", "<a href='URI'>https://some.url</a>"}, value3);
+        testLanguageMap("en", new String[]{"Just a test"}, value3);
+        assertEquals("label: ({en=[source]}) value: ({@none=[May the source be with you, <a href='URI'>https://some.url</a>]}, {en=[Just a test]})", metaData[2].toString());
     }
 
     /**
