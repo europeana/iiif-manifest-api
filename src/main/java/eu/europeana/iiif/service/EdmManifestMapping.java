@@ -1,5 +1,6 @@
 package eu.europeana.iiif.service;
 
+import com.jayway.jsonpath.Filter;
 import com.jayway.jsonpath.JsonPath;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.Definitions;
@@ -22,6 +23,9 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+
+import static com.jayway.jsonpath.Criteria.where;
+import static com.jayway.jsonpath.Filter.filter;
 
 /**
  * This class contains all the methods for mapping EDM record data to IIIF Manifest data for both IIIF v2 and v3
@@ -321,8 +325,9 @@ public final class EdmManifestMapping {
     }
 
     private static LanguageMap getEntityPrefLabels(Object jsonDoc, String entityName, String value) {
-        LanguageMap[] labels = JsonPath.parse(jsonDoc).read("$.object[?(@." + entityName + ")]." + entityName +
-                "[?(@.about == '" + value + "')].prefLabel", LanguageMap[].class);
+        Filter aboutFilter = filter(where("about").is(value));
+        LanguageMap[] labels = JsonPath.parse(jsonDoc).
+                read("$.object[?(@." + entityName + ")]." + entityName + "[?].prefLabel", LanguageMap[].class, aboutFilter);
         if (labels.length > 0) {
             return labels[0];
         }
@@ -443,11 +448,12 @@ public final class EdmManifestMapping {
     }
 
     private static String getAttributionSnippetEdmIsShownBy(String europeanaId, String edmIsShownBy, Object jsonDoc) {
+        Filter isShownByFilter = filter(where("about").is(edmIsShownBy));
         String[] attributions = JsonPath.parse(jsonDoc).
-                read("$.object.aggregations[*].webResources[?(@.about == '" + edmIsShownBy + "')].textAttributionSnippet", String[].class);
+                read("$.object.aggregations[*].webResources[?].textAttributionSnippet", String[].class, isShownByFilter);
         return (String) getFirstValueArray("textAttributionSnippet", europeanaId, attributions);
     }
-    
+
     /**
      * Return the first license description we find in any 'aggregation.edmRights' field. Note that we first try the europeanaAggregation and if
      * that doesn't contain an edmRights, we check the other aggregations
