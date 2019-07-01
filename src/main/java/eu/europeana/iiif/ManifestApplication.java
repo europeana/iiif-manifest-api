@@ -19,8 +19,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
  * Created on 6-12-2017
  */
 @SpringBootApplication
-@EnableHystrixDashboard
-@EnableCircuitBreaker
+//@EnableHystrixDashboard
+//@EnableCircuitBreaker
 @PropertySource(value = "classpath:build.properties", ignoreResourceNotFound = true)
 public class ManifestApplication extends SpringBootServletInitializer {
 

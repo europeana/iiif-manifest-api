@@ -27,11 +27,13 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
@@ -51,10 +53,17 @@ public class ManifestService {
     private static ObjectMapper mapper = new ObjectMapper();
 
     private ManifestSettings settings;
-    private CloseableHttpClient httpClient = HttpClients.createDefault();
+    private CloseableHttpClient httpClient;
 
     public ManifestService(ManifestSettings settings) {
         this.settings = settings;
+
+        // configure http client
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        cm.setMaxTotal(200);
+        cm.setDefaultMaxPerRoute(100);
+        httpClient = HttpClients.custom().setConnectionManager(cm).build();
+
         // configure jsonpath: we use jsonpath in combination with Jackson because that makes it easier to know what
         // type of objects are returned (see also https://stackoverflow.com/a/40963445)
         com.jayway.jsonpath.Configuration.setDefaults(new com.jayway.jsonpath.Configuration.Defaults() {
@@ -125,18 +134,19 @@ public class ManifestService {
      *
      */
     // TODO only use hysterix for default connection!? Not for custom recordApiUrls?
-    @HystrixCommand(groupKey = "record", commandKey = "record", threadPoolKey = "record",
-                    ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class}, commandProperties = {
-                @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "30000"),
-                @HystrixProperty(name = "fallback.enabled", value="false"),
-                @HystrixProperty(name = "circuitBreaker.enabled", value="true"),
-                @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value="10") // short-circuit after 10 faulty requests
-            },
-            threadPoolProperties = {
-                    @HystrixProperty(name = "coreSize", value = "3"),
-                    @HystrixProperty(name = "maxQueueSize", value = "-1") // use SynchronousQueue instead of LinkedBlockingQueue
-            }
-    )
+//    @HystrixCommand(groupKey = "record", commandKey = "record", threadPoolKey = "record",
+//                    ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class}, commandProperties = {
+//                @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "30000"),
+//                @HystrixProperty(name = "fallback.enabled", value="false"),
+//                @HystrixProperty(name = "circuitBreaker.enabled", value="true"),
+//                @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value="10") // short-circuit after 10 faulty requests
+//            },
+//            threadPoolProperties = {
+//                    @HystrixProperty(name = "coreSize", value = "3"),
+//                    //@HystrixProperty(name = "maximumSize", value="110"),
+//                    @HystrixProperty(name = "maxQueueSize", value = "-1") // use SynchronousQueue instead of LinkedBlockingQueue
+//            }
+//    )
     public String getRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
         String result= null;
 
@@ -204,10 +214,10 @@ public class ManifestService {
      * @return true if it exists, false if it doesn't exists, null if we got no response
      * @throws IIIFException when there is an error checking if a fulltext exists
      */
-    @HystrixCommand(commandProperties = {
-            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "5000"),
-            @HystrixProperty(name = "fallback.enabled", value="true")
-    }, fallbackMethod = "fallbackExistsFullText")
+//    @HystrixCommand(commandProperties = {
+//            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "5000"),
+//            @HystrixProperty(name = "fallback.enabled", value="true")
+//    }, fallbackMethod = "fallbackExistsFullText")
     public Boolean existsFullText(String fullTextUrl) throws IIIFException {
         Boolean result;
         try {
@@ -230,7 +240,7 @@ public class ManifestService {
         return result;
     }
 
-    @SuppressWarnings({"unused", "squid:S2447"}) // prevent false positive, method is used by hysterix as fallback
+    @SuppressWarnings({"unused", "squid:S2447"}) // method is used by hysterix as fallback
     private Boolean fallbackExistsFullText(String fullTextUrl) {
         return null; // we return null, meaning that we were not able to check if a full text exists or not.
     }
@@ -424,6 +434,14 @@ public class ManifestService {
      */
     public ManifestSettings getSettings() {
         return settings;
+    }
+
+    @PreDestroy
+    public void close() throws IOException {
+        if (this.httpClient != null) {
+            LOG.info("Closing http-client...");
+            this.httpClient.close();
+        }
     }
 
 }
