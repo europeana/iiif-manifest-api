@@ -2,13 +2,11 @@ package eu.europeana.iiif.model.v2;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.io.Serializable;
-
 /**
  * @author Patrick Ehlert
  * Created on 06-02-2018
  */
-public class Service extends JsonLdId implements Serializable {
+public class Service extends JsonLdId {
 
     private static final long serialVersionUID = -7367911509714923855L;
 

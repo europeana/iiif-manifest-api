@@ -1,6 +1,7 @@
 package eu.europeana.iiif.model.v2;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import eu.europeana.iiif.model.v3.LanguageMap;
 
 import java.io.Serializable;
 
@@ -23,8 +24,8 @@ public class LanguageObject implements Serializable {
      * @param value
      */
     public LanguageObject(String language, String value) {
-        // language should empty if no specific language is specified
-        if (!"def".equalsIgnoreCase(language)) {
+        // if no specific language is defined (def or @none), then don't set language at all
+        if (!"def".equalsIgnoreCase(language) && !LanguageMap.NO_LANGUAGE_KEY.equalsIgnoreCase(language)) {
             this.language = language;
         }
         this.value = value;

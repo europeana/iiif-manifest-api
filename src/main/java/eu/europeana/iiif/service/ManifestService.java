@@ -11,19 +11,15 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
+import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.v2.FullText;
 import eu.europeana.iiif.model.v2.ManifestV2;
+import eu.europeana.iiif.model.v2.Sequence;
 import eu.europeana.iiif.model.v3.AnnotationPage;
 import eu.europeana.iiif.model.v3.ManifestV3;
-import eu.europeana.iiif.service.exception.FullTextCheckException;
-import eu.europeana.iiif.service.exception.IIIFException;
-import eu.europeana.iiif.service.exception.IllegalArgumentException;
-import eu.europeana.iiif.service.exception.InvalidApiKeyException;
-import eu.europeana.iiif.service.exception.RecordNotFoundException;
-import eu.europeana.iiif.service.exception.RecordParseException;
-import eu.europeana.iiif.service.exception.RecordRetrieveException;
+import eu.europeana.iiif.service.exception.*;
 import ioinformarics.oss.jackson.module.jsonld.JsonldModule;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -35,17 +31,12 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Service that loads record data, uses that to generate a Manifest object and serializes the manifest in JSON-LD
@@ -134,26 +125,29 @@ public class ManifestService {
      * @param recordId Europeana record id in the form of "/datasetid/recordid" (so with leading slash and without trailing slash)
      * @param wsKey api key to send to record API
      * @param recordApiUrl if not null we will use the provided URL as the address of the Record API instead of the default configured address
-     *f
-     * @return record information in json format
      * @throws IIIFException (
      *      IllegalArgumentException if a parameter has an illegal format,
      *      InvalidApiKeyException if the provide key is not valid,
      *      RecordNotFoundException if there was a 404,
      *      RecordRetrieveException on all other problems)
+     * @return record information in json format     *
      *
      */
     // TODO only use hysterix for default connection!? Not for custom recordApiUrls?
-    @HystrixCommand(groupKey = "record", commandKey = "record", threadPoolKey = "record",
-                    ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class}, commandProperties = {
-            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "40000"),
-            @HystrixProperty(name = "fallback.enabled", value="false") },
-            threadPoolProperties = {
-                    @HystrixProperty(name = "coreSize", value = "10"),
-                    @HystrixProperty(name = "maximumSize", value = "100"),
-                    @HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true")
-            }
-    )
+//    @HystrixCommand(groupKey = "record", commandKey = "record", threadPoolKey = "record",
+//                    ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class}, commandProperties = {
+//                @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "30000"),
+//                @HystrixProperty(name = "fallback.enabled", value="false"),
+//                @HystrixProperty(name = "circuitBreaker.enabled", value="true"),
+//                @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value="10") // short-circuit after 10 faulty requests
+//            },
+//            threadPoolProperties = {
+//                    @HystrixProperty(name = "coreSize", value = "3"),
+//                    //@HystrixProperty(name = "maximumSize", value="110"),
+//                    //@HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true") 
+//                    @HystrixProperty(name = "maxQueueSize", value = "-1") // use SynchronousQueue instead of LinkedBlockingQueue
+//            }
+//    )
     public String getRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
         String result= null;
 
@@ -163,7 +157,9 @@ public class ManifestService {
         } else {
             url = new StringBuilder(recordApiUrl.toString());
         }
-        url.append(settings.getRecordApiPath());
+        if (settings.getRecordApiPath() != null) {
+            url.append(settings.getRecordApiPath());
+        }
         url.append(recordId);
         url.append(".json?wskey=");
         url.append(wsKey);
@@ -219,10 +215,10 @@ public class ManifestService {
      * @return true if it exists, false if it doesn't exists, null if we got no response
      * @throws IIIFException when there is an error checking if a fulltext exists
      */
-    @HystrixCommand(commandProperties = {
-            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "5000"),
-            @HystrixProperty(name = "fallback.enabled", value="true")
-    }, fallbackMethod = "fallbackExistsFullText")
+//    @HystrixCommand(commandProperties = {
+//            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "5000"),
+//            @HystrixProperty(name = "fallback.enabled", value="true")
+//    }, fallbackMethod = "fallbackExistsFullText")
     public Boolean existsFullText(String fullTextUrl) throws IIIFException {
         Boolean result;
         try {
@@ -245,7 +241,7 @@ public class ManifestService {
         return result;
     }
 
-    @SuppressWarnings({"unused", "squid:S2447"}) // prevent false positive, method is used by hysterix as fallback
+    @SuppressWarnings({"unused", "squid:S2447"}) // method is used by hysterix as fallback
     private Boolean fallbackExistsFullText(String fullTextUrl) {
         return null; // we return null, meaning that we were not able to check if a full text exists or not.
     }
@@ -313,16 +309,17 @@ public class ManifestService {
      * data for all full texts is too slow.
      */
     private void fillInFullTextLinksV2(ManifestV2 manifest, URL fullTextApi) throws IIIFException {
-        if (manifest.getSequences() != null) {
-            for (eu.europeana.iiif.model.v2.Sequence s : manifest.getSequences()) {
+        if (manifest.getSequences() != null && manifest.getSequences().length > 0) {
+            // there is always only 1 sequence
+            Sequence s = manifest.getSequences()[0];
 
-                // We don't want to check for all images if they have a fulltext because that takes too long
-                // Instead we use only do a fulltext exists check for the canvas returned by findMatchingCanvas()
-                String canvasId = findMatchingCanvas(s.getIsShownBy(), s.getCanvases(), null);
-
+            // We don't want to check for all images if they have a fulltext because that takes too long
+            // Instead we use only do a fulltext exists check for the canvas returned by findMatchingCanvas()
+            String canvasId = findMatchingCanvas(manifest.getIsShownBy(), s.getCanvases(), null);
+            if (canvasId != null) {
                 // do the actual fulltext check
                 String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
-                if (canvasId != null && existsFullText(fullTextUrl)) {
+                if (existsFullText(fullTextUrl)) {
                     // loop over canvases to add full-text link to all
                     for (eu.europeana.iiif.model.v2.Canvas c : s.getCanvases()) {
                         String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()),
@@ -340,7 +337,7 @@ public class ManifestService {
     /**
      * Find the canvas that has an image with resource id that matches the provided edmIsShownBy.
      * We do this because the number of this canvas will be used in doing the existsFullText check
-     * Note that we use this method both for v2 and v3 (only 1 at the time)
+     * Note that we use this method both for either v2 and v3 (depending on which is parameter is set)
      */
     private String findMatchingCanvas(String edmIsShownBy, eu.europeana.iiif.model.v2.Canvas[] canvasesV2, eu.europeana.iiif.model.v3.Canvas[] canvasesV3) {
         String result = null;
@@ -354,8 +351,8 @@ public class ManifestService {
 
         if (canvasesV2 != null) {
             for (eu.europeana.iiif.model.v2.Canvas c : canvasesV2) {
-                String canvasImageResourceId = c.getImages()[0].getResource().getId();
-                if (edmIsShownBy.equals(canvasImageResourceId)) {
+                String annotationBodyId = c.getImages()[0].getResource().getId();
+                if (edmIsShownBy.equals(annotationBodyId)) {
                     result = Integer.toString(c.getPageNr());
                     LOG.trace("Canvas {} matches with edmIsShownBy", result);
                     break;
@@ -363,8 +360,8 @@ public class ManifestService {
             }
         } else {
             for (eu.europeana.iiif.model.v3.Canvas c : canvasesV3) {
-                String canvasImageResourceId = c.getItems()[0].getItems()[0].getId();
-                if (edmIsShownBy.equals(canvasImageResourceId)) {
+                String annotationBodyId = c.getItems()[0].getItems()[0].getBody().getId();
+                if (edmIsShownBy.equals(annotationBodyId)) {
                     result = Integer.toString(c.getPageNr());
                     LOG.trace("Canvas {} matches with edmIsShownBy", result);
                     break;
@@ -382,18 +379,18 @@ public class ManifestService {
      * data for all full texts is too slow.
      */
     private void fillInFullTextLinksV3(ManifestV3 manifest, URL fullTextApi) throws IIIFException {
-        if (manifest.getItems() != null) {
-            for (eu.europeana.iiif.model.v3.Sequence s : manifest.getItems()) {
+        eu.europeana.iiif.model.v3.Canvas[] canvases = manifest.getItems();
+        if (canvases != null) {
 
-                // We don't want to check for all images if they have a fulltext because that takes too long
-                // Instead we use only do a fulltext exists check for the canvas returned by findMatchingCanvas()
-                String canvasId = findMatchingCanvas(s.getIsShownBy(), null, s.getItems());
-
+            // We don't want to check for all images if they have a fulltext because that takes too long
+            // Instead we use only do a fulltext exists check for the canvas returned by findMatchingCanvas()
+            String canvasId = findMatchingCanvas(manifest.getIsShownBy(), null, canvases);
+            if (canvasId != null) {
                 // do the actual fulltext check
                 String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
-                if (canvasId != null && existsFullText(fullTextUrl)) {
-                    // loop over canvases to add full-text link to all
-                    for (eu.europeana.iiif.model.v3.Canvas c : s.getItems()) {
+                if (existsFullText(fullTextUrl)) {
+                    // loop over canvases to add an extra annotation page
+                    for (eu.europeana.iiif.model.v3.Canvas c : canvases) {
                         String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()),
                                 fullTextApi);
                         addFullTextAnnotationPageV3(c, ftUrl);
@@ -407,11 +404,10 @@ public class ManifestService {
      *  If there is a full text available we have to add a new annotation page with just the full text url as id
      */
     private void addFullTextAnnotationPageV3(eu.europeana.iiif.model.v3.Canvas c, String fullTextUrl) {
-        List<AnnotationPage> aps;
-        if (c.getItems() == null || c.getItems().length == 0) {
-            aps = new ArrayList<>();
-        } else {
-            aps = Arrays.asList(c.getItems());
+        List<AnnotationPage> aps = new ArrayList<>();
+
+        if (c.getItems() != null && c.getItems().length > 0) {
+            aps.addAll(Arrays.asList(c.getItems()));
         }
         aps.add(new AnnotationPage(fullTextUrl));
         c.setItems(aps.toArray(new AnnotationPage[0]));

@@ -4,10 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import eu.europeana.iiif.model.Definitions;
-import eu.europeana.iiif.service.EdmManifestMapping;
 import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldType;
-
-import java.io.Serializable;
 
 /**
  * IIIF Manifest version 2 (see also http://iiif.io/api/presentation/2.1/#manifest)
@@ -17,12 +14,9 @@ import java.io.Serializable;
  */
 @JsonPropertyOrder({"id", "context"})
 @JsonldType(value = "sc:Manifest")
-public class ManifestV2 extends JsonLdId implements Serializable {
+public class ManifestV2 extends JsonLdId {
 
     private static final long serialVersionUID = -2645198128531918309L;
-
-    @JsonIgnore
-    private String europeanaId; // for internal use only
 
     @JsonProperty("@context")
     private String context = "http://iiif.io/api/presentation/2/context.json";
@@ -38,18 +32,28 @@ public class ManifestV2 extends JsonLdId implements Serializable {
     private DataSet[] seeAlso;
     private Sequence[] sequences;
 
+    @JsonIgnore
+    private String europeanaId; // for internal use only
+    @JsonIgnore
+    private String isShownBy;
+
     /**
      * Create a new empty manifest (only id is filled)
      * @param europeanaId
      * @param manifestId
      */
-    public ManifestV2(String europeanaId, String manifestId) {
+    public ManifestV2(String europeanaId, String manifestId, String isShownBy) {
         super(manifestId);
         this.europeanaId = europeanaId;
+        this.isShownBy = isShownBy;
     }
 
     public String getEuropeanaId() {
         return europeanaId;
+    }
+
+    public String getIsShownBy() {
+        return this.isShownBy;
     }
 
     public String getContext() {

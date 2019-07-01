@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -26,10 +27,10 @@ public class WebResourceSorterTest {
     private static final WebResource ISOLATED2 = new WebResource("iso2", null);
 
     /**
-     * @param webResources
+     * @param webResources list of webresources to check
      * @return true if the webresource with wrId1 is found after the webresource with wrId2 in the webResources array
      */
-    public boolean isAfter(List<WebResource> webResources, String wrId1, String wrId2) {
+    private boolean isAfter(List<WebResource> webResources, String wrId1, String wrId2) {
         int pos1 = -1;
         int pos2 = -1;
         for (int i = 0; i < webResources.size() && (pos1 == -1 || pos2 == -1); i++) {
@@ -53,7 +54,7 @@ public class WebResourceSorterTest {
 
     /**
      * Test if we get the expected order for a 'normal' test case
-     * @throws DataInconsistentException
+     * @throws DataInconsistentException when the data is inconsistent
      */
     @Test
     public void sortNormal() throws DataInconsistentException {
@@ -76,27 +77,30 @@ public class WebResourceSorterTest {
 
     /**
      * Check if we can handle a list of webresources that have no sequences properly
-     * @throws DataInconsistentException
+     * @throws DataInconsistentException when the data is inconsistent
      */
     @Test
     public void sortOnlyIsolated() throws DataInconsistentException {
         WebResource[] isolated = new WebResource[]{ ISOLATED1, ISOLATED2};
         List<WebResource> wrs = WebResourceSorter.sort(Arrays.asList(isolated));
+        assertNotNull(wrs);
         // can't test order since it's not defined.
     }
 
     /**
      * Test if we handle an empty list of webresources properly
-     * @throws DataInconsistentException
+     * @throws DataInconsistentException when the data is inconsistent
      */
     @Test
     public void sortEmpty() throws DataInconsistentException {
-        List<WebResource> wrs = WebResourceSorter.sort(Arrays.asList(new WebResource[0]));
+        List<WebResource> emptyList = new ArrayList<>();
+        List<WebResource> wrs = WebResourceSorter.sort(emptyList);
+        assertNotNull(wrs);
     }
 
     /**
      * Test if an error is thrown for data that has infinite loops
-     * @throws DataInconsistentException*
+     * @throws DataInconsistentException when the data is inconsistent
      */
     @Test(expected = DataInconsistentException.class)
     public void sortInfiniteLoopTest() throws DataInconsistentException {
@@ -104,12 +108,12 @@ public class WebResourceSorterTest {
                 new WebResource("1", "2"),
                 new WebResource("2", "3"),
                 new WebResource("3", "1")};
-        List<WebResource> wrs = WebResourceSorter.sort(Arrays.asList(infiniteLoop));
+        WebResourceSorter.sort(Arrays.asList(infiniteLoop));
     }
 
     /**
      * Test if an error is thrown if a nextInSequence webresource doesn't exist
-     * @throws DataInconsistentException
+     * @throws DataInconsistentException when the data is inconsistent
      */
     @Test(expected = DataInconsistentException.class)
     public void sortIncompleteSequence() throws DataInconsistentException {
@@ -117,12 +121,12 @@ public class WebResourceSorterTest {
                 new WebResource("1", "2"),
                 new WebResource("2", "3"),
                 new WebResource("3", "4")};
-        List<WebResource> wrs = WebResourceSorter.sort(Arrays.asList(incomplete));
+        WebResourceSorter.sort(Arrays.asList(incomplete));
     }
 
     /**
      * Test if an error is thrown if there are two intertwined sequences
-     * @throws DataInconsistentException
+     * @throws DataInconsistentException when the data is inconsistent
      */
     @Test(expected = DataInconsistentException.class)
     public void sortIntertwinedSequence() throws DataInconsistentException {
@@ -131,7 +135,7 @@ public class WebResourceSorterTest {
                 new WebResource("2", "3"),
                 new WebResource("5", "4"),
                 new WebResource("4", "3")};
-        List<WebResource> wrs = WebResourceSorter.sort(Arrays.asList(intertwined));
+        WebResourceSorter.sort(Arrays.asList(intertwined));
     }
 
 }
