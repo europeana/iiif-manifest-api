@@ -144,6 +144,7 @@ public class ManifestService {
 //            threadPoolProperties = {
 //                    @HystrixProperty(name = "coreSize", value = "3"),
 //                    //@HystrixProperty(name = "maximumSize", value="110"),
+//                    //@HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true") 
 //                    @HystrixProperty(name = "maxQueueSize", value = "-1") // use SynchronousQueue instead of LinkedBlockingQueue
 //            }
 //    )
