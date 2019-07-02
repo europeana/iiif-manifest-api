@@ -263,7 +263,7 @@ public final class EdmManifestMapping {
                     LOG.trace("  processing value {}", value);
                     if (isUrl(value)) {
                         // 1. add html anchor tag to current value
-                        String newValue = "<a href='URI'>" + value + "</a>";
+                        String newValue = "<a href='" + value + "'>" + value + "</a>";
                         LOG.trace("    isUrl -> newValue = {} ", newValue);
                         newValues.add(newValue);
 
