@@ -148,20 +148,20 @@ public class EdmManifestV3MappingTest {
         LanguageMap label2 = metaData[1].getLabel();
         LanguageMap value2 = metaData[1].getValue();
         testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"source"}, label2);
-        testLanguageMap(LanguageMap.NO_LANGUAGE_KEY, new String[]{"<a href='URI'>http://data.europeana.eu/place/base/203206</a>"}, value2);
+        testLanguageMap(LanguageMap.NO_LANGUAGE_KEY, new String[]{"<a href='http://data.europeana.eu/place/base/203206'>http://data.europeana.eu/place/base/203206</a>"}, value2);
         testLanguageMap("be", new String[]{"Bierbeek"}, value2);
         testLanguageMap("bg", new String[]{"Бийрбек"}, value2);
         testLanguageMap("zh", new String[]{"比尔贝克"}, value2);
-        assertEquals("label: ({en=[source]}) value: ({@none=[<a href='URI'>http://data.europeana.eu/place/base/203206</a>]}, {be=[Bierbeek]}, {bg=[Бийрбек]}, {zh=[比尔贝克]})", metaData[1].toString());
+        assertEquals("label: ({en=[source]}) value: ({@none=[<a href='http://data.europeana.eu/place/base/203206'>http://data.europeana.eu/place/base/203206</a>]}, {be=[Bierbeek]}, {bg=[Бийрбек]}, {zh=[比尔贝克]})", metaData[1].toString());
 
         LOG.info("metaData3 = "+metaData[2]);
         assertNotNull(metaData[2]);
         LanguageMap label3 = metaData[2].getLabel();
         LanguageMap value3 = metaData[2].getValue();
         testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"source"}, label3);
-        testLanguageMap(LanguageMap.NO_LANGUAGE_KEY, new String[]{"May the source be with you", "<a href='URI'>https://some.url</a>"}, value3);
+        testLanguageMap(LanguageMap.NO_LANGUAGE_KEY, new String[]{"May the source be with you", "<a href='https://some.url'>https://some.url</a>"}, value3);
         testLanguageMap("en", new String[]{"Just a test"}, value3);
-        assertEquals("label: ({en=[source]}) value: ({@none=[May the source be with you, <a href='URI'>https://some.url</a>]}, {en=[Just a test]})", metaData[2].toString());
+        assertEquals("label: ({en=[source]}) value: ({@none=[May the source be with you, <a href='https://some.url'>https://some.url</a>]}, {en=[Just a test]})", metaData[2].toString());
     }
 
     /**
