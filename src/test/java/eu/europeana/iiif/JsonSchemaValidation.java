@@ -35,7 +35,10 @@ public class JsonSchemaValidation {
               loadJsonSchema().validate(jsonSubject);
               System.out.println(successResult);
 
-        } catch (ValidationException ex) { }
+        } catch (ValidationException ex) {
+            ex.getAllMessages().stream().peek(e -> validationResult.append("\n")).forEach(validationResult::append);
+            throw new AssertionError(validationResult.toString());
+        }
 
     }
 
