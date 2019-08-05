@@ -11,10 +11,9 @@ import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.Collection;
 import eu.europeana.iiif.model.v3.*;
 import eu.europeana.iiif.service.exception.DataInconsistentException;
-import eu.europeana.metis.mediaprocessing.extraction.ResourceType;
+import eu.europeana.metis.utils.MediaType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 
 import java.sql.Timestamp;
@@ -395,7 +394,7 @@ public final class EdmManifestMapping {
      * @param jsonDoc parsed json document
      * @return date string in xsd:datetime format (i.e. YYYY-MM-DDThh:mm:ssZ)
      */
-   static String getNavDate(String europeanaId, Object jsonDoc) {
+    static String getNavDate(String europeanaId, Object jsonDoc) {
         LocalDate navDate = null;
         LanguageMap[] proxiesLangDates = JsonPath.parse(jsonDoc).read("$.object.proxies[*].dctermsIssued", LanguageMap[].class);
         for (LanguageMap langDates : proxiesLangDates) {
@@ -504,7 +503,7 @@ public final class EdmManifestMapping {
     static eu.europeana.iiif.model.v2.DataSet[] getDataSetsV2(String europeanaId) {
         eu.europeana.iiif.model.v2.DataSet[] result = new eu.europeana.iiif.model.v2.DataSet[3];
         result[0] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".json-ld"), Definitions.MEDIA_TYPE_JSONLD);
-        result[1] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".json"), MediaType.APPLICATION_JSON_VALUE);
+        result[1] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".json"), org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
         result[2] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".rdf"), Definitions.MEDIA_TYPE_RDF);
         return result;
     }
@@ -517,7 +516,7 @@ public final class EdmManifestMapping {
     static eu.europeana.iiif.model.v3.DataSet[] getDataSetsV3(String europeanaId) {
         eu.europeana.iiif.model.v3.DataSet[] result = new eu.europeana.iiif.model.v3.DataSet[3];
         result[0] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json-ld"), Definitions.MEDIA_TYPE_JSONLD);
-        result[1] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json"), MediaType.APPLICATION_JSON_VALUE);
+        result[1] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json"), org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
         result[2] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".rdf"), Definitions.MEDIA_TYPE_RDF);
         return result;
     }
@@ -611,10 +610,10 @@ public final class EdmManifestMapping {
      * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That is done later
      */
     static eu.europeana.iiif.model.v2.Canvas getCanvasV2(ManifestSettings settings,
-                                                                 String europeanaId,
-                                                                 int order,
-                                                                 WebResource webResource,
-                                                                 Map<String, Object>[] services) {
+                                                         String europeanaId,
+                                                         int order,
+                                                         WebResource webResource,
+                                                         Map<String, Object>[] services) {
         eu.europeana.iiif.model.v2.Canvas c = new eu.europeana.iiif.model.v2.Canvas(Definitions.getCanvasId(europeanaId, order),
                 order, settings.getCanvasHeight(), settings.getCanvasWidth());
 
@@ -657,10 +656,10 @@ public final class EdmManifestMapping {
      * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That is done later
      */
     static eu.europeana.iiif.model.v3.Canvas getCanvasV3(ManifestSettings settings,
-                                                                 String europeanaId,
-                                                                 int order,
-                                                                 WebResource webResource,
-                                                                 Map<String, Object>[] services) {
+                                                         String europeanaId,
+                                                         int order,
+                                                         WebResource webResource,
+                                                         Map<String, Object>[] services) {
         eu.europeana.iiif.model.v3.Canvas c = new eu.europeana.iiif.model.v3.Canvas(Definitions.getCanvasId(europeanaId, order), order,
                 settings.getCanvasHeight(), settings.getCanvasWidth());
 
@@ -691,8 +690,8 @@ public final class EdmManifestMapping {
         annoPage.setItems(new Annotation[] { anno });
         // we use Metis to determine if it's an image, video, audio or text based on mimetype
         String ebucoreMimeType = (String) webResource.get("ebucoreHasMimeType");
-        ResourceType resourceType = ResourceType.getResourceType(ebucoreMimeType);
-        if (resourceType == ResourceType.AUDIO || resourceType == ResourceType.VIDEO) {
+        MediaType resourceType = MediaType.getMediaType(ebucoreMimeType);
+        if (resourceType == MediaType.AUDIO || resourceType == MediaType.VIDEO) {
             anno.setTimeMode("trim");
         }
         anno.setTarget(c.getId());
@@ -779,10 +778,10 @@ public final class EdmManifestMapping {
      * @return LocalDateTime object with the record's 'timestamp_update' value (UTC)
      */
     public static ZonedDateTime getRecordTimestampUpdate(String json) {
-       String date = JsonPath.parse(json).read("$.object.timestamp_update", String.class);
-       if (StringUtils.isEmpty(date)) {
-           return null;
-       }
-       return EdmDateUtils.recordTimestampToDateTime(date);
+        String date = JsonPath.parse(json).read("$.object.timestamp_update", String.class);
+        if (StringUtils.isEmpty(date)) {
+            return null;
+        }
+        return EdmDateUtils.recordTimestampToDateTime(date);
     }
 }

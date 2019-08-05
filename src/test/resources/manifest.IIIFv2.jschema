@@ -1,0 +1,149 @@
+{
+    "$schema": "http://www.europeana.eu/schemas/json/iiif#",
+    "title": "IIIF API v2 schema",
+    "oneOf": [
+        { "$ref": "#/definitions/manifest" }
+    ],
+    "definitions": {
+
+        "manifest": {
+            "type": "object",
+            "properties": {
+                "@context"   : { "enum": [ "http://iiif.io/api/presentation/2/context.json" ] },
+                "@id"        : { "type": "string", "format": "uri"       },
+                "@type"      : { "enum": [ "sc:Manifest" ]               },
+                "label"      : { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/langObj"  } },
+                "description": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/langObj"  } },
+                "metadata"   : { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/metadata" } },
+                "thumbnail"  : { "$ref": "#/definitions/image"           },
+                "navDate"    : { "type": "string", "format": "date-time" },
+                "attribution": { "type": "string"                        },
+                "license"    : { "type": "string", "format": "uri"       },
+                "logo"       : { "enum": [ "https://style.europeana.eu/images/europeana-logo-default.png" ] },
+                "seeAlso"    : { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/dataset"  } },
+                "sequences"  : { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/sequence" } },
+                "within"     : { "type": "string", "format": "uri"       }
+             },
+            "required": [ "@context", "@id", "@type", "label", "license", "logo", "seeAlso", "sequences" ],
+            "additionalProperties": false
+        },
+        "sequence": {
+            "type": "object",
+            "properties": {
+                "@id"        : { "type": "string", "format": "uri" },
+                "@type"      : { "enum": [ "sc:Sequence" ]         },
+                "label"      : { "enum": [ "Current Page Order" ]  },
+                "startCanvas": { "type": "string", "format": "uri" },
+                "canvases"   : { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/canvas" } }
+            },
+            "required": [ "@id", "@type", "label", "startCanvas", "canvases" ],
+            "additionalProperties": false
+        },
+        "canvas": {
+            "type": "object",
+            "properties": {
+                "@id"         : { "type": "string", "format": "uri" },
+                "@type"       : { "enum": [ "sc:Canvas" ]           },
+                "label"       : { "type": "string"                  },
+                "height"      : { "type": "integer"                 },
+                "width"       : { "type": "integer"                 },
+                "attribution" : { "type": "string"                  },
+                "license"     : { "type": "string", "format": "uri" },
+                "images"      : { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/page"     } },
+                "otherContent": { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/fulltext" } }
+            },
+            "required": [ "@id", "@type", "label", "height", "width", "images" ],
+            "additionalProperties": false
+        },
+        "page": {
+            "type": "object",
+            "properties": {
+                "@id"         : { "type": "string", "format": "uri" },
+                "@type"       : { "enum": [ "oa:Annotation" ]       },
+                "motivation"  : { "enum": [ "sc:painting" ]         },
+                "resource"    : { "$ref": "#/definitions/body"      },
+                "on"          : { "type": "string", "format": "uri" }
+            },
+            "required": [ "@id", "@type", "motivation", "resource", "on" ],
+            "additionalProperties": false
+        },
+        "body": {
+            "type": "object",
+            "properties": {
+                "@id"         : { "type": "string", "format": "uri" },
+                "@type"       : { "enum": [ "dctypes:Image" ]       },
+                "format"      : { "type": "string"                  },
+                "service"     : { "$ref": "#/definitions/service"   }
+            },
+            "required": [ "@id", "@type" ],
+            "additionalProperties": false
+        },
+        "service": {
+            "type": "object",
+            "properties": {
+                "@context"    : { "enum": [ "http://iiif.io/api/image/2/context.json" ] },
+                "@id"         : { "type": "string", "format": "uri" },
+                "profile"     : { "$ref": "#/definitions/profiles"  }
+            },
+            "required": [ "@context", "@id", "profile" ],
+            "additionalProperties": false
+        },
+        "fulltext": {
+        },
+
+        "metadata": {
+            "type": "object",
+            "properties": {
+                "label"      : { "$ref": "#/definitions/properties" },
+                "value"      : { "type": "array", "minItems": 1, "items": { "$ref": "#/definitions/langObj" } }
+            },
+            "required": [ "label", "value" ],
+            "additionalProperties": false
+        },
+        "image": {
+            "type": "object",
+            "properties": {
+                "@id"         : { "type": "string", "format": "uri" },
+                "@type"       : { "enum": [ "dctypes:Image" ]       },
+                "width"       : { "type": "integer" },
+                "height"      : { "type": "integer" }
+            },
+            "required": [ "@id", "@type" ],
+            "additionalProperties": false
+        },
+        "dataset": {
+            "type": "object",
+            "properties": {
+                "@id"        : { "type": "string", "format": "uri" },
+                "format"     : { "$ref": "#/definitions/mimetypes" },
+                "profile"    : { "enum": [ "http://www.europeana.eu/schemas/edm/" ]  }
+            },
+            "required": [ "@id", "format", "profile" ],
+            "additionalProperties": false
+        },
+
+        "mimetypes": {
+            "enum": [ "application/json", "application/rdf+xml", "application/ld+json" ]
+        },
+        "profiles": {
+            "enum": [ "http://library.stanford.edu/iiif/image-api/1.1/compliance.html#level0"
+                    , "http://library.stanford.edu/iiif/image-api/1.1/compliance.html#level1"
+                    , "http://library.stanford.edu/iiif/image-api/1.1/compliance.html#level2"
+                    , "http://iiif.io/api/image/2/level0.json"
+                    , "http://iiif.io/api/image/2/level1.json"
+                    , "http://iiif.io/api/image/2/level2.json" ]
+        },
+        "properties": {
+            "enum": [ "date", "format", "relation", "type", "language", "source" ]
+        },
+        "langObj": {
+            "type": "object",
+            "properties": {
+                "@language": { "type": "string", "pattern": "^(|[a-z]{2})$" },
+                "@value"   : { "type": "string"                             }
+            },
+            "required": [ "@value" ],
+            "additionalProperties": false
+        }
+    }
+}
