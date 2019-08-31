@@ -10,7 +10,7 @@
 
 	<groupId>eu.europeana.iiif</groupId>
 	<artifactId>manifest-api</artifactId>
-	<version>0.5-alpha</version>
+	<version>0.5-alpha-SNAPSHOT</version>
 	<packaging>war</packaging>
 
 	<name>Europeana IIIF Manifest API</name>
@@ -24,9 +24,7 @@
 
 		<spring-boot.version>2.1.4.RELEASE</spring-boot.version>
 		<spring-hysterix.version>2.1.1.RELEASE</spring-hysterix.version>
-		<!-- For now we use a snapshot version until there is an official 1.4 release
-		     This is because Metis team made certain classes and methods for us starting june 18th-->
-		<metis.version>1.4.0-20190622.001800-40</metis.version>
+		<metis.version>1.4.0</metis.version>
 	</properties>
 
 	<dependencyManagement>
