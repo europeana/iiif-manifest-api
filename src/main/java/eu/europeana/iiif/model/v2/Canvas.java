@@ -37,6 +37,16 @@ public class Canvas extends JsonLdId {
         this.width = width;
     }
 
+    /**
+     * Create a new canvas object
+     * @param id
+     * @param pageNr
+     */
+    public Canvas(String id, int pageNr) {
+        super(id);
+        this.pageNr = pageNr;
+    }
+
     public int getPageNr() {
         return pageNr;
     }
@@ -55,6 +65,14 @@ public class Canvas extends JsonLdId {
 
     public Integer getWidth() {
         return width;
+    }
+
+    public void setHeight(Integer height) {
+        this.height = height;
+    }
+
+    public void setWidth(Integer width) {
+        this.width = width;
     }
 
     public String getAttribution() {

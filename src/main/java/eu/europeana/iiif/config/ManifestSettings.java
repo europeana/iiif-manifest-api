@@ -39,11 +39,6 @@ public class ManifestSettings {
     @Value("${suppress-parse-exception}")
     private Boolean suppressParseException = Boolean.FALSE; // default value if we run this outside of Spring (i.e. JUnit)
 
-    @Value("${canvas.height}")
-    private Integer canvasHeight;
-    @Value("${canvas.width}")
-    private Integer canvasWidth;
-
     /**
      * @return base url from where we should retrieve record json data
      */
@@ -78,20 +73,6 @@ public class ManifestSettings {
      */
     public Boolean getSuppressParseException() {
         return suppressParseException;
-    }
-
-    /**
-     * @return Integer containing canvas height
-     */
-    public Integer getCanvasHeight() {
-        return canvasHeight;
-    }
-
-    /**
-     * @return Integer containing canvas width
-     */
-    public Integer getCanvasWidth() {
-        return canvasWidth;
     }
 
     /**

@@ -265,7 +265,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testSequenceEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getSequencesV2(ms.getSettings(), "test", null, document));
+        assertNull(EdmManifestMapping.getSequencesV2("test", null, document));
     }
 
     /**
@@ -274,7 +274,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testSequenceMissingIsShownAtHasView() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_NOISSHOWNAT);
-        assertNull(EdmManifestMapping.getSequencesV2(ms.getSettings(), "test", null, document));
+        assertNull(EdmManifestMapping.getSequencesV2("test", null, document));
     }
 
     /**
@@ -284,7 +284,7 @@ public class EdmManifestV2MappingTest {
     public void testSequence() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_1SERVICE);
         String edmIsShownBy = EdmManifestMapping.getIsShownBy(null, document);
-        Sequence[] sequence = EdmManifestMapping.getSequencesV2(ms.getSettings(), "/test-id", edmIsShownBy, document);
+        Sequence[] sequence = EdmManifestMapping.getSequencesV2("/test-id", edmIsShownBy, document);
         assertNotNull(sequence);
         assertEquals(1, sequence.length); // there should always be only 1 sequence
         assertTrue(sequence[0].getId().endsWith("/test-id" + "/sequence/s1"));
