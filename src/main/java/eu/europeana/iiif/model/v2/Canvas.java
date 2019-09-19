@@ -21,7 +21,7 @@ public class Canvas extends JsonLdId {
     private String attribution;
     private String license;
     private Annotation[] images;
-    private FullText[] otherContent; // only 1 value is expected (or null)
+    private String [] otherContent;  // only 1 value is expected (or null)
 
     /**
      * Create a new canvas object
@@ -81,11 +81,11 @@ public class Canvas extends JsonLdId {
         this.images = images;
     }
 
-    public FullText[] getOtherContent() {
+    public String[] getOtherContent() {
         return otherContent;
     }
 
-    public void setOtherContent(FullText[] otherContent) {
+    public void setOtherContent(String[] otherContent) {
         this.otherContent = otherContent;
     }
 }
