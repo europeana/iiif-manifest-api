@@ -83,7 +83,7 @@ public class ManifestService {
 
             @Override
             public Set<Option> options() {
-                if (settings.getSuppressParseException()) {
+                if (Boolean.TRUE.equals(settings.getSuppressParseException())) {
                     // we want to be fault tolerant in production, but for testing we may want to disable this option
                     return EnumSet.of(Option.SUPPRESS_EXCEPTIONS);
                 } else {
@@ -257,7 +257,7 @@ public class ManifestService {
     public ManifestV2 generateManifestV2 (String json, boolean addFullText, URL fullTextApi)    {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        ManifestV2 result = EdmManifestMapping.getManifestV2(settings, document);
+        ManifestV2 result = EdmManifestMapping.getManifestV2(document);
 
         if (addFullText) {
             try {
@@ -286,7 +286,7 @@ public class ManifestService {
     public ManifestV3 generateManifestV3 (String json, boolean addFullText, URL fullTextApi)  {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        ManifestV3 result = EdmManifestMapping.getManifestV3(settings, document);
+        ManifestV3 result = EdmManifestMapping.getManifestV3(document);
 
         if (addFullText) {
             try {
@@ -319,7 +319,7 @@ public class ManifestService {
             if (canvasId != null) {
                 // do the actual fulltext check
                 String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
-                if (existsFullText(fullTextUrl)) {
+                if (Boolean.TRUE.equals(existsFullText(fullTextUrl))) {
                     // loop over canvases to add full-text link to all
                     for (eu.europeana.iiif.model.v2.Canvas c : s.getCanvases()) {
                         String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()),
@@ -388,7 +388,7 @@ public class ManifestService {
             if (canvasId != null) {
                 // do the actual fulltext check
                 String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
-                if (existsFullText(fullTextUrl)) {
+                if (Boolean.TRUE.equals(existsFullText(fullTextUrl))) {
                     // loop over canvases to add an extra annotation page
                     for (eu.europeana.iiif.model.v3.Canvas c : canvases) {
                         String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()),
