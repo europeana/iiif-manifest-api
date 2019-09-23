@@ -663,7 +663,7 @@ public final class EdmManifestMapping {
     }
 
     /**
-     * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That is done later
+     * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That's done later.
      */
     private static eu.europeana.iiif.model.v3.Canvas getCanvasV3(String europeanaId, int order, WebResource webResource, Map<String, Object>[] services) {
         eu.europeana.iiif.model.v3.Canvas c =
