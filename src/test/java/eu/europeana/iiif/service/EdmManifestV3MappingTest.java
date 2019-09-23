@@ -266,7 +266,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testCanvasEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getItems(ms.getSettings(), "test", null, document));
+        assertNull(EdmManifestMapping.getItems("test", null, document));
     }
 
     /**
@@ -275,7 +275,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testCanvasMissingIsShownAtHasView() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_NOISSHOWNAT);
-        assertNull(EdmManifestMapping.getItems(ms.getSettings(), "test", null, document));
+        assertNull(EdmManifestMapping.getItems("test", null, document));
     }
 
     /**
@@ -285,7 +285,7 @@ public class EdmManifestV3MappingTest {
     public void testCanvases() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_1SERVICE);
         String edmIsShownBy = EdmManifestMapping.getIsShownBy(null, document);
-        Canvas[] canvases = EdmManifestMapping.getItems(ms.getSettings(), "/test-id", edmIsShownBy, document);
+        Canvas[] canvases = EdmManifestMapping.getItems("/test-id", edmIsShownBy, document);
         assertNotNull(canvases);
         assertEquals(2, canvases.length);
 

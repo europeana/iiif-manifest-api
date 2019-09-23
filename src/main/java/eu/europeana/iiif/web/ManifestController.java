@@ -142,11 +142,8 @@ public class ManifestController {
     }
 
     private String generateETag(String recordId, ZonedDateTime recordUpdated, String iiifVersion) {
-        StringBuilder hashData = new StringBuilder(recordId);
-        hashData.append(recordUpdated);
-        hashData.append(manifestService.getSettings().getAppVersion());
-        hashData.append(iiifVersion);
-        return CacheUtils.generateETag(hashData.toString(), true);
+        String hashData = recordId + recordUpdated + manifestService.getSettings().getAppVersion() + iiifVersion;
+        return CacheUtils.generateETag(hashData, true);
     }
 
 }

@@ -260,7 +260,7 @@ public class ManifestService {
     public ManifestV2 generateManifestV2 (String json, boolean addFullText, URL fullTextApi)    {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        ManifestV2 result = EdmManifestMapping.getManifestV2(settings, document);
+        ManifestV2 result = EdmManifestMapping.getManifestV2(document);
 
         if (addFullText) {
             try {
@@ -289,7 +289,7 @@ public class ManifestService {
     public ManifestV3 generateManifestV3 (String json, boolean addFullText, URL fullTextApi)  {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        ManifestV3 result = EdmManifestMapping.getManifestV3(settings, document);
+        ManifestV3 result = EdmManifestMapping.getManifestV3(document);
 
         if (addFullText) {
             try {
