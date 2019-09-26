@@ -621,12 +621,14 @@ public final class EdmManifestMapping {
 
         c.setLabel("p. "+order);
 
-        if (safeToCast(webResource, EBUCOREHEIGHT)){
-            c.setHeight( (Integer) webResource.get(EBUCOREHEIGHT));
+        Object obj = webResource.get(EBUCOREHEIGHT);
+        if (obj instanceof Integer){
+            c.setHeight((Integer) obj);
         }
 
-        if (safeToCast(webResource, EBUCOREWIDTH)){
-            c.setWidth( (Integer) webResource.get(EBUCOREWIDTH));
+        obj = webResource.get(EBUCOREWIDTH);
+        if (obj instanceof Integer){
+            c.setWidth((Integer) obj);
         }
 
         String attributionText = (String) webResource.get(TEXTATTRIBSNIPPET);
@@ -671,12 +673,14 @@ public final class EdmManifestMapping {
 
         c.setLabel(new LanguageMap(null, "p. "+order));
 
-        if (safeToCast(webResource, EBUCOREHEIGHT)){
-            c.setHeight( (Integer) webResource.get(EBUCOREHEIGHT));
+        Object obj = webResource.get(EBUCOREHEIGHT);
+        if (obj instanceof Integer){
+            c.setHeight((Integer) obj);
         }
 
-        if (safeToCast(webResource, EBUCOREWIDTH)){
-            c.setWidth( (Integer) webResource.get(EBUCOREWIDTH));
+        obj = webResource.get(EBUCOREWIDTH);
+        if (obj instanceof Integer){
+            c.setWidth((Integer) obj);
         }
 
         String durationText = (String) webResource.get("ebucoreDuration");
@@ -797,18 +801,5 @@ public final class EdmManifestMapping {
            return null;
        }
        return EdmDateUtils.recordTimestampToDateTime(date);
-    }
-
-
-    /**
-     * TODO make this generic to deal with other potential casting errors
-     * this method checks for both the primitive int and object Integer types that can safely be cast to Integer
-     */
-    private static boolean safeToCast(WebResource wr, String field){
-        if (wr.get(field) != null){
-            Class<?> klaff = wr.get(field).getClass();
-            return Integer.class.equals(klaff) || int.class.equals(klaff);
-        }
-        return false;
     }
 }

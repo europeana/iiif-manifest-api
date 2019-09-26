@@ -231,7 +231,7 @@ public class ManifestService {
                 } else {
                     // TODO when hysterix is enabled again, we can simply throw an error again
                     //throw new FullTextCheckException("Error checking if full text exists: "+response.getStatusLine().getReasonPhrase());
-                    LOG.error(String.format("Error checking if full text exists: %s", response.getStatusLine().getReasonPhrase()));
+                    LOG.error("Error checking if full text exists: {}", response.getStatusLine().getReasonPhrase());
                     result = null;
                 }
             }
@@ -429,7 +429,7 @@ public class ManifestService {
                     writerWithDefaultPrettyPrinter().
                     writeValueAsString(m);
         } catch (IOException e) {
-            throw new RecordParseException("Error serializing data: "+e.getMessage(), e);
+            throw new RecordParseException(String.format("Error serializing data: %s", e.getMessage()), e);
         }
     }
 
