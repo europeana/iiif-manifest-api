@@ -9,10 +9,7 @@ import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
-import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
-import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import eu.europeana.iiif.config.ManifestSettings;
-import eu.europeana.iiif.model.v2.FullText;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v2.Sequence;
 import eu.europeana.iiif.model.v3.AnnotationPage;
@@ -197,7 +194,7 @@ public class ManifestService {
      * Generates a url to a full text resource
      * @param fullTextApiUrl optional, if not specified then the default Full-Text API specified in .properties is used
      */
-    public String generateFullTextUrl(String europeanaId, String pageId, URL fullTextApiUrl) {
+    String generateFullTextUrl(String europeanaId, String pageId, URL fullTextApiUrl) {
         StringBuilder url;
         if (fullTextApiUrl == null) {
             url = new StringBuilder(settings.getFullTextApiBaseUrl());
@@ -219,7 +216,7 @@ public class ManifestService {
 //            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "5000"),
 //            @HystrixProperty(name = "fallback.enabled", value="true")
 //    }, fallbackMethod = "fallbackExistsFullText")
-    public Boolean existsFullText(String fullTextUrl) throws IIIFException {
+    Boolean existsFullText(String fullTextUrl) throws IIIFException {
         Boolean result;
         try {
             try (CloseableHttpResponse response = httpClient.execute(new HttpHead(fullTextUrl))) {
@@ -232,11 +229,17 @@ public class ManifestService {
                 } else if (responseCode == HttpStatus.SC_OK) {
                     result = Boolean.TRUE;
                 } else {
-                    throw new FullTextCheckException("Error checking if full text exists: "+response.getStatusLine().getReasonPhrase());
+                    // TODO when hysterix is enabled again, we can simply throw an error again
+                    //throw new FullTextCheckException("Error checking if full text exists: "+response.getStatusLine().getReasonPhrase());
+                    LOG.error("Error checking if full text exists: {}", response.getStatusLine().getReasonPhrase());
+                    result = null;
                 }
             }
         } catch (IOException e) {
-            throw new FullTextCheckException("Error checking if full text exists", e);
+            // TODO when hysterix is enabled again, we can simply throw an error again
+            //throw new FullTextCheckException("Error checking if full text exists", e);
+            LOG.error("Error checking if full text exists", e);
+            result = null;
         }
         return result;
     }
@@ -325,8 +328,8 @@ public class ManifestService {
                         String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()),
                                 fullTextApi);
                         // always 1 value in array
-                        FullText[] ft = new FullText[1];
-                        ft[0] = new FullText(ftUrl);
+                        String[] ft = new String[1];
+                        ft[0] = ftUrl;
                         c.setOtherContent(ft);
                     }
                 }
@@ -426,7 +429,7 @@ public class ManifestService {
                     writerWithDefaultPrettyPrinter().
                     writeValueAsString(m);
         } catch (IOException e) {
-            throw new RecordParseException("Error serializing data: "+e.getMessage(), e);
+            throw new RecordParseException(String.format("Error serializing data: %s", e.getMessage()), e);
         }
     }
 

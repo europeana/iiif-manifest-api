@@ -38,6 +38,8 @@ public final class EdmManifestMapping {
     private static final Logger LOG = LogManager.getLogger(EdmManifestMapping.class);
     private static final String ABOUT = "about";
     private static final String TEXTATTRIBSNIPPET = "textAttributionSnippet";
+    private static final String EBUCOREHEIGHT = "ebucoreHeight";
+    private static final String EBUCOREWIDTH = "ebucoreWidth";
 
     private EdmManifestMapping() {
         // private constructor to prevent initialization
@@ -618,14 +620,14 @@ public final class EdmManifestMapping {
 
         c.setLabel("p. "+order);
 
-        Integer canvasHeight = (Integer) webResource.get("ebucoreHeight");
-        if (canvasHeight != null){
-            c.setHeight(canvasHeight);
+        Object obj = webResource.get(EBUCOREHEIGHT);
+        if (obj instanceof Integer){
+            c.setHeight((Integer) obj);
         }
 
-        Integer canvasWidth = (Integer) webResource.get("ebucoreWidth");
-        if (canvasWidth != null){
-            c.setWidth(canvasWidth);
+        obj = webResource.get(EBUCOREWIDTH);
+        if (obj instanceof Integer){
+            c.setWidth((Integer) obj);
         }
 
         String attributionText = (String) webResource.get(TEXTATTRIBSNIPPET);
@@ -662,7 +664,7 @@ public final class EdmManifestMapping {
     }
 
     /**
-     * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That is done later
+     * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That's done later.
      */
     private static eu.europeana.iiif.model.v3.Canvas getCanvasV3(String europeanaId, int order, WebResource webResource, Map<String, Object>[] services) {
         eu.europeana.iiif.model.v3.Canvas c =
@@ -670,14 +672,14 @@ public final class EdmManifestMapping {
 
         c.setLabel(new LanguageMap(null, "p. "+order));
 
-        Integer canvasHeight = (Integer) webResource.get("ebucoreHeight");
-        if (canvasHeight != null){
-            c.setHeight(canvasHeight);
+        Object obj = webResource.get(EBUCOREHEIGHT);
+        if (obj instanceof Integer){
+            c.setHeight((Integer) obj);
         }
 
-        Integer canvasWidth = (Integer) webResource.get("ebucoreWidth");
-        if (canvasWidth != null){
-            c.setWidth(canvasWidth);
+        obj = webResource.get(EBUCOREWIDTH);
+        if (obj instanceof Integer){
+            c.setWidth((Integer) obj);
         }
 
         String durationText = (String) webResource.get("ebucoreDuration");
