@@ -2,7 +2,6 @@ package eu.europeana.iiif.service;
 
 import com.jayway.jsonpath.Filter;
 import com.jayway.jsonpath.JsonPath;
-import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.Definitions;
 import eu.europeana.iiif.model.WebResource;
 import eu.europeana.iiif.model.WebResourceSorter;
