@@ -10,7 +10,7 @@
 
 	<groupId>eu.europeana.iiif</groupId>
 	<artifactId>manifest-api</artifactId>
-	<version>0.5-alpha-SNAPSHOT</version>
+	<version>0.5-alpha</version>
 	<packaging>war</packaging>
 
 	<name>Europeana IIIF Manifest API</name>
