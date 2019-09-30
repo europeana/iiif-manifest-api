@@ -1,4 +1,4 @@
-package eu.europeana.iiif.model;
+package eu.europeana.iiif.service;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -12,6 +12,8 @@ import java.time.format.DateTimeFormatter;
  * Created on 13-02-2018
  */
 public final class EdmDateUtils {
+
+    // TODO make EdmDateStringToDate handle more different date strings (see EA-990)
 
     private static final Logger LOG = LogManager.getLogger(EdmDateUtils.class);
 
@@ -54,7 +56,7 @@ public final class EdmDateUtils {
     private static LocalDate tryParseFormat(String edmDate, DateTimeFormatter format, boolean logError) {
         try {
             return LocalDate.parse(edmDate, format);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             if (logError) {
                 LOG.error("Error parsing date {} (used formatter = {})", edmDate, format);
             }

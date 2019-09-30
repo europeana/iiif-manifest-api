@@ -34,8 +34,8 @@ public class SwaggerConfig {
     @SuppressWarnings("squid:UnusedPrivateMethod")
     private ApiInfo apiInfo() {
         return new ApiInfo(
-                "IIIF API",
-                "Some custom description of API.",
+                "IIIF Manifest API",
+                "Generate an IIIF v2 or v3 manifest for Europeana CHOs",
                 null,
                 null,
                 new Contact("APIs team", "www.europeana.eu", "api@europeana.eu"),

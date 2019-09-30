@@ -3,4 +3,4 @@ server.port: 8083
 
 spring:
   application:
-    name: IIIF API
+    name: IIIF Manifest API

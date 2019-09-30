@@ -1,7 +1,6 @@
 package eu.europeana.iiif.service;
 
 import eu.europeana.iiif.service.exception.IllegalArgumentException;
-import org.apache.logging.log4j.LogManager;
 
 import java.net.URL;
 import java.util.regex.Pattern;

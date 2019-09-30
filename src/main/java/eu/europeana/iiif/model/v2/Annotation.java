@@ -2,14 +2,12 @@ package eu.europeana.iiif.model.v2;
 
 import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldType;
 
-import java.io.Serializable;
-
 /**
  * @author Patrick Ehlert
  * Created on 06-02-2018
  */
 @JsonldType(value = "oa:Annotation")
-public class Annotation extends JsonLdId implements Serializable {
+public class Annotation extends JsonLdId {
 
     private static final long serialVersionUID = -7091618924397220872L;
 

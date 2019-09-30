@@ -1,15 +1,14 @@
-package eu.europeana.iiif.service;
+package eu.europeana.iiif.config;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -38,15 +37,7 @@ public class ManifestSettings {
     private String fullTextApiPath;
 
     @Value("${suppress-parse-exception}")
-    private Boolean suppressParseException = Boolean.FALSE; // default value if we run this outside of Spring
-
-    @Value("${canvas.height}")
-    private Integer canvasHeight;
-    @Value("${canvas.width}")
-    private Integer canvasWidth;
-
-    @Autowired
-    private Environment environment;
+    private Boolean suppressParseException = Boolean.FALSE; // default value if we run this outside of Spring (i.e. JUnit)
 
     /**
      * @return base url from where we should retrieve record json data
@@ -85,32 +76,22 @@ public class ManifestSettings {
     }
 
     /**
-     * @return Integer containing canvas height
-     */
-    public Integer getCanvasHeight() {
-        return canvasHeight;
-    }
-
-    /**
-     * @return Integer containing canvas width
-     */
-    public Integer getCanvasWidth() {
-        return canvasWidth;
-    }
-
-    /**
      * Note: this does not work when running the exploded build from the IDE because the values in the build.properties
      * are substituted only in the .war file. It returns 'default' in that case.
      * @return String containing app version, used in the eTag SHA hash generation
      */
     public String getAppVersion() {
-        Properties buildProperties = new Properties();
         InputStream resourceAsStream = this.getClass().getResourceAsStream("/build.properties");
+        if (resourceAsStream == null) {
+            return "no version set";
+        }
         try {
+            Properties buildProperties = new Properties();
             buildProperties.load(resourceAsStream);
-            return environment.getProperty("info.app.version");
-        } catch (Exception e) {
-            return "default";
+            return buildProperties.getProperty("info.app.version");
+        } catch (IOException | RuntimeException e) {
+            LOG.warn("Error reading version from build.properties file", e);
+            return "no version set";
         }
     }
 

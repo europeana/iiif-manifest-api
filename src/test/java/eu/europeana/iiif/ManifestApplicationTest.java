@@ -7,7 +7,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class IiifApplicationTests {
+public class ManifestApplicationTest {
 
 	/**
 	 * Basic Spring-Boot context load test

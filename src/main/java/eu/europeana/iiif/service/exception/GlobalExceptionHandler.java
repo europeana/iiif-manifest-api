@@ -17,13 +17,13 @@ public class GlobalExceptionHandler {
 
     /**
      * Checks if we should log an error and rethrows it
-     * @param e
-     * @throws IIIFException
+     * @param e caught exception
+     * @throws IIIFException rethrown exception
      */
     @ExceptionHandler(IIIFException.class)
     public void handleIiifException(IIIFException e) throws IIIFException {
         if (e.doLog()) {
-            LOG.error(e.getMessage(), e);
+            LOG.error("Caught exception", e);
         }
         throw e;
     }

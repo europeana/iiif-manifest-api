@@ -1,17 +1,14 @@
 package eu.europeana.iiif.model.v2;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import eu.europeana.iiif.service.ManifestSettings;
 import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldType;
-
-import java.io.Serializable;
 
 /**
  * @author Patrick Ehlert
  * Created on 06-02-2018
  */
 @JsonldType("sc:Canvas")
-public class Canvas extends JsonLdId implements Serializable {
+public class Canvas extends JsonLdId {
 
     private static final long serialVersionUID = 6160907015595073905L;
 
@@ -24,13 +21,30 @@ public class Canvas extends JsonLdId implements Serializable {
     private String attribution;
     private String license;
     private Annotation[] images;
-    private FullText[] otherContent; // only 1 value is expected (or null)
+    private String [] otherContent;  // only 1 value is expected (or null)
 
-    public Canvas(ManifestSettings settings, String id, int pageNr) {
+    /**
+     * Create a new canvas object
+     * @param id
+     * @param pageNr
+     * @param height
+     * @param width
+     */
+    public Canvas(String id, int pageNr, Integer height, Integer width) {
         super(id);
         this.pageNr = pageNr;
-        this.height = settings.getCanvasHeight();
-        this.width = settings.getCanvasWidth();
+        this.height = height;
+        this.width = width;
+    }
+
+    /**
+     * Create a new canvas object
+     * @param id
+     * @param pageNr
+     */
+    public Canvas(String id, int pageNr) {
+        super(id);
+        this.pageNr = pageNr;
     }
 
     public int getPageNr() {
@@ -51,6 +65,14 @@ public class Canvas extends JsonLdId implements Serializable {
 
     public Integer getWidth() {
         return width;
+    }
+
+    public void setHeight(Integer height) {
+        this.height = height;
+    }
+
+    public void setWidth(Integer width) {
+        this.width = width;
     }
 
     public String getAttribution() {
@@ -77,11 +99,11 @@ public class Canvas extends JsonLdId implements Serializable {
         this.images = images;
     }
 
-    public FullText[] getOtherContent() {
+    public String[] getOtherContent() {
         return otherContent;
     }
 
-    public void setOtherContent(FullText[] otherContent) {
+    public void setOtherContent(String[] otherContent) {
         this.otherContent = otherContent;
     }
 }

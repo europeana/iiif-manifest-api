@@ -1,6 +1,5 @@
 package eu.europeana.iiif.service;
 
-import eu.europeana.iiif.web.ManifestController;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.DateUtils;
 import org.apache.logging.log4j.LogManager;
@@ -22,7 +21,11 @@ import java.util.Date;
  * @author Patrick Ehlert
  * Created on 03-10-2018
  */
-public class CacheUtils {
+public final class CacheUtils {
+
+    private static final String IF_MATCH = "If-Match";
+    private static final String IF_NON_MATCH = "If-None-Match";
+    private static final String IF_MODIFIED_SINCE = "If-Modified-Since";
 
     private CacheUtils() {
         // empty constructor to prevent initialization
@@ -89,15 +92,15 @@ public class CacheUtils {
                                               ZonedDateTime lastModified, String eTag) {
         // chosen this implementation instead of the 'shallow' out-of-the-box spring boot version because that does not
         // offer the advantage of saving on processing time
-        ZonedDateTime requestLastModified = headerStringToDate(request.getHeader("If-Modified-Since"));
+        ZonedDateTime requestLastModified = headerStringToDate(request.getHeader(IF_MODIFIED_SINCE));
         if((requestLastModified !=null && requestLastModified.compareTo(lastModified) > 0) ||
-                (StringUtils.isNotEmpty(request.getHeader("If-None-Match")) &&
-                        StringUtils.equalsIgnoreCase(request.getHeader("If-None-Match"), eTag))) {
+                (StringUtils.isNotEmpty(request.getHeader(IF_NON_MATCH)) &&
+                        StringUtils.equalsIgnoreCase(request.getHeader(IF_NON_MATCH), eTag))) {
             // TODO Also we ignore possible multiple eTags for now
             return new ResponseEntity<>(headers, HttpStatus.NOT_MODIFIED);
-        } else if (StringUtils.isNotEmpty(request.getHeader("If-Match")) &&
-                (!StringUtils.equalsIgnoreCase(request.getHeader("If-Match"), eTag) &&
-                        !StringUtils.equalsIgnoreCase(request.getHeader("If-Match"), "*"))) {
+        } else if (StringUtils.isNotEmpty(request.getHeader(IF_MATCH)) &&
+                (!StringUtils.equalsIgnoreCase(request.getHeader(IF_MATCH), eTag) &&
+                        !StringUtils.equalsIgnoreCase(request.getHeader(IF_MATCH), "*"))) {
             // Note that according to the specification we have to use strong ETags here (but for now we just ignore that)
             // see https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.24
             // TODO Also we ignore possible multiple eTags for now
@@ -118,7 +121,7 @@ public class CacheUtils {
         // Note that Apache DateUtils can parse all 3 date format patterns allowed by RFC 2616
         Date headerDate = DateUtils.parseDate(dateString);
         if (headerDate == null) {
-            LogManager.getLogger(ManifestController.class).error("Error parsing request header Date string: {}", dateString);
+            LogManager.getLogger(CacheUtils.class).error("Error parsing request header Date string: {}", dateString);
             return null;
         }
         return headerDate.toInstant().atOffset(ZoneOffset.UTC).toZonedDateTime();
