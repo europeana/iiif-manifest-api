@@ -19,6 +19,7 @@ import ioinformarics.oss.jackson.module.jsonld.JsonldModule;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
@@ -50,7 +51,9 @@ public class ManifestService {
     private static ObjectMapper mapper = new ObjectMapper();
 
     private ManifestSettings settings;
-    private CloseableHttpClient httpClient;
+    private CloseableHttpClient gethttpClient;
+    private CloseableHttpClient headhttpClient;
+
 
     public ManifestService(ManifestSettings settings) {
         this.settings = settings;
@@ -59,7 +62,15 @@ public class ManifestService {
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
         cm.setMaxTotal(200);
         cm.setDefaultMaxPerRoute(100);
-        httpClient = HttpClients.custom().setConnectionManager(cm).build();
+
+        // configure for head request
+        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(8 * 1000)
+                .setSocketTimeout(10 * 1000).build();
+        headhttpClient = HttpClients.custom().setConnectionManager(cm)
+                .setDefaultRequestConfig(requestConfig).build();
+
+        //configure for get request
+        gethttpClient = HttpClients.custom().setConnectionManager(cm).build();
 
         // configure jsonpath: we use jsonpath in combination with Jackson because that makes it easier to know what
         // type of objects are returned (see also https://stackoverflow.com/a/40963445)
@@ -163,7 +174,7 @@ public class ManifestService {
 
         try {
             String recordUrl = url.toString();
-            try (CloseableHttpResponse response = httpClient.execute(new HttpGet(recordUrl))) {
+            try (CloseableHttpResponse response = gethttpClient.execute(new HttpGet(recordUrl))) {
                 int responseCode = response.getStatusLine().getStatusCode();
                 LOG.debug("Record request: {}, status code = {}", recordId, responseCode);
                 if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
@@ -219,7 +230,7 @@ public class ManifestService {
     Boolean existsFullText(String fullTextUrl) throws IIIFException {
         Boolean result;
         try {
-            try (CloseableHttpResponse response = httpClient.execute(new HttpHead(fullTextUrl))) {
+            try (CloseableHttpResponse response = headhttpClient.execute(new HttpHead(fullTextUrl))) {
                 int responseCode = response.getStatusLine().getStatusCode();
                 LOG.debug("Full-Text head request: {}, status code = {}", fullTextUrl, responseCode);
                 if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
@@ -442,9 +453,13 @@ public class ManifestService {
 
     @PreDestroy
     public void close() throws IOException {
-        if (this.httpClient != null) {
-            LOG.info("Closing http-client...");
-            this.httpClient.close();
+        if (this.gethttpClient != null) {
+            LOG.info("Closing get request http-client...");
+            this.gethttpClient.close();
+        }
+        if (this.headhttpClient != null) {
+            LOG.info("Closing head request http-client...");
+            this.headhttpClient.close();
         }
     }
 
