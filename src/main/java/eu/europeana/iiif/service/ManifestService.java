@@ -63,13 +63,13 @@ public class ManifestService {
         cm.setMaxTotal(200);
         cm.setDefaultMaxPerRoute(100);
 
-        // configure for head request
+        // configure for head requests to Fulltext API (with specific timeouts)
         RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(8 * 1000)
-                .setSocketTimeout(10 * 1000).build();
+                .setSocketTimeout(5 * 1000).build();
         headhttpClient = HttpClients.custom().setConnectionManager(cm)
                 .setDefaultRequestConfig(requestConfig).build();
 
-        //configure for get request
+        //configure for get requests to Record API
         gethttpClient = HttpClients.custom().setConnectionManager(cm).build();
 
         // configure jsonpath: we use jsonpath in combination with Jackson because that makes it easier to know what
