@@ -18,6 +18,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -50,8 +52,10 @@ public class ManifestControllerTest {
     private static final String ETAG_HEADER_V3 = "W/\"545f96ddfbdef6a91d60d0176229e8a2abb73f20694b425bd428573f522e0bbe\"";
     private static final String ETAG_HEADER_FALSE = "W/\"ca3d67df3ee77ece353fd070203c47a43ea383558df10a4ab0cd2ce4b46d7643\"";
 
-    @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private WebApplicationContext webApplicationContext;
 
     @MockBean
     private ManifestService manifestService;
@@ -60,6 +64,9 @@ public class ManifestControllerTest {
 
     @Before
     public void setup() throws Exception {
+        // Setting it manually to bypass Spring Security IP address filter
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+
         given(manifestSettings.getAppVersion()).willReturn("v1.0-test");
 
         // mock v2 and v3 manifest responses
