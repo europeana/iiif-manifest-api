@@ -17,9 +17,10 @@ public class Canvas extends JsonLdIdType {
     private Integer height;
     private Integer width;
     private Double duration;
-    private LanguageMap attribution;
+    private LanguageMap requiredStatement; // attribution
     private Rights rights;
     private AnnotationPage[] items;
+    private AnnotationPage[] annotations; // full text identifiers
 
     /**
      * Create a new canvas object
@@ -81,12 +82,12 @@ public class Canvas extends JsonLdIdType {
         this.duration = duration;
     }
 
-    public LanguageMap getAttribution() {
-        return attribution;
+    public LanguageMap getRequiredStatement() {
+        return requiredStatement;
     }
 
-    public void setAttribution(LanguageMap attribution) {
-        this.attribution = attribution;
+    public void setRequiredStatement(LanguageMap requiredStatement) {
+        this.requiredStatement = requiredStatement;
     }
 
     public Rights getRights() {
@@ -103,5 +104,17 @@ public class Canvas extends JsonLdIdType {
 
     public void setItems(AnnotationPage[] items) {
         this.items = items;
+    }
+
+    /**
+     * If fulltext is available they this will contain AnnotationPages with only the full text identifier
+     * @return array of {@link AnnotationPage} with full text identifiers (if fulltext is available)
+     */
+    public AnnotationPage[] getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(AnnotationPage[] annotations) {
+        this.annotations = annotations;
     }
 }

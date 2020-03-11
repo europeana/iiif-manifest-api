@@ -203,7 +203,7 @@ public class EdmManifestV2MappingTest {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_ATTRIBUTION);
         String attribution = EdmManifestMapping.getAttributionV2("test", EdmManifestData.TEST_IS_SHOWN_BY, document);
         assertNotNull(attribution);
-        assertEquals("attributionTextOk", attribution);
+        assertEquals(EdmManifestData.TEST_ATTRIBUTION_TEXT_V2, attribution);
     }
 
     /**
@@ -273,7 +273,7 @@ public class EdmManifestV2MappingTest {
      */
     @Test
     public void testSequenceMissingIsShownAtHasView() {
-        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_NOISSHOWNAT);
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_NOISSHOWNBY);
         assertNull(EdmManifestMapping.getSequencesV2("test", null, document));
     }
 
@@ -282,7 +282,7 @@ public class EdmManifestV2MappingTest {
      */
     @Test
     public void testSequence() {
-        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_1SERVICE);
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
         String edmIsShownBy = EdmManifestMapping.getIsShownBy(null, document);
         Sequence[] sequence = EdmManifestMapping.getSequencesV2("/test-id", edmIsShownBy, document);
         assertNotNull(sequence);
@@ -292,20 +292,22 @@ public class EdmManifestV2MappingTest {
         // test canvas part
         assertTrue(sequence[0].getStartCanvas().endsWith("/test-id" + "/canvas/p1"));
         assertNotNull(sequence[0].getCanvases());
+        // note that one of the 3 canvases is not edmIsShownBy or hasView so it's not included
         assertEquals(2, sequence[0].getCanvases().length);
 
+        // we only check the first canvas
         ExpectedCanvasValues ecv = new ExpectedCanvasValues();
         ecv.id = sequence[0].getStartCanvas();
         ecv.label = "p. 1";
-        ecv.attribution = "wr1Attribution";
-        ecv.license = "wr1License";
+        ecv.attribution = "wr3Attribution";
+        ecv.license = "wr3License";
         ecv.annotationAndBody = new ExpectedAnnotationAndBodyValues();
         ecv.annotationAndBody.idEndsWith = "/test-id/annotation/p1";
         ecv.annotationAndBody.onId = ecv.id;
-        ecv.annotationAndBody.bodyId = "wr1Id";
+        ecv.annotationAndBody.bodyId = "wr3Id";
         ecv.annotationAndBody.format = "video/mp4";
         ecv.annotationAndBody.service = new ExpectedServiceValues();
-        ecv.annotationAndBody.service.id = "service1Id";
+        ecv.annotationAndBody.service.id = "service3Id";
         ecv.annotationAndBody.service.profile = "serviceProfile";
 
         checkCanvas(ecv, sequence[0].getCanvases()[0]);
