@@ -81,6 +81,7 @@ public final class WebResourceSorter {
             if (isolated.hasNextInSequence()) {
                 throw new DataInconsistentException("Expected webresource "+isolated.getId()+" to not have a nextInSequence value");
             }
+            LOG.trace("  Adding isolated node = {}", isolated);
             result.add(isolated);
         }
 

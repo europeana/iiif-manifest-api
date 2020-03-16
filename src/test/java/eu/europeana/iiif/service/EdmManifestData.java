@@ -34,26 +34,36 @@ public class EdmManifestData {
     public static final String TEST_THUMBNAIL = "{\"object\": {\"europeanaAggregation\" :{ \"edmPreview\":\""+TEST_THUMBNAIL_ID+"\"}}}";
     
     public static final String TEST_NAVDATE = "{\"object\": {\"proxies\":[{}, {\"dctermsIssued\":{\"en\":[\"NOT A REAL DATE\"]}}, {\"dctermsIssued\":{\"def\":[\"1922-03-15\"]}} ]}}";
-    
+
+    public static final String TEST_HOMEPAGE_ID = "https://www.europeana.eu/record/x/y.html";
+    public static final String TEST_HOMEPAGE = "{\"object\": {\"europeanaAggregation\" :{ \"edmLandingPage\":\""+TEST_HOMEPAGE_ID+"\"}}}";
+
     public static final String TEST_IS_SHOWN_BY = "https://test.europeana.eu/test.jpg";
-    
+
+    public static final String TEST_ATTRIBUTION_TEXT_V2 = "some attribution text";
+    public static final String TEST_ATTRIBUTION_TEXT_V3 = "<span>some attribution text</span>";
     public static final String TEST_ATTRIBUTION = "{\"object\": {\"aggregations\":[{ \"edmIsShownBy\":\""+TEST_IS_SHOWN_BY+"\"}, "+
-            " {\"webResources\":[{\"about\":\"http://dont.pick/me.jpg\", \"textAttributionSnippet\":\"attributionTextFalse\"}," +
-            "{\"about\":\""+TEST_IS_SHOWN_BY+"\", \"textAttributionSnippet\":\"attributionTextOk\"}" +"]}]}}";
+            " {\"webResources\":[{\"about\":\"http://dont.pick/me.jpg\", \"textAttributionSnippet\":\"attributionTextFalse\", " +
+                                                                        "\"htmlAttributionSnippet\":\"<span>attributionTextFalse</span>\"}," +
+            "{\"about\":\""+TEST_IS_SHOWN_BY+"\", \"textAttributionSnippet\":\""+TEST_ATTRIBUTION_TEXT_V2+"\", " +
+                                                 "\"htmlAttributionSnippet\":\""+TEST_ATTRIBUTION_TEXT_V3+"\"}" +"]}]}}";
     
     public static final String TEST_LICENSE_EUROPEANAAGGREGATION = "{\"object\": { \"aggregations\": [{\"edmRights\": { \"en\": [\"licenseTextAggregation\"]}}], \"europeanaAggregation\" : {\"edmRights\": { \"en\": [\"licenseTextEuropeana\"]}}}}";
     public static final String TEST_LICENSE_OTHERAGGREGATION = "{\"object\": { \"europeanaAggregation\" : {\"edmRights\":{}}, \"aggregations\": [{}, {\"edmRights\": { \"en\": [\"licenseTextAggregation\"]}}] }}";
     
-    public static final String TEST_SEQUENCE_2CANVAS_1SERVICE = "{\"object\": { \"aggregations\": [ {\"edmIsShownBy\": \"wr1Id\", \"hasView\": [\"wr2Id\"], \"webResources\": [ "+
-            "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\", \"webResourceEdmRights\":"+
-            "{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"video/mp4\", \"svcsHasService\": [\"service1Id\"], \"ebucoreDuration\": \"98765\"  },"+
-            "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"webResourceEdmRights\":"+
-            "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"wr2MimeType\" }"+
-            "] } ], \"services\": [{\"about\": \"service1Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
-    public static final String TEST_SEQUENCE_2CANVAS_NOISSHOWNAT = "{\"object\": { \"aggregations\": [ { \"webResources\": [ "+
+    public static final String TEST_SEQUENCE_3CANVAS_1SERVICE = "{\"object\": { \"aggregations\": [ {\"edmIsShownBy\": \"wr3Id\", \"hasView\": [\"wr2Id\"], \"webResources\": [ "+
+            "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":"+
+            "{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"wr1MimeType\" },"+
+            "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"htmlAttributionSnippet\": \"<span>wr2Attribution</span>\", \"webResourceEdmRights\":"+
+            "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"wr2MimeType\" },"+
+            "{\"about\": \"wr3Id\", \"textAttributionSnippet\": \"wr3Attribution\", \"htmlAttributionSnippet\": \"<span>wr3Attribution</span>\", \"webResourceEdmRights\":"+
+            "{\"def\":[\"wr3License\"]}, \"ebucoreHasMimeType\": \"video/mp4\", \"svcsHasService\": [\"service3Id\"], \"ebucoreDuration\": \"98765\"  }"+
+            "] } ], \"services\": [{\"about\": \"service3Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
+    public static final String TEST_SEQUENCE_2CANVAS_NOISSHOWNBY = "{\"object\": { \"aggregations\": [ { \"webResources\": [ "+
             "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\", \"webResourceEdmRights\":"+
             "{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"wr1MimeType\", \"svcsHasService\": [\"service1Id\"]  },"+
             "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"webResourceEdmRights\":"+
             "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"wr2MimeType\", \"svcsHasService\": [\"service2Id\"]  }"+
             "] } ], \"services\": [{\"about\": \"service1Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
 }
+
