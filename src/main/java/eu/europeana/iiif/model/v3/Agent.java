@@ -14,7 +14,7 @@ public class Agent extends JsonLdIdType {
     private static Image[] logo = new Image[]{ new Image(Definitions.EUROPEANA_LOGO_URL) };
 
     public Agent() {
-        super("https://www.europeana.eu/en/about.html", "Agent");
+        super("https://www.europeana.eu/en/about-us", "Agent");
     }
 
     public Text[] getHomepage() {
