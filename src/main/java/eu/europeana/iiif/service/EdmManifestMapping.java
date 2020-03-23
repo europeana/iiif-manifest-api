@@ -103,8 +103,19 @@ public final class EdmManifestMapping {
     }
 
     static String getIsShownBy(String europeanaId, Object jsonDoc) {
-        return (String) getFirstValueArray("edmIsShownBy", europeanaId,
+        String isShownBy = (String) getFirstValueArray("edmIsShownBy", europeanaId,
                 JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmIsShownBy", String[].class));
+
+        // EA-1973 temporary(?) workaround for EUScreen, use isShownAt instead.
+        if (StringUtils.isEmpty(isShownBy)) {
+            String isShownAt = (String) getFirstValueArray("edmIsShownBy", europeanaId,
+                    JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmIsShownAt", String[].class));
+            if (isShownAt != null && (isShownAt.startsWith("http://www.euscreen.eu/item.html") ||
+                    isShownAt.startsWith("https://www.euscreen.eu/item.html"))) {
+                isShownBy = isShownAt;
+            }
+        }
+        return isShownBy;
     }
 
     /**
