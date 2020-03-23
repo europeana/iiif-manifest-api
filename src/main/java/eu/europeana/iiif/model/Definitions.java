@@ -108,16 +108,6 @@ public final class Definitions {
     }
 
     /**
-     * Create a sequence ID
-     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
-     * @param order number
-     * @return string containing the sequence ID
-     */
-    public static String getSequenceId(String europeanaId, int order) {
-        return Definitions.SEQUENCE_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId).concat(Integer.toString(order));
-    }
-
-    /**
      * Create a canvas ID
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
      * @param order number
@@ -125,16 +115,6 @@ public final class Definitions {
      */
     public static String getCanvasId(String europeanaId, int order) {
         return Definitions.CANVAS_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId).concat(Integer.toString(order));
-    }
-
-    /**
-     * Create an annotation ID
-     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
-     * @param order number
-     * @return String containing the annotation ID
-     */
-    public static String getAnnotationId(String europeanaId, int order) {
-        return Definitions.ANNOTATION_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId).concat(Integer.toString(order));
     }
 
     /**

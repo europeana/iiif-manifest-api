@@ -103,8 +103,19 @@ public final class EdmManifestMapping {
     }
 
     static String getIsShownBy(String europeanaId, Object jsonDoc) {
-        return (String) getFirstValueArray("edmIsShownBy", europeanaId,
+        String isShownBy = (String) getFirstValueArray("edmIsShownBy", europeanaId,
                 JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmIsShownBy", String[].class));
+
+        // EA-1973 temporary(?) workaround for EUScreen, use isShownAt instead.
+        if (StringUtils.isEmpty(isShownBy)) {
+            String isShownAt = (String) getFirstValueArray("edmIsShownBy", europeanaId,
+                    JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmIsShownAt", String[].class));
+            if (isShownAt != null && (isShownAt.startsWith("http://www.euscreen.eu/item.html") ||
+                    isShownAt.startsWith("https://www.euscreen.eu/item.html"))) {
+                isShownBy = isShownAt;
+            }
+        }
+        return isShownBy;
     }
 
     /**
@@ -563,7 +574,7 @@ public final class EdmManifestMapping {
         }
         // there should be only 1 sequence, so sequence number is always 1
         eu.europeana.iiif.model.v2.Sequence[] result = new eu.europeana.iiif.model.v2.Sequence[1];
-        result[0] = new eu.europeana.iiif.model.v2.Sequence(Definitions.getSequenceId(europeanaId, 1));
+        result[0] = new eu.europeana.iiif.model.v2.Sequence();
         result[0].setStartCanvas(Definitions.getCanvasId(europeanaId, 1));
         result[0].setCanvases(canvases.toArray(new eu.europeana.iiif.model.v2.Canvas[0]));
         return result;
@@ -720,7 +731,7 @@ public final class EdmManifestMapping {
 
         // canvas has 1 annotation (image field)
         c.setImages(new eu.europeana.iiif.model.v2.Annotation[1]);
-        c.getImages()[0] = new eu.europeana.iiif.model.v2.Annotation(Definitions.getAnnotationId(europeanaId, order));
+        c.getImages()[0] = new eu.europeana.iiif.model.v2.Annotation();
         c.getImages()[0].setOn(c.getId());
 
         // annotation has 1 annotationBody

@@ -287,7 +287,6 @@ public class EdmManifestV2MappingTest {
         Sequence[] sequence = EdmManifestMapping.getSequencesV2("/test-id", edmIsShownBy, document);
         assertNotNull(sequence);
         assertEquals(1, sequence.length); // there should always be only 1 sequence
-        assertTrue(sequence[0].getId().endsWith("/test-id" + "/sequence/s1"));
 
         // test canvas part
         assertTrue(sequence[0].getStartCanvas().endsWith("/test-id" + "/canvas/p1"));
@@ -337,7 +336,6 @@ public class EdmManifestV2MappingTest {
      * Test if we generate an annotation and annotation body object (and containing service object) properly
      */
     public void checkAnnotationAndBody(ExpectedAnnotationAndBodyValues eabv, Annotation ann) {
-        assertTrue(ann.getId().endsWith(eabv.idEndsWith));
         assertEquals(eabv.onId, ann.getOn());
 
         // test annotationBody part
