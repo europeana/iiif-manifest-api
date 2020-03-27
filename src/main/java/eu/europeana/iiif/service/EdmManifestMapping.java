@@ -65,7 +65,9 @@ public final class EdmManifestMapping {
         manifest.setLicense(getLicense(europeanaId, jsonDoc));
         manifest.setSeeAlso(getDataSetsV2(europeanaId));
         manifest.setSequences(getSequencesV2(europeanaId, isShownBy, jsonDoc));
-        manifest.setStartCanvasPageNr(getStartCanvasV2(manifest.getSequences()[0].getCanvases(), isShownBy));
+        if (manifest.getSequences() != null) {
+            manifest.setStartCanvasPageNr(getStartCanvasV2(manifest.getSequences()[0].getCanvases(), isShownBy));
+        }
         return manifest;
     }
 
