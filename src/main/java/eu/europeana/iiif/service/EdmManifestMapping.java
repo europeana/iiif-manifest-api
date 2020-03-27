@@ -37,9 +37,10 @@ public final class EdmManifestMapping {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestMapping.class);
     private static final String ABOUT = "about";
-    private static final String TEXTATTRIBSNIPPET = "textAttributionSnippet";
-    private static final String EBUCOREHEIGHT = "ebucoreHeight";
-    private static final String EBUCOREWIDTH = "ebucoreWidth";
+    private static final String TEXT_ATTRIB_SNIPPET = "textAttributionSnippet";
+    private static final String HTML_ATTRIB_SNIPPET = "htmlAttributionSnippet";
+    private static final String EBUCORE_HEIGHT = "ebucoreHeight";
+    private static final String EBUCORE_WIDTH = "ebucoreWidth";
 
     private EdmManifestMapping() {
         // private constructor to prevent initialization
@@ -64,6 +65,7 @@ public final class EdmManifestMapping {
         manifest.setLicense(getLicense(europeanaId, jsonDoc));
         manifest.setSeeAlso(getDataSetsV2(europeanaId));
         manifest.setSequences(getSequencesV2(europeanaId, isShownBy, jsonDoc));
+        manifest.setStartCanvasPageNr(getStartCanvasV2(manifest.getSequences()[0].getCanvases(), isShownBy));
         return manifest;
     }
 
@@ -78,14 +80,16 @@ public final class EdmManifestMapping {
         ManifestV3 manifest = new ManifestV3(europeanaId, Definitions.getManifestId(europeanaId), isShownBy);
         manifest.setWithin(EdmManifestMapping.getWithinV3(jsonDoc));
         manifest.setLabel(EdmManifestMapping.getLabelsV3(jsonDoc));
-        manifest.setDescription(EdmManifestMapping.getDescriptionV3(jsonDoc));
+        manifest.setSummary(EdmManifestMapping.getDescriptionV3(jsonDoc));
         manifest.setMetaData(EdmManifestMapping.getMetaDataV3(jsonDoc));
         manifest.setThumbnail(getThumbnailImageV3(europeanaId, jsonDoc));
         manifest.setNavDate(getNavDate(europeanaId, jsonDoc));
-        manifest.setAttribution(getAttributionV3(europeanaId, isShownBy, jsonDoc));
+        manifest.setHomePage(getHomePage(europeanaId, jsonDoc));
+        manifest.setRequiredStatement(getAttributionV3(europeanaId, isShownBy, jsonDoc));
         manifest.setRights(getRights(europeanaId, jsonDoc));
         manifest.setSeeAlso(getDataSetsV3(europeanaId));
         manifest.setItems(getItems(europeanaId, isShownBy, jsonDoc));
+        manifest.setStart(getStartCanvasV3(manifest.getItems(), isShownBy));
         return manifest;
     }
 
@@ -99,8 +103,19 @@ public final class EdmManifestMapping {
     }
 
     static String getIsShownBy(String europeanaId, Object jsonDoc) {
-        return (String) getFirstValueArray("edmIsShownBy", europeanaId,
+        String isShownBy = (String) getFirstValueArray("edmIsShownBy", europeanaId,
                 JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmIsShownBy", String[].class));
+
+        // EA-1973 temporary(?) workaround for EUScreen, use isShownAt instead.
+        if (StringUtils.isEmpty(isShownBy)) {
+            String isShownAt = (String) getFirstValueArray("edmIsShownBy", europeanaId,
+                    JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmIsShownAt", String[].class));
+            if (isShownAt != null && (isShownAt.startsWith("http://www.euscreen.eu/item.html") ||
+                    isShownAt.startsWith("https://www.euscreen.eu/item.html"))) {
+                isShownBy = isShownAt;
+            }
+        }
+        return isShownBy;
     }
 
     /**
@@ -422,6 +437,20 @@ public final class EdmManifestMapping {
     }
 
     /**
+     * @param europeanaId consisting of dataset ID and record ID separated by a slash
+     * @param jsonDoc parsed json document
+     * @return {@link Text} containing reference to the landing page of the item on Europeana website
+     */
+    static Text[] getHomePage(String europeanaId, Object jsonDoc) {
+        String[] landingPages = JsonPath.parse(jsonDoc).read("$.object.europeanaAggregation[?(@.edmLandingPage)].edmLandingPage", String[].class);
+        String landingPage = (String) getFirstValueArray("landingPage", europeanaId, landingPages);
+        if (landingPage == null) {
+            return null;
+        }
+        return new Text[]{new Text(landingPage, new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, "Europeana"))};
+    }
+
+    /**
      * Return attribution text as a String
      * We look for the webResource that corresponds to our edmIsShownBy and return the 'textAttributionSnippet' for that.
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
@@ -430,30 +459,29 @@ public final class EdmManifestMapping {
      * @return
      */
     static String getAttributionV2(String europeanaId, String isShownBy, Object jsonDoc) {
-        return getAttributionSnippetEdmIsShownBy(europeanaId, isShownBy, jsonDoc);
+        Filter isShownByFilter = filter(where(ABOUT).is(isShownBy));
+        String[] attributions = JsonPath.parse(jsonDoc).
+                read("$.object.aggregations[*].webResources[?]." + TEXT_ATTRIB_SNIPPET, String[].class, isShownByFilter);
+        return (String) getFirstValueArray(TEXT_ATTRIB_SNIPPET, europeanaId, attributions);
     }
 
     /**
      * Return attribution text as a String
-     * We look for the webResource that corresponds to our edmIsShownBY and return the 'textAttributionSnippet' for that.
+     * We look for the webResource that corresponds to our edmIsShownBy and return the attribution snippet for that.
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
      * @param isShownBy edmIsShownBy value
      * @param jsonDoc parsed json document
      * @return
      */
     static LanguageMap getAttributionV3(String europeanaId, String isShownBy, Object jsonDoc) {
-        String attribution = getAttributionSnippetEdmIsShownBy(europeanaId, isShownBy, jsonDoc);
+        Filter isShownByFilter = filter(where(ABOUT).is(isShownBy));
+        String[] attributions = JsonPath.parse(jsonDoc).
+                read("$.object.aggregations[*].webResources[?]."+ HTML_ATTRIB_SNIPPET, String[].class, isShownByFilter);
+        String attribution = (String) getFirstValueArray(HTML_ATTRIB_SNIPPET, europeanaId, attributions);
         if (StringUtils.isEmpty(attribution)) {
             return null;
         }
         return new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, attribution);
-    }
-
-    private static String getAttributionSnippetEdmIsShownBy(String europeanaId, String edmIsShownBy, Object jsonDoc) {
-        Filter isShownByFilter = filter(where(ABOUT).is(edmIsShownBy));
-        String[] attributions = JsonPath.parse(jsonDoc).
-                read("$.object.aggregations[*].webResources[?].textAttributionSnippet", String[].class, isShownByFilter);
-        return (String) getFirstValueArray(TEXTATTRIBSNIPPET, europeanaId, attributions);
     }
 
     /**
@@ -546,12 +574,20 @@ public final class EdmManifestMapping {
         }
         // there should be only 1 sequence, so sequence number is always 1
         eu.europeana.iiif.model.v2.Sequence[] result = new eu.europeana.iiif.model.v2.Sequence[1];
-        result[0] = new eu.europeana.iiif.model.v2.Sequence(Definitions.getSequenceId(europeanaId, 1));
+        result[0] = new eu.europeana.iiif.model.v2.Sequence();
         result[0].setStartCanvas(Definitions.getCanvasId(europeanaId, 1));
         result[0].setCanvases(canvases.toArray(new eu.europeana.iiif.model.v2.Canvas[0]));
         return result;
     }
 
+    /**
+     * Generates an ordered array of {@link Canvas}es referring to edmIsShownBy and hasView {@link WebResource}s.
+     * For more information about the ordering @see {@link WebResourceSorter}
+     * @param europeanaId
+     * @param isShownBy
+     * @param jsonDoc
+     * @return array of Canvases
+     */
     static eu.europeana.iiif.model.v3.Canvas[] getItems(String europeanaId, String isShownBy, Object jsonDoc) {
         // generate canvases in a same order as the web resources
         List<WebResource> sortedResources = getSortedWebResources(europeanaId, isShownBy, jsonDoc);
@@ -567,6 +603,59 @@ public final class EdmManifestMapping {
             order++;
         }
         return canvases.toArray(new eu.europeana.iiif.model.v3.Canvas[0]);
+    }
+
+    /**
+     * @return the {@link eu.europeana.iiif.model.v3.Canvas} that refers to edmIsShownBy, or else just the first Canvas
+     */
+    static eu.europeana.iiif.model.v3.Canvas getStartCanvasV3(eu.europeana.iiif.model.v3.Canvas[] items, String edmIsShownBy) {
+        if (items == null) {
+            LOG.trace("Start canvas = null (no canvases present)");
+            return null;
+        }
+
+        eu.europeana.iiif.model.v3.Canvas result = null;
+        for (eu.europeana.iiif.model.v3.Canvas c : items) {
+            String annotationBodyId = c.getItems()[0].getItems()[0].getBody().getId();
+            if (edmIsShownBy.equals(annotationBodyId)) {
+                result = c;
+                LOG.trace("Start canvas = {} (matches with edmIsShownBy)", result.getPageNr());
+                break;
+            }
+        }
+        // nothing found, return first canvas
+        if (result == null) {
+            result = items[0];
+            LOG.trace("Start canvas = {} (no match with edmIsShownBy, select first)", result.getPageNr());
+        }
+        return new eu.europeana.iiif.model.v3.Canvas(result.getId(), result.getPageNr());
+    }
+
+    /**
+     * @return Integer containing the page number of the canvas that refers to the edmIsShownBy, or else just the first
+     *  Canvas. Null if there are no canvases
+     */
+    static Integer getStartCanvasV2(eu.europeana.iiif.model.v2.Canvas[] items, String edmIsShownBy) {
+        if (items == null) {
+            LOG.trace("Start canvas = null (no canvases present)");
+            return null;
+        }
+
+        eu.europeana.iiif.model.v2.Canvas result = null;
+        for (eu.europeana.iiif.model.v2.Canvas c : items) {
+            String annotationBodyId = c.getImages()[0].getResource().getId();
+            if (edmIsShownBy.equals(annotationBodyId)) {
+                result = c;
+                LOG.trace("Start canvas = {} (matches with edmIsShownBy)", result.getPageNr());
+                break;
+            }
+        }
+        // nothing found, return first canvas
+        if (result == null) {
+            result = items[0];
+            LOG.trace("Start canvas = {} (no match with edmIsShownBy, select first)", result.getPageNr());
+        }
+        return result.getPageNr();
     }
 
     /**
@@ -620,17 +709,17 @@ public final class EdmManifestMapping {
 
         c.setLabel("p. "+order);
 
-        Object obj = webResource.get(EBUCOREHEIGHT);
+        Object obj = webResource.get(EBUCORE_HEIGHT);
         if (obj instanceof Integer){
             c.setHeight((Integer) obj);
         }
 
-        obj = webResource.get(EBUCOREWIDTH);
+        obj = webResource.get(EBUCORE_WIDTH);
         if (obj instanceof Integer){
             c.setWidth((Integer) obj);
         }
 
-        String attributionText = (String) webResource.get(TEXTATTRIBSNIPPET);
+        String attributionText = (String) webResource.get(TEXT_ATTRIB_SNIPPET);
         if (!StringUtils.isEmpty(attributionText)){
             c.setAttribution(attributionText);
         }
@@ -642,7 +731,7 @@ public final class EdmManifestMapping {
 
         // canvas has 1 annotation (image field)
         c.setImages(new eu.europeana.iiif.model.v2.Annotation[1]);
-        c.getImages()[0] = new eu.europeana.iiif.model.v2.Annotation(Definitions.getAnnotationId(europeanaId, order));
+        c.getImages()[0] = new eu.europeana.iiif.model.v2.Annotation();
         c.getImages()[0].setOn(c.getId());
 
         // annotation has 1 annotationBody
@@ -672,12 +761,12 @@ public final class EdmManifestMapping {
 
         c.setLabel(new LanguageMap(null, "p. "+order));
 
-        Object obj = webResource.get(EBUCOREHEIGHT);
+        Object obj = webResource.get(EBUCORE_HEIGHT);
         if (obj instanceof Integer){
             c.setHeight((Integer) obj);
         }
 
-        obj = webResource.get(EBUCOREWIDTH);
+        obj = webResource.get(EBUCORE_WIDTH);
         if (obj instanceof Integer){
             c.setWidth((Integer) obj);
         }
@@ -688,9 +777,9 @@ public final class EdmManifestMapping {
             c.setDuration(durationInMs / 1000D);
         }
 
-        String attributionText = (String) webResource.get(TEXTATTRIBSNIPPET);
+        String attributionText = (String) webResource.get(HTML_ATTRIB_SNIPPET);
         if (!StringUtils.isEmpty(attributionText)){
-            c.setAttribution(new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, attributionText));
+            c.setRequiredStatement(new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, attributionText));
         }
 
         LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get("webResourceEdmRights");

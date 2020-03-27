@@ -7,17 +7,13 @@ import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldType;
  * Created on 06-02-2018
  */
 @JsonldType(value = "oa:Annotation")
-public class Annotation extends JsonLdId {
+public class Annotation {
 
     private static final long serialVersionUID = -7091618924397220872L;
 
     private String motivation = "sc:painting";
     private AnnotationBody resource;
     private String on;
-
-    public Annotation(String id) {
-        super(id);
-    }
 
     public String getMotivation() {
         return motivation;

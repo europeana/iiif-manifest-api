@@ -16,9 +16,9 @@ import eu.europeana.iiif.model.v3.AnnotationPage;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.exception.*;
 import ioinformarics.oss.jackson.module.jsonld.JsonldModule;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
@@ -50,7 +50,9 @@ public class ManifestService {
     private static ObjectMapper mapper = new ObjectMapper();
 
     private ManifestSettings settings;
-    private CloseableHttpClient httpClient;
+    private CloseableHttpClient gethttpClient;
+    private CloseableHttpClient headhttpClient;
+
 
     public ManifestService(ManifestSettings settings) {
         this.settings = settings;
@@ -59,7 +61,15 @@ public class ManifestService {
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
         cm.setMaxTotal(200);
         cm.setDefaultMaxPerRoute(100);
-        httpClient = HttpClients.custom().setConnectionManager(cm).build();
+
+        // configure for head requests to Fulltext API (with specific timeouts)
+        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(8 * 1000)
+                .setSocketTimeout(5 * 1000).build();
+        headhttpClient = HttpClients.custom().setConnectionManager(cm)
+                .setDefaultRequestConfig(requestConfig).build();
+
+        //configure for get requests to Record API
+        gethttpClient = HttpClients.custom().setConnectionManager(cm).build();
 
         // configure jsonpath: we use jsonpath in combination with Jackson because that makes it easier to know what
         // type of objects are returned (see also https://stackoverflow.com/a/40963445)
@@ -163,7 +173,7 @@ public class ManifestService {
 
         try {
             String recordUrl = url.toString();
-            try (CloseableHttpResponse response = httpClient.execute(new HttpGet(recordUrl))) {
+            try (CloseableHttpResponse response = gethttpClient.execute(new HttpGet(recordUrl))) {
                 int responseCode = response.getStatusLine().getStatusCode();
                 LOG.debug("Record request: {}, status code = {}", recordId, responseCode);
                 if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
@@ -219,7 +229,7 @@ public class ManifestService {
     Boolean existsFullText(String fullTextUrl) throws IIIFException {
         Boolean result;
         try {
-            try (CloseableHttpResponse response = httpClient.execute(new HttpHead(fullTextUrl))) {
+            try (CloseableHttpResponse response = headhttpClient.execute(new HttpHead(fullTextUrl))) {
                 int responseCode = response.getStatusLine().getStatusCode();
                 LOG.debug("Full-Text head request: {}, status code = {}", fullTextUrl, responseCode);
                 if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
@@ -317,11 +327,11 @@ public class ManifestService {
             Sequence s = manifest.getSequences()[0];
 
             // We don't want to check for all images if they have a fulltext because that takes too long
-            // Instead we use only do a fulltext exists check for the canvas returned by findMatchingCanvas()
-            String canvasId = findMatchingCanvas(manifest.getIsShownBy(), s.getCanvases(), null);
+            // Instead we use only do a fulltext exists check for the canvas specified as start canvas
+            Integer canvasId = manifest.getStartCanvasPageNr();
             if (canvasId != null) {
                 // do the actual fulltext check
-                String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
+                String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId.toString(), fullTextApi);
                 if (Boolean.TRUE.equals(existsFullText(fullTextUrl))) {
                     // loop over canvases to add full-text link to all
                     for (eu.europeana.iiif.model.v2.Canvas c : s.getCanvases()) {
@@ -337,45 +347,7 @@ public class ManifestService {
         }
     }
 
-    /**
-     * Find the canvas that has an image with resource id that matches the provided edmIsShownBy.
-     * We do this because the number of this canvas will be used in doing the existsFullText check
-     * Note that we use this method both for either v2 and v3 (depending on which is parameter is set)
-     */
-    private String findMatchingCanvas(String edmIsShownBy, eu.europeana.iiif.model.v2.Canvas[] canvasesV2, eu.europeana.iiif.model.v3.Canvas[] canvasesV3) {
-        String result = null;
-        if (StringUtils.isEmpty(edmIsShownBy)) {
-            LOG.trace ("No full-text check because edmIsShownBy is empty");
-            return result;
-        } else if (canvasesV2 == null && canvasesV3 == null) {
-            LOG.trace ("No full-text check because there are no canvases");
-            return result;
-        }
 
-        if (canvasesV2 != null) {
-            for (eu.europeana.iiif.model.v2.Canvas c : canvasesV2) {
-                String annotationBodyId = c.getImages()[0].getResource().getId();
-                if (edmIsShownBy.equals(annotationBodyId)) {
-                    result = Integer.toString(c.getPageNr());
-                    LOG.trace("Canvas {} matches with edmIsShownBy", result);
-                    break;
-                }
-            }
-        } else {
-            for (eu.europeana.iiif.model.v3.Canvas c : canvasesV3) {
-                String annotationBodyId = c.getItems()[0].getItems()[0].getBody().getId();
-                if (edmIsShownBy.equals(annotationBodyId)) {
-                    result = Integer.toString(c.getPageNr());
-                    LOG.trace("Canvas {} matches with edmIsShownBy", result);
-                    break;
-                }
-            }
-        }
-        if (result == null) {
-            LOG.trace("No full-text check because there was no match with edmIsShownBy");
-        }
-        return result;
-    }
 
     /**
      * We generate all full text links in one place, so we can raise a timeout if retrieving the necessary
@@ -386,36 +358,18 @@ public class ManifestService {
         if (canvases != null) {
 
             // We don't want to check for all images if they have a fulltext because that takes too long
-            // Instead we use only do a fulltext exists check for the canvas returned by findMatchingCanvas()
-            String canvasId = findMatchingCanvas(manifest.getIsShownBy(), null, canvases);
-            if (canvasId != null) {
-                // do the actual fulltext check
-                String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
-                if (Boolean.TRUE.equals(existsFullText(fullTextUrl))) {
-                    // loop over canvases to add an extra annotation page
-                    for (eu.europeana.iiif.model.v3.Canvas c : canvases) {
-                        String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()),
-                                fullTextApi);
-                        addFullTextAnnotationPageV3(c, ftUrl);
-                    }
+            // Instead we use only do a fulltext exists check for the canvas specified as start canvas
+            String canvasId = Integer.toString(manifest.getStart().getPageNr());
+            String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
+            if (Boolean.TRUE.equals(existsFullText(fullTextUrl))) {
+                // loop over canvases to add an extra annotation page
+                for (eu.europeana.iiif.model.v3.Canvas c : canvases) {
+                    String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()), fullTextApi);
+                    c.setAnnotations(new AnnotationPage[]{ new AnnotationPage(ftUrl) });
                 }
             }
         }
     }
-
-    /**
-     *  If there is a full text available we have to add a new annotation page with just the full text url as id
-     */
-    private void addFullTextAnnotationPageV3(eu.europeana.iiif.model.v3.Canvas c, String fullTextUrl) {
-        List<AnnotationPage> aps = new ArrayList<>();
-
-        if (c.getItems() != null && c.getItems().length > 0) {
-            aps.addAll(Arrays.asList(c.getItems()));
-        }
-        aps.add(new AnnotationPage(fullTextUrl));
-        c.setItems(aps.toArray(new AnnotationPage[0]));
-    }
-
 
    /**
      * Serialize manifest to JSON-LD
@@ -442,9 +396,13 @@ public class ManifestService {
 
     @PreDestroy
     public void close() throws IOException {
-        if (this.httpClient != null) {
-            LOG.info("Closing http-client...");
-            this.httpClient.close();
+        if (this.gethttpClient != null) {
+            LOG.info("Closing get request http-client...");
+            this.gethttpClient.close();
+        }
+        if (this.headhttpClient != null) {
+            LOG.info("Closing head request http-client...");
+            this.headhttpClient.close();
         }
     }
 
