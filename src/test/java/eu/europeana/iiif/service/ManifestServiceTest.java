@@ -100,6 +100,13 @@ public class ManifestServiceTest {
                         .withHeader(CONTENT_TYPE, APPLICATION_JSON)
                         .withBody(ExampleData.EXAMPLE_RECORD_CHILD_RESPONSE)));
 
+        //Record API, minimal data
+        stubFor(get(urlEqualTo(API_V2_RECORD + ExampleData.EXAMPLE_RECORD_MINIMAL_ID + JSON_WSKEY+EXAMPLE_WSKEY))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader(CONTENT_TYPE, APPLICATION_JSON)
+                        .withBody(ExampleData.EXAMPLE_RECORD_MINIMAL_RESPONSE)));
+
         // Record API, simulate timeout exception
         stubFor(get(urlEqualTo(API_V2_RECORD + EXAMPLE_ERROR_ID + JSON_WSKEY + EXAMPLE_WSKEY))
                 .willReturn(aResponse()
@@ -172,7 +179,7 @@ public class ManifestServiceTest {
         return json;
     }
 
-    private ManifestV2 getManifestV2(String recordId) throws IIIFException{
+    private ManifestV2 getManifestV2(String recordId) throws IIIFException {
         ManifestV2 m = ms.generateManifestV2(getRecord(recordId), true, getFullTextApiUrl());
         assertNotNull(m);
         assertTrue(m.getId().contains(recordId));
@@ -275,6 +282,7 @@ public class ManifestServiceTest {
     @Test
     public void testGetManifestV2() throws IIIFException {
         getManifestV2(ExampleData.EXAMPLE_RECORD_CHILD_ID);
+        getManifestV2(ExampleData.EXAMPLE_RECORD_MINIMAL_ID);
     }
 
     /**
@@ -283,6 +291,7 @@ public class ManifestServiceTest {
     @Test
     public void testGetManifestV3() throws IIIFException {
         getManifestV3(ExampleData.EXAMPLE_RECORD_PARENT_ID);
+        getManifestV2(ExampleData.EXAMPLE_RECORD_MINIMAL_ID);
     }
 
     /**
