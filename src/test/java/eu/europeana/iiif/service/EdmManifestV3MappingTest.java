@@ -291,7 +291,7 @@ public class EdmManifestV3MappingTest {
     public void testStartCanvas() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
         String edmIsShownBy = EdmManifestMapping.getIsShownBy(null, document);
-        Canvas[] canvases = EdmManifestMapping.getItems("/test-id", edmIsShownBy, document);
+        Canvas[] canvases = EdmManifestMapping.getItems("/test-id", edmIsShownBy, document, false);
         Canvas start = EdmManifestMapping.getStartCanvasV3(canvases, edmIsShownBy);
 
         // test if only a few fields are set and the rest is null
@@ -312,7 +312,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testCanvasEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getItems("test", null, document));
+        assertNull(EdmManifestMapping.getItems("test", null, document, false));
     }
 
     /**
@@ -321,7 +321,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testCanvasMissingIsShownAtHasView() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_NOISSHOWNBY);
-        assertNull(EdmManifestMapping.getItems("test", null, document));
+        assertNull(EdmManifestMapping.getItems("test", null, document, false));
     }
 
     /**
@@ -331,7 +331,7 @@ public class EdmManifestV3MappingTest {
     public void testCanvases() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
         String edmIsShownBy = EdmManifestMapping.getIsShownBy(null, document);
-        Canvas[] canvases = EdmManifestMapping.getItems("/test-id", edmIsShownBy, document);
+        Canvas[] canvases = EdmManifestMapping.getItems("/test-id", edmIsShownBy, document, false);
         assertNotNull(canvases);
         // note that the 3rd canvas is not edmIsShownBy or hasView so not included
         assertEquals(2, canvases.length);
