@@ -1,6 +1,7 @@
 package eu.europeana.iiif.service;
 
 import eu.europeana.iiif.service.exception.IllegalArgumentException;
+import org.springframework.util.StringUtils;
 
 import java.net.URL;
 import java.util.regex.Pattern;
@@ -46,6 +47,9 @@ public final class ValidateUtils {
      * @throws IllegalArgumentException thrown when the provided recordId doesn't adhere to the expected format
      */
     public static final boolean validateWskeyFormat(String wsKey) throws IllegalArgumentException {
+        if (StringUtils.isEmpty(wsKey)) {
+            throw new IllegalArgumentException("Empty API key");
+        }
         if (!WSKEY.matcher(wsKey).matches()) {
             throw new IllegalArgumentException("Illegal API key "+ wsKey);
         }
