@@ -81,20 +81,24 @@ public final class EdmManifestMapping {
         String europeanaId = getEuropeanaId(jsonDoc);
         String isShownBy = getIsShownBy(europeanaId, jsonDoc);
 
-        // EA-1973 + EA-2002 temporary(?) workaround for EUScreen, use isShownAt instead.
-        boolean isEuScreenHack = false;
+        // EA-1973 + EA-2002 temporary(?) workaround for EUScreen; use isShownAt and use edmType instead of ebucoreMimetype
+        ResourceType euScreenTypeHack = null;
         if (StringUtils.isEmpty(isShownBy)) {
             String edmType = (String) getFirstValueArray("edmType", europeanaId,
                     JsonPath.parse(jsonDoc).read("$.object.proxies[?(@.europeanaProxy == true)].edmType", String[].class));
             String isShownAt = (String) getFirstValueArray("edmIsShownAt", europeanaId,
                     JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmIsShownAt", String[].class));
             LOG.debug("edmType = {}, isShownAt = {}", edmType, isShownAt);
-            if (isShownAt != null && "VIDEO".equalsIgnoreCase(edmType) &&
+            if (isShownAt != null && ("VIDEO".equalsIgnoreCase(edmType) || "SOUND".equalsIgnoreCase(edmType))  &&
                     (isShownAt.startsWith("http://www.euscreen.eu/item.html") ||
-                     isShownAt.startsWith("https://www.euscreen.eu/item.html")) ) {
-                LOG.debug("Using isShownAt because item is EUScreen video");
+                     isShownAt.startsWith("https://www.euscreen.eu/item.html")) ){
+                LOG.debug("Using isShownAt because item is EUScreen video or audio");
                 isShownBy = isShownAt;
-                isEuScreenHack = true;
+                if ("SOUND".equalsIgnoreCase(edmType)) {
+                    euScreenTypeHack = ResourceType.AUDIO;
+                } else {
+                    euScreenTypeHack = ResourceType.VIDEO;
+                }
             }
         }
 
@@ -109,7 +113,7 @@ public final class EdmManifestMapping {
         manifest.setRequiredStatement(getAttributionV3(europeanaId, isShownBy, jsonDoc));
         manifest.setRights(getRights(europeanaId, jsonDoc));
         manifest.setSeeAlso(getDataSetsV3(europeanaId));
-        manifest.setItems(getItems(europeanaId, isShownBy, jsonDoc, isEuScreenHack));
+        manifest.setItems(getItems(europeanaId, isShownBy, jsonDoc, euScreenTypeHack));
         manifest.setStart(getStartCanvasV3(manifest.getItems(), isShownBy));
         return manifest;
     }
@@ -598,7 +602,7 @@ public final class EdmManifestMapping {
      * @param jsonDoc
      * @return array of Canvases
      */
-    static eu.europeana.iiif.model.v3.Canvas[] getItems(String europeanaId, String isShownBy, Object jsonDoc, boolean isEuScreenHack) {
+    static eu.europeana.iiif.model.v3.Canvas[] getItems(String europeanaId, String isShownBy, Object jsonDoc, ResourceType euScreenTypeHack) {
         // generate canvases in a same order as the web resources
         List<WebResource> sortedResources = getSortedWebResources(europeanaId, isShownBy, jsonDoc);
         if (sortedResources.isEmpty()) {
@@ -609,7 +613,7 @@ public final class EdmManifestMapping {
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
         List<eu.europeana.iiif.model.v3.Canvas> canvases = new ArrayList<>(sortedResources.size());
         for (WebResource webResource: getSortedWebResources(europeanaId, isShownBy, jsonDoc)) {
-            canvases.add(getCanvasV3(europeanaId, order, webResource, services, isEuScreenHack));
+            canvases.add(getCanvasV3(europeanaId, order, webResource, services, euScreenTypeHack));
             order++;
         }
         return canvases.toArray(new eu.europeana.iiif.model.v3.Canvas[0]);
@@ -766,7 +770,7 @@ public final class EdmManifestMapping {
      * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That's done later.
      */
     private static eu.europeana.iiif.model.v3.Canvas getCanvasV3(String europeanaId, int order, WebResource webResource,
-                                                                 Map<String, Object>[] services, boolean isEUScreenHack) {
+                        Map<String, Object>[] services, ResourceType euScreenTypeHack) {
         eu.europeana.iiif.model.v3.Canvas c =
                 new eu.europeana.iiif.model.v3.Canvas(Definitions.getCanvasId(europeanaId, order), order);
 
@@ -805,16 +809,17 @@ public final class EdmManifestMapping {
         // annotation page has 1 annotation
         Annotation anno = new Annotation(null);
         annoPage.setItems(new Annotation[] { anno });
-        // we use Metis to determine if it's an image, video, audio or text based on mimetype
 
-        String ebucoreMimeType;
-        // EA-1973 + EA-2002 temporary(?) workaround for EUScreen, always assume video/mp4
-        if (isEUScreenHack) {
-            ebucoreMimeType = "video/mp4";
-        } else {
-            ebucoreMimeType = (String) webResource.get("ebucoreHasMimeType");
-        }
+        // we use Metis to determine if it's an image, video, audio or text based on mimetype
+        String ebucoreMimeType = (String) webResource.get("ebucoreHasMimeType");
         ResourceType resourceType = ResourceType.getResourceType(ebucoreMimeType);
+
+        // EA-1973 + EA-2002 temporary(?) workaround for EUScreen; use isShownAt and use edmType instead of ebucoreMimetype
+        if (euScreenTypeHack != null) {
+            resourceType = euScreenTypeHack;
+            ebucoreMimeType = null;
+        }
+
         if (resourceType == ResourceType.AUDIO || resourceType == ResourceType.VIDEO) {
             anno.setTimeMode("trim");
         }
