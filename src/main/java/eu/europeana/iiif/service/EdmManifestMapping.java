@@ -32,7 +32,9 @@ import static com.jayway.jsonpath.Filter.filter;
  * @author Patrick Ehlert
  * Created on 08-02-2018
  */
-@SuppressWarnings("squid:S1168") // ignore sonarqube rule: we return null on purpose in this class
+// ignore sonarqube rule: we return null on purpose in this class
+// ignore pmd rule:  we want to make a clear which objects are v2 and which v3
+@SuppressWarnings({"squid:S1168", "pmd:UnnecessaryFullyQualifiedName"})
 public final class EdmManifestMapping {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestMapping.class);

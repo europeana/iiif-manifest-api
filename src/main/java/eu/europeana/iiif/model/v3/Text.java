@@ -7,6 +7,8 @@ package eu.europeana.iiif.model.v3;
  */
 public class Text extends JsonLdIdType {
 
+    private static final long serialVersionUID = -3966992167567502750L;
+
     private LanguageMap label;
 
     /**

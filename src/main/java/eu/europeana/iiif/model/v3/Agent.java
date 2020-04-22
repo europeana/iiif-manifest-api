@@ -9,6 +9,8 @@ import eu.europeana.iiif.model.Definitions;
  */
 public class Agent extends JsonLdIdType {
 
+    private static final long serialVersionUID = 4455239006070480317L;
+
     private static Text[] europeanaHomepage = new Text[]{ new Text("https://www.europeana.eu",
                                                       new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, "Europeana")) };
     private static Image[] logo = new Image[]{ new Image(Definitions.EUROPEANA_LOGO_URL) };
