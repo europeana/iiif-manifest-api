@@ -86,8 +86,15 @@ public final class EdmManifestMapping {
         // EA-1973 + EA-2002 temporary(?) workaround for EUScreen; use isShownAt and use edmType instead of ebucoreMimetype
         ResourceType euScreenTypeHack = null;
         if (StringUtils.isEmpty(isShownBy)) {
+            LOG.debug("isShownBy is empty");
+            // find edmType (try first Europeana Proxy, use other proxies as fallback)
             String edmType = (String) getFirstValueArray("edmType", europeanaId,
                     JsonPath.parse(jsonDoc).read("$.object.proxies[?(@.europeanaProxy == true)].edmType", String[].class));
+            if (StringUtils.isEmpty(edmType)) {
+                edmType = (String) getFirstValueArray("edmType", europeanaId,
+                        JsonPath.parse(jsonDoc).read("$.object.proxies[?(@.europeanaProxy != true)].edmType", String[].class));
+            }
+            // find isShownAt
             String isShownAt = (String) getFirstValueArray("edmIsShownAt", europeanaId,
                     JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmIsShownAt", String[].class));
             LOG.debug("edmType = {}, isShownAt = {}", edmType, isShownAt);
@@ -102,6 +109,8 @@ public final class EdmManifestMapping {
                     euScreenTypeHack = ResourceType.VIDEO;
                 }
             }
+        } else {
+            LOG.debug("isShownBy = {}");
         }
 
         ManifestV3 manifest = new ManifestV3(europeanaId, Definitions.getManifestId(europeanaId), isShownBy);
