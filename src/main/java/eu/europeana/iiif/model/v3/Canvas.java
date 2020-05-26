@@ -102,6 +102,7 @@ public class Canvas extends JsonLdIdType {
         return items;
     }
 
+    @JsonIgnore
     public Annotation getStartCanvasAnnotation() {
         if (items == null || items.length == 0) {
             return null;

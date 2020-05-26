@@ -99,6 +99,7 @@ public class Canvas extends JsonLdId {
         this.images = images;
     }
 
+    @JsonIgnore
     public Annotation getStartImageAnnotation() {
         if (images == null || images.length == 0) {
             return null;
