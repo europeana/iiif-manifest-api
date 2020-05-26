@@ -60,7 +60,7 @@ public class ManifestServiceTest {
     private static final String CONTENT_LENGTH = "Content-Length";
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String APPLICATION_JSON = "application/json;charset=UTF-8";
-    private static final String API_V2_RECORD = "/api/v2/record";
+    private static final String API_V2_RECORD = "/record/v2";
     private static final String JSON_WSKEY = ".json?wskey=";
 
     @Autowired
@@ -71,7 +71,7 @@ public class ManifestServiceTest {
         LogManager.getLogger(ManifestServiceTest.class).info("Mock API port {}, httpsPort {}", wireMockRule.port(), wireMockRule.httpsPort());
 
         // Record API, return 401 for all unknown wskeys
-        stubFor(get(urlPathMatching("/api/v2/record/.*"))
+        stubFor(get(urlPathMatching(API_V2_RECORD + "/.*"))
                 .withQueryParam("wskey", matching(".*"))
                 .willReturn(aResponse()
                         .withStatus(401)
@@ -79,7 +79,7 @@ public class ManifestServiceTest {
                         .withBody("{\"error\": \"Invalid API key\"}")));
 
         // Record API, return 404 for all unknown record ids (that have a valid wskey)
-        stubFor(get(urlPathMatching("/api/v2/record/.*"))
+        stubFor(get(urlPathMatching(API_V2_RECORD + "/.*"))
                 .withQueryParam("wskey", equalTo(EXAMPLE_WSKEY))
                 .willReturn(aResponse()
                         .withStatus(404)
