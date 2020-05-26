@@ -300,25 +300,8 @@ public final class EdmManifestMapping {
                 LOG.trace("  checking key {} with {} values", key, values.length);
 
                 List<String> newValues = new ArrayList<>(); // recreate all values (because we may change one)
-
                 for (String value : values) {
-                    LOG.trace("  processing value {}", value);
-                    if (isUrl(value)) {
-                        // 1. add html anchor tag to current value
-                        String newValue = "<a href='" + value + "'>" + value + "</a>";
-                        LOG.trace("    isUrl -> newValue = {} ", newValue);
-                        newValues.add(newValue);
-
-                        // 2. check if we should add extra preflabels
-                        LanguageMap extraPrefLabelMap = getTimespanAgentConceptOrPlaceLabels(jsonDoc, value);
-                        if (extraPrefLabelMap != null) {
-                            LOG.trace("    isUrl -> extraLabels = {}", extraPrefLabelMap);
-                            extraPrefLabelMaps.add(extraPrefLabelMap);
-                        }
-                    } else {
-                        // no url, we keep it.
-                        newValues.add(value);
-                    }
+                    processMetaDataValue(value, newValues, jsonDoc, extraPrefLabelMaps);
                 }
 
                 // replace old values with new ones for the current key
@@ -335,6 +318,27 @@ public final class EdmManifestMapping {
             LOG.trace("FINISH '{}' value map = {}", fieldName, metaDataValue);
 
             metaData.add(new eu.europeana.iiif.model.v3.MetaData(metaDataLabel, metaDataValue));
+        }
+    }
+
+    private static void processMetaDataValue(String value, List<String> newValues, Object jsonDoc,
+                                        List<LanguageMap> extraPrefLabelMaps) {
+        LOG.trace("  processing value {}", value);
+        if (isUrl(value)) {
+            // 1. add html anchor tag to current value
+            String newValue = "<a href='" + value + "'>" + value + "</a>";
+            LOG.trace("    isUrl -> newValue = {} ", newValue);
+            newValues.add(newValue);
+
+            // 2. check if we should add extra preflabels
+            LanguageMap extraPrefLabelMap = getTimespanAgentConceptOrPlaceLabels(jsonDoc, value);
+            if (extraPrefLabelMap != null) {
+                LOG.trace("    isUrl -> extraLabels = {}", extraPrefLabelMap);
+                extraPrefLabelMaps.add(extraPrefLabelMap);
+            }
+        } else {
+            // no url, we keep it.
+            newValues.add(value);
         }
     }
 
@@ -386,17 +390,21 @@ public final class EdmManifestMapping {
                 String language = entry.getKey();
                 String[] values = entry.getValue();
                 for (String value: values) {
-                    List<LanguageObject> langObjects;
-                    if (!metaData.containsKey(fieldName)) {
-                        langObjects = new ArrayList<>();
-                        metaData.put(fieldName, langObjects);
-                    } else {
-                        langObjects = metaData.get(fieldName);
-                    }
-                    langObjects.add(new LanguageObject(language, value));
+                    processMetaDataField(fieldName, metaData, language, value);
                 }
             }
         }
+    }
+
+    private static void processMetaDataField(String fieldName,  Map<String, List<LanguageObject>> metaData, String language, String value) {
+        List<LanguageObject> langObjects;
+        if (!metaData.containsKey(fieldName)) {
+            langObjects = new ArrayList<>();
+            metaData.put(fieldName, langObjects);
+        } else {
+            langObjects = metaData.get(fieldName);
+        }
+        langObjects.add(new LanguageObject(language, value));
     }
 
     /**
@@ -641,7 +649,7 @@ public final class EdmManifestMapping {
 
         eu.europeana.iiif.model.v3.Canvas result = null;
         for (eu.europeana.iiif.model.v3.Canvas c : items) {
-            String annotationBodyId = c.getItems()[0].getItems()[0].getBody().getId();
+            String annotationBodyId = c.getStartCanvasAnnotation().getBody().getId();
             if (edmIsShownBy.equals(annotationBodyId)) {
                 result = c;
                 LOG.trace("Start canvas = {} (matches with edmIsShownBy)", result.getPageNr());
@@ -668,7 +676,7 @@ public final class EdmManifestMapping {
 
         eu.europeana.iiif.model.v2.Canvas result = null;
         for (eu.europeana.iiif.model.v2.Canvas c : items) {
-            String annotationBodyId = c.getImages()[0].getResource().getId();
+            String annotationBodyId = c.getStartImageAnnotation().getResource().getId();
             if (edmIsShownBy.equals(annotationBodyId)) {
                 result = c;
                 LOG.trace("Start canvas = {} (matches with edmIsShownBy)", result.getPageNr());

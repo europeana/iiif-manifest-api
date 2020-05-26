@@ -102,6 +102,13 @@ public class Canvas extends JsonLdIdType {
         return items;
     }
 
+    public Annotation getStartCanvasAnnotation() {
+        if (items == null || items.length == 0) {
+            return null;
+        }
+        return items[0].getItems()[0];
+    }
+
     public void setItems(AnnotationPage[] items) {
         this.items = items;
     }
