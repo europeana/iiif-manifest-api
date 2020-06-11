@@ -384,7 +384,7 @@ public class EdmManifestV3MappingTest {
         expectedAnnotation2.timeMode = null;
         expectedAnnotation2.target = "https://iiif.europeana.eu/presentation/test-id/canvas/p2";
         expectedAnnotation2.bodyId = "wr2Id";
-        expectedAnnotation2.bodyType = "Unknown";
+        expectedAnnotation2.bodyType = "Other";
         expectedAnnotation2.bodyFormat = "wr2MimeType";
         expectedAnnotation2.hasService = false;
         checkCanvas(expectedCanvas2, canvas2);

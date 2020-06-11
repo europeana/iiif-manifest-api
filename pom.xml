@@ -24,7 +24,8 @@
 
 		<spring-boot.version>2.1.4.RELEASE</spring-boot.version>
 		<spring-hysterix.version>2.1.1.RELEASE</spring-hysterix.version>
-		<metis.version>1.4.0</metis.version>
+		<jackson.version>2.11.0</jackson.version>
+		<metis.version>1.9.0</metis.version>
 	</properties>
 
 	<dependencyManagement>
@@ -100,10 +101,10 @@
 
 		<dependency>
 			<groupId>eu.europeana.metis</groupId>
-			<artifactId>metis-media-service</artifactId>
+			<artifactId>metis-common</artifactId>
             <version>${metis.version}</version>
 			<exclusions>
-				<!-- exclude all other dependencies coming in from metis-media-service -->
+				<!-- exclude all other dependencies coming in from metis-commons -->
 				<exclusion>
 					<groupId>*</groupId>
 					<artifactId>*</artifactId>

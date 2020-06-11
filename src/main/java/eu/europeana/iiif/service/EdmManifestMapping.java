@@ -2,6 +2,7 @@ package eu.europeana.iiif.service;
 
 import com.jayway.jsonpath.Filter;
 import com.jayway.jsonpath.JsonPath;
+import eu.europeana.metis.utils.MediaType;
 import eu.europeana.iiif.model.Definitions;
 import eu.europeana.iiif.model.WebResource;
 import eu.europeana.iiif.model.WebResourceSorter;
@@ -10,10 +11,8 @@ import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.Collection;
 import eu.europeana.iiif.model.v3.*;
 import eu.europeana.iiif.service.exception.DataInconsistentException;
-import eu.europeana.metis.mediaprocessing.extraction.ResourceType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.http.MediaType;
 import org.springframework.util.StringUtils;
 
 import java.sql.Timestamp;
@@ -84,7 +83,7 @@ public final class EdmManifestMapping {
         String isShownBy = getIsShownBy(europeanaId, jsonDoc);
 
         // EA-1973 + EA-2002 temporary(?) workaround for EUScreen; use isShownAt and use edmType instead of ebucoreMimetype
-        ResourceType euScreenTypeHack = null;
+        MediaType euScreenTypeHack = null;
         if (StringUtils.isEmpty(isShownBy)) {
             LOG.debug("isShownBy is empty");
             // find edmType (try first Europeana Proxy, use other proxies as fallback)
@@ -104,9 +103,9 @@ public final class EdmManifestMapping {
                 LOG.debug("Using isShownAt because item is EUScreen video or audio");
                 isShownBy = isShownAt;
                 if ("SOUND".equalsIgnoreCase(edmType)) {
-                    euScreenTypeHack = ResourceType.AUDIO;
+                    euScreenTypeHack = MediaType.AUDIO;
                 } else {
-                    euScreenTypeHack = ResourceType.VIDEO;
+                    euScreenTypeHack = MediaType.VIDEO;
                 }
             }
         } else {
@@ -567,7 +566,7 @@ public final class EdmManifestMapping {
     static eu.europeana.iiif.model.v2.DataSet[] getDataSetsV2(String europeanaId) {
         eu.europeana.iiif.model.v2.DataSet[] result = new eu.europeana.iiif.model.v2.DataSet[3];
         result[0] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".json-ld"), Definitions.MEDIA_TYPE_JSONLD);
-        result[1] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".json"), MediaType.APPLICATION_JSON_VALUE);
+        result[1] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".json"), org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
         result[2] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".rdf"), Definitions.MEDIA_TYPE_RDF);
         return result;
     }
@@ -580,7 +579,7 @@ public final class EdmManifestMapping {
     static eu.europeana.iiif.model.v3.DataSet[] getDataSetsV3(String europeanaId) {
         eu.europeana.iiif.model.v3.DataSet[] result = new eu.europeana.iiif.model.v3.DataSet[3];
         result[0] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json-ld"), Definitions.MEDIA_TYPE_JSONLD);
-        result[1] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json"), MediaType.APPLICATION_JSON_VALUE);
+        result[1] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json"), org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
         result[2] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".rdf"), Definitions.MEDIA_TYPE_RDF);
         return result;
     }
@@ -621,7 +620,7 @@ public final class EdmManifestMapping {
      * @param jsonDoc
      * @return array of Canvases
      */
-    static eu.europeana.iiif.model.v3.Canvas[] getItems(String europeanaId, String isShownBy, Object jsonDoc, ResourceType euScreenTypeHack) {
+    static eu.europeana.iiif.model.v3.Canvas[] getItems(String europeanaId, String isShownBy, Object jsonDoc, MediaType euScreenTypeHack) {
         // generate canvases in a same order as the web resources
         List<WebResource> sortedResources = getSortedWebResources(europeanaId, isShownBy, jsonDoc);
         if (sortedResources.isEmpty()) {
@@ -789,7 +788,7 @@ public final class EdmManifestMapping {
      * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That's done later.
      */
     private static eu.europeana.iiif.model.v3.Canvas getCanvasV3(String europeanaId, int order, WebResource webResource,
-                        Map<String, Object>[] services, ResourceType euScreenTypeHack) {
+                        Map<String, Object>[] services, MediaType euScreenTypeHack) {
         eu.europeana.iiif.model.v3.Canvas c =
                 new eu.europeana.iiif.model.v3.Canvas(Definitions.getCanvasId(europeanaId, order), order);
 
@@ -831,23 +830,23 @@ public final class EdmManifestMapping {
 
         // we use Metis to determine if it's an image, video, audio or text based on mimetype
         String ebucoreMimeType = (String) webResource.get("ebucoreHasMimeType");
-        ResourceType resourceType = ResourceType.getResourceType(ebucoreMimeType);
+        MediaType mediaType = MediaType.getMediaType(ebucoreMimeType);
 
         // EA-1973 + EA-2002 temporary(?) workaround for EUScreen; use isShownAt and use edmType instead of ebucoreMimetype
         if (euScreenTypeHack != null) {
-            LOG.debug("Override resourceType {} with {} because of EUScreen hack", resourceType, euScreenTypeHack);
-            resourceType = euScreenTypeHack;
+            LOG.debug("Override mediaType {} with {} because of EUScreen hack", mediaType, euScreenTypeHack);
+            mediaType = euScreenTypeHack;
             ebucoreMimeType = null;
         }
 
-        if (resourceType == ResourceType.AUDIO || resourceType == ResourceType.VIDEO) {
+        if (mediaType == MediaType.AUDIO || mediaType == MediaType.VIDEO) {
             anno.setTimeMode("trim");
         }
         anno.setTarget(c.getId());
 
         // annotation has 1 annotationBody
         eu.europeana.iiif.model.v3.AnnotationBody annoBody = new AnnotationBody(
-                (String) webResource.get(ABOUT),  StringUtils.capitalize(resourceType.toString().toLowerCase(Locale.GERMANY)));
+                (String) webResource.get(ABOUT),  StringUtils.capitalize(mediaType.toString().toLowerCase(Locale.GERMANY)));
         anno.setBody(annoBody);
 
         if (!StringUtils.isEmpty(ebucoreMimeType)) {
