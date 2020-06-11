@@ -110,7 +110,7 @@ public final class EdmManifestMapping {
                 }
             }
         } else {
-            LOG.debug("isShownBy = {}");
+            LOG.debug("isShownBy = {}", isShownBy);
         }
 
         ManifestV3 manifest = new ManifestV3(europeanaId, Definitions.getManifestId(europeanaId), isShownBy);
@@ -835,6 +835,7 @@ public final class EdmManifestMapping {
 
         // EA-1973 + EA-2002 temporary(?) workaround for EUScreen; use isShownAt and use edmType instead of ebucoreMimetype
         if (euScreenTypeHack != null) {
+            LOG.debug("Override resourceType {} with {} because of EUScreen hack", resourceType, euScreenTypeHack);
             resourceType = euScreenTypeHack;
             ebucoreMimeType = null;
         }
