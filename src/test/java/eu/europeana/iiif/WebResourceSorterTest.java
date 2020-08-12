@@ -25,6 +25,11 @@ public class WebResourceSorterTest {
                                                                       new WebResource("5", null) };
     private static final WebResource ISOLATED1 = new WebResource("iso1", null);
     private static final WebResource ISOLATED2 = new WebResource("iso2", null);
+    private static final WebResource ISOLATED3 = new WebResource("iso3", null);
+    private static final WebResource ISOLATED4 = new WebResource("iso4", null);
+    private static final WebResource ISOLATED5 = new WebResource("iso5", "6");
+
+    private static final List<String> orderViews1 = new ArrayList<>(Arrays.asList("1", "2", "3", "4", "5", "iso2", "iso1", "iso3", "iso4", "iso5"));
 
     /**
      * @param webResources list of webresources to check
@@ -65,7 +70,7 @@ public class WebResourceSorterTest {
         test.add(ISOLATED2);
         test.addAll(Arrays.asList(SEQUENCE2));
 
-        List<WebResource> wrs = WebResourceSorter.sort(test);
+        List<WebResource> wrs = WebResourceSorter.sort(test, orderViews1);
         assertTrue(isAfter(wrs, "1", "2"));
         assertTrue(isAfter(wrs, "3", "4"));
         assertTrue(isAfter(wrs, "4", "5"));
@@ -73,6 +78,7 @@ public class WebResourceSorterTest {
         assertTrue(isAfter(wrs, "iso1", "5"));
         assertTrue(isAfter(wrs, "iso2", "2"));
         assertTrue(isAfter(wrs, "iso2", "5"));
+        assertTrue(isAfter(wrs, "iso1", "iso2"));
     }
 
     /**
@@ -81,10 +87,13 @@ public class WebResourceSorterTest {
      */
     @Test
     public void sortOnlyIsolated() throws DataInconsistentException {
-        WebResource[] isolated = new WebResource[]{ ISOLATED1, ISOLATED2};
-        List<WebResource> wrs = WebResourceSorter.sort(Arrays.asList(isolated));
+        WebResource[] isolated = new WebResource[]{ ISOLATED1, ISOLATED2, ISOLATED3, ISOLATED4};
+        List<WebResource> wrs = WebResourceSorter.sort(Arrays.asList(isolated), orderViews1);
         assertNotNull(wrs);
-        // can't test order since it's not defined.
+        assertTrue(isAfter(wrs, "iso1", "iso2"));
+        assertTrue(isAfter(wrs, "iso4", "iso3"));
+        assertTrue(isAfter(wrs, "iso3", "iso1"));
+        assertTrue(isAfter(wrs, "iso4", "iso2"));
     }
 
     /**
@@ -94,7 +103,7 @@ public class WebResourceSorterTest {
     @Test
     public void sortEmpty() throws DataInconsistentException {
         List<WebResource> emptyList = new ArrayList<>();
-        List<WebResource> wrs = WebResourceSorter.sort(emptyList);
+        List<WebResource> wrs = WebResourceSorter.sort(emptyList,orderViews1);
         assertNotNull(wrs);
     }
 
@@ -108,7 +117,7 @@ public class WebResourceSorterTest {
                 new WebResource("1", "2"),
                 new WebResource("2", "3"),
                 new WebResource("3", "1")};
-        WebResourceSorter.sort(Arrays.asList(infiniteLoop));
+        WebResourceSorter.sort(Arrays.asList(infiniteLoop),orderViews1);
     }
 
     /**
@@ -121,7 +130,7 @@ public class WebResourceSorterTest {
                 new WebResource("1", "2"),
                 new WebResource("2", "3"),
                 new WebResource("3", "4")};
-        WebResourceSorter.sort(Arrays.asList(incomplete));
+        WebResourceSorter.sort(Arrays.asList(incomplete),orderViews1);
     }
 
     /**
@@ -135,7 +144,16 @@ public class WebResourceSorterTest {
                 new WebResource("2", "3"),
                 new WebResource("5", "4"),
                 new WebResource("4", "3")};
-        WebResourceSorter.sort(Arrays.asList(intertwined));
+        WebResourceSorter.sort(Arrays.asList(intertwined),orderViews1);
     }
 
+    /**
+     * Test if an error is thrown if there isolated sequence contains nextSequenceID
+     * @throws DataInconsistentException when the data is inconsistent
+     */
+    @Test(expected = DataInconsistentException.class)
+    public void sortIsolatedSequence() throws DataInconsistentException {
+        WebResource[] isolated = new WebResource[]{ ISOLATED1,ISOLATED5};
+        WebResourceSorter.sort(Arrays.asList(isolated), orderViews1);
+    }
 }
