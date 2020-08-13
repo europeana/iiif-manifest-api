@@ -39,6 +39,7 @@ public final class WebResourceSorter {
     /**
      * Sorts the provided webResource array. All sequences should be listed first (in reverse sequence order), then
      * all webresources that are not part of a sequence should be ordered according to orderViews List
+     * if the records contains multiple sequences, then the one containing edmIsShownBY should be the first sequence.
      * orderViews List contains edm:isShownBy/edmIsShowAt (EUScreen items) as the first element and then order of the edm:hasView
      * If there are multiple sequences, the order between sequences doesn't matter. Also the order between webresources
      * not part of a sequence doesn't matter.
@@ -67,14 +68,22 @@ public final class WebResourceSorter {
         LOG.trace("  StartNodes = {}", startNodes);
 
         // for each start node, follow the sequence down to the end node and list webresource in reverse order
+        ArrayList<WebResource> sequences = new ArrayList<>();
         ArrayList<WebResource> result = new ArrayList<>();
         Iterator<String> startNodeIds = startNodes.iterator();
         while (startNodeIds.hasNext()) {
             String startNodeId = startNodeIds.next();
             List<WebResource> sequence = getSequence(startNodeId, idsWebResources, idsNextInSequence);
             LOG.trace("  Sequence = {}", sequence);
-            result.addAll(sequence);
+            // add the edmIsShowmBy sequence first in the results
+            if (getOrderOfSequence(orderViews.get(0), sequence)) {
+                result.addAll(sequence);
+            } else {
+                sequences.addAll(sequence);
+            }
         }
+        // add rest of the sequences later
+        result.addAll(sequences);
 
         // add any remaining nodes as the order of orderViews List
         // (these should be isolated webresources, not part of any sequence)
@@ -93,6 +102,18 @@ public final class WebResourceSorter {
             LOG.debug("Webresources = {}", result);
         }
         return result;
+    }
+
+    /**
+     * Iterate over the sequence and find if the sequence contains edmIsShownBy
+     */
+    private static boolean getOrderOfSequence(String edmIsShownBy, List<WebResource> sequence) {
+        for(WebResource wr : sequence) {
+            if(wr.getId().equals(edmIsShownBy)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

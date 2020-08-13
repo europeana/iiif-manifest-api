@@ -30,6 +30,9 @@ public class WebResourceSorterTest {
     private static final WebResource ISOLATED5 = new WebResource("iso5", "6");
 
     private static final List<String> orderViews1 = new ArrayList<>(Arrays.asList("1", "2", "3", "4", "5", "iso2", "iso1", "iso3", "iso4", "iso5"));
+    private static final List<String> orderViews2 = new ArrayList<>(Arrays.asList("5", "2", "3", "4", "1", "iso2", "iso1", "iso5", "iso4", "iso3"));
+    private static final List<String> orderViews3 = new ArrayList<>(Arrays.asList("iso4", "2", "3", "4", "1", "iso1", "iso2", "iso3", "5", "iso5"));
+
 
     /**
      * @param webResources list of webresources to check
@@ -69,7 +72,6 @@ public class WebResourceSorterTest {
         test.addAll(Arrays.asList(SEQUENCE1));
         test.add(ISOLATED2);
         test.addAll(Arrays.asList(SEQUENCE2));
-
         List<WebResource> wrs = WebResourceSorter.sort(test, orderViews1);
         assertTrue(isAfter(wrs, "1", "2"));
         assertTrue(isAfter(wrs, "3", "4"));
@@ -155,5 +157,57 @@ public class WebResourceSorterTest {
     public void sortIsolatedSequence() throws DataInconsistentException {
         WebResource[] isolated = new WebResource[]{ ISOLATED1,ISOLATED5};
         WebResourceSorter.sort(Arrays.asList(isolated), orderViews1);
+    }
+
+    /**
+     * Checks order of multiple sequences with the combination of isNextSequence + edmIsShownBy
+     * If a record has 2 or more sequences, show the sequence that contains the edmIsShownBy first
+     */
+    @Test
+    public void sortMultipleSequences() throws DataInconsistentException {
+        // 2 sequences and 4 isolated nodes
+        List<WebResource> test = new ArrayList<>();
+        test.add(ISOLATED1);
+        test.add(ISOLATED2);
+        test.add(ISOLATED3);
+        test.add(ISOLATED4);
+        test.addAll(Arrays.asList(SEQUENCE1));
+        test.addAll(Arrays.asList(SEQUENCE2));
+
+        // when multilple sequences contains edmIsShownBy value
+        List<WebResource> wrs = WebResourceSorter.sort(test, orderViews2);
+        System.out.println(wrs);
+        assertTrue(isAfter(wrs, "4", "5"));
+        assertTrue(isAfter(wrs, "3", "4"));
+        assertTrue(isAfter(wrs, "1", "2"));
+        assertTrue(isAfter(wrs, "2", "5"));
+        assertTrue(isAfter(wrs, "1", "5"));
+        assertTrue(isAfter(wrs, "iso1", "2"));
+        assertTrue(isAfter(wrs, "iso1", "5"));
+        assertTrue(isAfter(wrs, "iso2", "2"));
+        assertTrue(isAfter(wrs, "iso2", "5"));
+        assertTrue(isAfter(wrs, "iso1", "iso2"));
+        assertTrue(isAfter(wrs, "iso4", "iso1"));
+        assertTrue(isAfter(wrs, "iso3", "iso4"));
+
+        wrs.clear();
+
+        // when multiple sequences does not contains edmIsShownBy value
+        wrs = WebResourceSorter.sort(test, orderViews3);
+        System.out.println(wrs);
+        assertTrue(isAfter(wrs, "1", "2"));
+        assertTrue(isAfter(wrs, "4", "5"));
+        assertTrue(isAfter(wrs, "3", "4"));
+        assertTrue(isAfter(wrs, "4", "2"));
+        assertTrue(isAfter(wrs, "3", "2"));
+        assertTrue(isAfter(wrs, "5", "2"));
+        assertTrue(isAfter(wrs, "iso4", "2"));
+        assertTrue(isAfter(wrs, "iso3", "5"));
+        assertTrue(isAfter(wrs, "iso2", "3"));
+        assertTrue(isAfter(wrs, "iso1", "1"));
+        assertTrue(isAfter(wrs, "iso1", "iso4"));
+        assertTrue(isAfter(wrs, "iso2", "iso4"));
+        assertTrue(isAfter(wrs, "iso3", "iso4"));
+
     }
 }
