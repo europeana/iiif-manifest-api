@@ -302,6 +302,21 @@ public class EdmManifestV3MappingTest {
     }
 
     @Test
+    public void startCanvasNoIsShownByShouldNotThrow() {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_NOISSHOWNBY);
+        String edmIsShownBy = EdmManifestMapping.getIsShownBy(null, document);
+
+        Canvas[] canvases = EdmManifestMapping.getItems("/test-id", edmIsShownBy, document, null);
+        Canvas start = EdmManifestMapping.getStartCanvasV3(canvases, edmIsShownBy);
+
+        // test if only a few fields are set and the rest is null
+        ExpectedCanvasAndAnnotationPageValues expectedCanvas = new ExpectedCanvasAndAnnotationPageValues();
+        expectedCanvas.idEndsWith = "/test-id/canvas/p1";
+        expectedCanvas.type = "Canvas";
+        checkCanvas(expectedCanvas, start);
+    }
+
+    @Test
     public void testStartCanvasEmpty() {
        assertNull(EdmManifestMapping.getStartCanvasV3(null, null));
     }
