@@ -649,7 +649,7 @@ public final class EdmManifestMapping {
         eu.europeana.iiif.model.v3.Canvas result = null;
         for (eu.europeana.iiif.model.v3.Canvas c : items) {
             String annotationBodyId = c.getStartCanvasAnnotation().getBody().getId();
-            if (edmIsShownBy.equals(annotationBodyId)) {
+            if (!StringUtils.isEmpty(edmIsShownBy) && edmIsShownBy.equals(annotationBodyId)) {
                 result = c;
                 LOG.trace("Start canvas = {} (matches with edmIsShownBy)", result.getPageNr());
                 break;
@@ -676,7 +676,7 @@ public final class EdmManifestMapping {
         eu.europeana.iiif.model.v2.Canvas result = null;
         for (eu.europeana.iiif.model.v2.Canvas c : items) {
             String annotationBodyId = c.getStartImageAnnotation().getResource().getId();
-            if (edmIsShownBy.equals(annotationBodyId)) {
+            if (!StringUtils.isEmpty(edmIsShownBy) && edmIsShownBy.equals(annotationBodyId)) {
                 result = c;
                 LOG.trace("Start canvas = {} (matches with edmIsShownBy)", result.getPageNr());
                 break;
