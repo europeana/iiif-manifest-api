@@ -24,6 +24,7 @@ import java.util.*;
 
 import static com.jayway.jsonpath.Criteria.where;
 import static com.jayway.jsonpath.Filter.filter;
+import static eu.europeana.iiif.model.Definitions.IMAGE_CONTEXT_VALUE;
 
 /**
  * This class contains all the methods for mapping EDM record data to IIIF Manifest data for both IIIF v2 and v3
@@ -57,6 +58,7 @@ public final class EdmManifestMapping {
         String europeanaId = getEuropeanaId(jsonDoc);
         String isShownBy = getIsShownBy(europeanaId, jsonDoc);
         ManifestV2 manifest = new ManifestV2(europeanaId, Definitions.getManifestId(europeanaId), isShownBy);
+        manifest.setService(getServiceDescription(europeanaId));
         manifest.setWithin(getWithinV2(jsonDoc));
         manifest.setLabel(getLabelsV2(jsonDoc));
         manifest.setDescription(getDescriptionV2(jsonDoc));
@@ -71,6 +73,13 @@ public final class EdmManifestMapping {
             manifest.setStartCanvasPageNr(getStartCanvasV2(manifest.getSequences()[0].getCanvases(), isShownBy));
         }
         return manifest;
+    }
+
+    /**
+     * Generates a service description for the manifest
+     */
+    private static eu.europeana.iiif.model.v2.Service getServiceDescription(String europeanaId) {
+        return new eu.europeana.iiif.model.v2.Service(Definitions.getSearchId(europeanaId), Definitions.SEARCH_CONTEXT_VALUE, Definitions.SEARCH_PROFILE_VALUE);
     }
 
     /**
@@ -776,7 +785,7 @@ public final class EdmManifestMapping {
         // body can have a service
         String serviceId = getServiceId(webResource, europeanaId);
         if (serviceId != null) {
-            eu.europeana.iiif.model.v2.Service service = new eu.europeana.iiif.model.v2.Service(serviceId);
+            eu.europeana.iiif.model.v2.Service service = new eu.europeana.iiif.model.v2.Service(serviceId, IMAGE_CONTEXT_VALUE);
             service.setProfile(lookupServiceDoapImplements(services, serviceId, europeanaId));
             annoBody.setService(service);
         }
