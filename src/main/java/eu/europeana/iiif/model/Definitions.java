@@ -111,6 +111,10 @@ public final class Definitions {
 
     public static final String IIIF_BASE_URL = "https://iiif.europeana.eu";
 
+    public static final String IMAGE_SERVICE_TYPE_3 = "ImageService3";
+
+    public static final String SEARCH_SERVICE_TYPE_1 = "SearchService1";
+
     private Definitions() {
         // empty constructor to avoid initializationRE
     }
