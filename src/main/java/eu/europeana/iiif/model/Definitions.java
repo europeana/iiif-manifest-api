@@ -94,6 +94,25 @@ public final class Definitions {
     public static final String EDM_SCHEMA_URL = "http://www.europeana.eu/schemas/edm/";
 
 
+    /**
+     * Context value for search service description
+     */
+    public static final String SEARCH_CONTEXT_VALUE = "http://iiif.io/api/search/1/context.json";
+
+    /**
+     * Profile value for search service description
+     */
+    public static final String SEARCH_PROFILE_VALUE = "http://iiif.io/api/search/1/search";
+
+    /**
+     * Context value for image service description
+     */
+    public static final String IMAGE_CONTEXT_VALUE = "http://iiif.io/api/image/2/context.json";
+
+    public static final String IIIF_BASE_URL = "https://iiif.europeana.eu";
+
+    public static final String IMAGE_SERVICE_TYPE_3 = "ImageService3";
+
     private Definitions() {
         // empty constructor to avoid initializationRE
     }
@@ -126,4 +145,12 @@ public final class Definitions {
         return Definitions.DATASET_ID_BASE_URL + europeanaId + postFix;
     }
 
+    /**
+     * Creates a search ID for the manifest service description.
+     * @param europeanaId * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
+     * @return string containing the search ID
+     */
+    public static String getSearchId(String europeanaId){
+        return Definitions.IIIF_BASE_URL + europeanaId + "/search";
+    }
 }
