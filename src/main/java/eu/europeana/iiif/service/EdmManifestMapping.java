@@ -87,7 +87,7 @@ public final class EdmManifestMapping {
      * Generates a serviceV3 description for the manifest
      */
     private static Service getServiceDescriptionV3(String europeanaId) {
-        return new Service(europeanaId, Definitions.SEARCH_SERVICE_TYPE_1, Definitions.SEARCH_CONTEXT_VALUE, Definitions.SEARCH_PROFILE_VALUE);
+        return new Service(europeanaId, null, Definitions.SEARCH_CONTEXT_VALUE, Definitions.SEARCH_PROFILE_VALUE);
     }
 
     /**

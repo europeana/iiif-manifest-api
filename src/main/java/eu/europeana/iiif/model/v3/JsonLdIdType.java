@@ -1,6 +1,7 @@
 package eu.europeana.iiif.model.v3;
 
 import java.io.Serializable;
+import java.util.Optional;
 
 /**
  * Id and Type are common fields for most IIIF v3 types.
@@ -28,7 +29,7 @@ public class JsonLdIdType implements Serializable{
         return id;
     }
 
-    public String getType() {
-        return type;
+    public Optional<String> getType() {
+        return Optional.ofNullable(type);
     }
 }

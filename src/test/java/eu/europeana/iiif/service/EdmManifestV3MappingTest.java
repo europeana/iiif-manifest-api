@@ -38,7 +38,7 @@ public class EdmManifestV3MappingTest {
         assertNotNull(col);
         assertTrue(col.length > 0);
         assertEquals("https://data.theeuropeanlibrary.org/someurl", col[0].getId());
-        assertEquals("Collection", col[0].getType());
+        assertEquals("Collection", col[0].getType().get());
     }
 
     @Test
@@ -183,7 +183,7 @@ public class EdmManifestV3MappingTest {
         assertNotNull(images);
         assertEquals(1, images.length);
         assertEquals(EdmManifestData.TEST_THUMBNAIL_ID, images[0].getId());
-        assertEquals("Image", images[0].getType());
+        assertEquals("Image", images[0].getType().get());
     }
 
     /**
@@ -206,7 +206,7 @@ public class EdmManifestV3MappingTest {
         assertEquals(1, text.length);
         assertEquals(EdmManifestData.TEST_HOMEPAGE_ID, text[0].getId());
         testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"Europeana"}, text[0].getLabel());
-        assertEquals("Text", text[0].getType());
+        assertEquals("Text", text[0].getType().get());
         assertEquals("text/html", text[0].getFormat());
     }
 
@@ -247,7 +247,7 @@ public class EdmManifestV3MappingTest {
         Rights rights = EdmManifestMapping.getRights("test", document);
         assertNotNull(rights);
         assertEquals("licenseTextEuropeana", rights.getId());
-        assertEquals("Text", rights.getType());
+        assertEquals("Text", rights.getType().get());
         assertEquals("text/html", rights.getFormat());
     }
 
@@ -409,7 +409,7 @@ public class EdmManifestV3MappingTest {
         assertNotNull(canvas);
         assertTrue("Expected id ending with " + expected.idEndsWith + " but id is "+canvas.getId(),
                 canvas.getId().endsWith(expected.idEndsWith));
-        assertEquals(expected.type, canvas.getType());
+        assertEquals(expected.type, canvas.getType().get());
         testLanguageMap(expected.label, canvas.getLabel());
         assertEquals(expected.duration, canvas.getDuration());
         testLanguageMap(expected.attribution, canvas.getRequiredStatement());
@@ -425,7 +425,7 @@ public class EdmManifestV3MappingTest {
             AnnotationPage ap = canvas.getItems()[0];
             assertNotNull(ap);
             assertEquals(expected.annoPageid, ap.getId());
-            assertEquals(expected.annoPageType, ap.getType());
+            assertEquals(expected.annoPageType, ap.getType().get());
             checkAnnotationAndBodyAndServiceValues(expected.annoPageAnnotationAndBody, ap.getItems());
         }
     }
@@ -437,20 +437,20 @@ public class EdmManifestV3MappingTest {
             ExpectedAnnotationAndBodyValues expected = expectedAnnotations[i];
             Annotation annotation = annotations[i];
             assertEquals("Annotation id", expected.id, annotation.getId());
-            assertEquals("Annotation type", expected.type, annotation.getType());
+            assertEquals("Annotation type", expected.type, annotation.getType().get());
             assertEquals("Annotation motivation", expected.motivation, annotation.getMotivation());
             assertEquals("Annotation timeMode", expected.timeMode, annotation.getTimeMode());
             assertEquals("Annotation target", expected.target, annotation.getTarget());
             AnnotationBody body = annotation.getBody();
             assertNotNull(body); // body should always be present
             assertEquals("AnnotationBody id", expected.bodyId, body.getId());
-            assertEquals("AnnotationBody type",expected.bodyType, body.getType());
+            assertEquals("AnnotationBody type",expected.bodyType, body.getType().get());
             assertEquals("AnnotationBody format", expected.bodyFormat, body.getFormat());
             if (expected.hasService) {
                 Service service = body.getService();
                 assertNotNull(service);
                 assertEquals("Service id", expected.bodyServiceId, service.getId());
-                assertEquals("Service type", expected.bodyServiceType, service.getType());
+                assertEquals("Service type", expected.bodyServiceType, service.getType().get());
                 assertEquals("Service profile", expected.bodyServiceProfile, service.getProfile());
             } else {
                 assertNull (annotation.getBody().getService());
