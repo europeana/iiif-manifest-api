@@ -68,7 +68,6 @@ public final class WebResourceSorter {
         LOG.trace("  StartNodes = {}", startNodes);
 
         // for each start node, follow the sequence down to the end node and list webresource in reverse order
-        ArrayList<WebResource> sequences = new ArrayList<>();
         ArrayList<WebResource> result = new ArrayList<>();
         Iterator<String> startNodeIds = startNodes.iterator();
         while (startNodeIds.hasNext()) {
@@ -76,14 +75,12 @@ public final class WebResourceSorter {
             List<WebResource> sequence = getSequence(startNodeId, idsWebResources, idsNextInSequence);
             LOG.trace("  Sequence = {}", sequence);
             // add the edmIsShowmBy sequence first in the results
-            if (getOrderOfSequence(orderViews.get(0), sequence)) {
-                result.addAll(sequence);
+            if (seqContainsEdmIsShownBy(orderViews.get(0), sequence)) {
+                result.addAll(0, sequence);
             } else {
-                sequences.addAll(sequence);
+                result.addAll(sequence);
             }
         }
-        // add rest of the sequences later
-        result.addAll(sequences);
 
         // add any remaining nodes as the order of orderViews List
         // (these should be isolated webresources, not part of any sequence)
@@ -107,7 +104,7 @@ public final class WebResourceSorter {
     /**
      * Iterate over the sequence and find if the sequence contains edmIsShownBy
      */
-    private static boolean getOrderOfSequence(String edmIsShownBy, List<WebResource> sequence) {
+    private static boolean seqContainsEdmIsShownBy(String edmIsShownBy, List<WebResource> sequence) {
         for(WebResource wr : sequence) {
             if(wr.getId().equals(edmIsShownBy)) {
                 return true;
