@@ -630,7 +630,7 @@ public final class EdmManifestMapping {
         int order = 1;
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
         List<eu.europeana.iiif.model.v3.Canvas> canvases = new ArrayList<>(sortedResources.size());
-        for (WebResource webResource: getSortedWebResources(europeanaId, isShownBy, jsonDoc)) {
+        for (WebResource webResource: sortedResources) {
             canvases.add(getCanvasV3(europeanaId, order, webResource, services, euScreenTypeHack));
             order++;
         }
@@ -721,7 +721,7 @@ public final class EdmManifestMapping {
 
         List<WebResource> sorted;
         try {
-            sorted = WebResourceSorter.sort(unsorted);
+            sorted = WebResourceSorter.sort(unsorted, validWebResources);
         } catch (DataInconsistentException e) {
             LOG.error("Error trying to sort webresources for {}. Cause: {}", europeanaId, e);
             sorted = unsorted;
