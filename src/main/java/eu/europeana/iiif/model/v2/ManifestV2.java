@@ -12,13 +12,12 @@ import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldType;
  * @author Patrick Ehlert
  * Created on 06-02-2018
  */
-@JsonPropertyOrder({"id", "service", "context"})
+@JsonPropertyOrder({"id", "context"})
 @JsonldType(value = "sc:Manifest")
 public class ManifestV2 extends JsonLdId {
 
     private static final long serialVersionUID = -2645198128531918309L;
 
-    private Service service;
     @JsonProperty("@context")
     private String context = "http://iiif.io/api/presentation/2/context.json";
     private String within;
@@ -31,6 +30,7 @@ public class ManifestV2 extends JsonLdId {
     private String license;
     private String logo = Definitions.EUROPEANA_LOGO_URL;
     private DataSet[] seeAlso;
+    private Service service;
     private Sequence[] sequences;
 
     @JsonIgnore

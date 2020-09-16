@@ -19,7 +19,6 @@ public class ManifestV3 extends JsonLdIdType {
     private static final String[] context = {"http://www.w3.org/ns/anno.jsonld",
                                              "http://iiif.io/api/presentation/3/context.json"};
     private static final Agent[] provider = new Agent[]{ new Agent() };
-    private Service[] service;
     private Collection[] within;
     private LanguageMap label; // edm:title
     private LanguageMap summary; // edm:description
@@ -30,6 +29,7 @@ public class ManifestV3 extends JsonLdIdType {
     private LanguageMap requiredStatement; // edm:attribution
     private Rights rights;
     private DataSet[] seeAlso;
+    private Service[] service;
     private Canvas start;
     private Canvas[] items;
 

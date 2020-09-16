@@ -42,7 +42,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @TestPropertySource(locations = "classpath:iiif-test.properties")
-@SpringBootTest(classes = {ManifestService.class, ManifestSettings.class})
+@SpringBootTest(classes = {ManifestService.class, ManifestSettings.class, SpringContext.class})
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 // The following 2 annotations are needed to enable hystrix so we can test timeouts and fallbacks
 @EnableCircuitBreaker

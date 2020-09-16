@@ -1,5 +1,8 @@
 package eu.europeana.iiif.model;
 
+import eu.europeana.iiif.config.ManifestSettings;
+import eu.europeana.iiif.service.SpringContext;
+
 /**
  * @author Patrick Ehlert
  * Created on 26-01-2018
@@ -151,6 +154,8 @@ public final class Definitions {
      * @return string containing the search ID
      */
     public static String getSearchId(String europeanaId){
-        return Definitions.IIIF_BASE_URL + europeanaId + "/search";
+        String fullTextApiBaseUrl = SpringContext.getBean(ManifestSettings.class).getFullTextApiBaseUrl();
+
+        return fullTextApiBaseUrl + "/presentation" + europeanaId + "/search";
     }
 }
