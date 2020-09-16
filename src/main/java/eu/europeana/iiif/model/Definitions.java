@@ -112,8 +112,6 @@ public final class Definitions {
      */
     public static final String IMAGE_CONTEXT_VALUE = "http://iiif.io/api/image/2/context.json";
 
-    public static final String IIIF_BASE_URL = "https://iiif.europeana.eu";
-
     public static final String IMAGE_SERVICE_TYPE_3 = "ImageService3";
 
     private Definitions() {
