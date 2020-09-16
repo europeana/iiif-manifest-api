@@ -114,6 +114,8 @@ public final class Definitions {
 
     public static final String IMAGE_SERVICE_TYPE_3 = "ImageService3";
 
+    private static String fullTextUrl;
+
     private Definitions() {
         // empty constructor to avoid initializationRE
     }
@@ -152,8 +154,13 @@ public final class Definitions {
      * @return string containing the search ID
      */
     public static String getSearchId(String europeanaId){
-        String fullTextApiBaseUrl = SpringContext.getBean(ManifestSettings.class).getFullTextApiBaseUrl();
+        return getFullTextUrl() + "/presentation" + europeanaId + "/search";
+    }
 
-        return fullTextApiBaseUrl + "/presentation" + europeanaId + "/search";
+    private static String getFullTextUrl(){
+        if(fullTextUrl == null){
+            fullTextUrl = SpringContext.getBean(ManifestSettings.class).getFullTextApiBaseUrl();
+        }
+        return fullTextUrl;
     }
 }
