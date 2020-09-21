@@ -6,8 +6,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * Main application
@@ -21,19 +27,25 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @PropertySource(value = "classpath:build.properties", ignoreResourceNotFound = true)
 public class ManifestApplication extends SpringBootServletInitializer {
 
+
     /**
      * Setup CORS for all requests
-     * @return WebMvcConfigurer that exposes CORS headers
+     *
+     * For some reason the default Spring-Boot way of configuring Cors via WebMvcConfigurer class doesn't
+     * work for Swagger, so we configure it here
      */
     @Bean
-    public WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**").allowedOrigins("*").maxAge(1000)
-                        .exposedHeaders("Allow, Vary, ETag, Last-Modified");
-            }
-        };
+    public CorsFilter corsFilter() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedHeaders(Collections.singletonList("*"));
+        config.setAllowedOrigins(Collections.singletonList("*"));
+        config.setAllowedMethods(Collections.singletonList("*"));
+        config.setExposedHeaders(Collections.singletonList("Allow, Vary, ETag, Last-Modified"));
+        config.setMaxAge(1000L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return new CorsFilter(source);
     }
 
     /**
