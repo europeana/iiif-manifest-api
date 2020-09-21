@@ -30,6 +30,7 @@ public class ManifestV2 extends JsonLdId {
     private String license;
     private String logo = Definitions.EUROPEANA_LOGO_URL;
     private DataSet[] seeAlso;
+    private Service service;
     private Sequence[] sequences;
 
     @JsonIgnore
@@ -162,5 +163,13 @@ public class ManifestV2 extends JsonLdId {
 
     public void setSequences(Sequence[] sequences) {
         this.sequences = sequences;
+    }
+
+    public Service getService() {
+        return service;
+    }
+
+    public void setService(Service service) {
+        this.service = service;
     }
 }

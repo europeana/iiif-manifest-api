@@ -2,7 +2,6 @@ package eu.europeana.iiif.service;
 
 import com.jayway.jsonpath.Filter;
 import com.jayway.jsonpath.JsonPath;
-import eu.europeana.metis.utils.MediaType;
 import eu.europeana.iiif.model.Definitions;
 import eu.europeana.iiif.model.WebResource;
 import eu.europeana.iiif.model.WebResourceSorter;
@@ -11,6 +10,7 @@ import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.Collection;
 import eu.europeana.iiif.model.v3.*;
 import eu.europeana.iiif.service.exception.DataInconsistentException;
+import eu.europeana.metis.utils.MediaType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.util.StringUtils;
@@ -57,6 +57,7 @@ public final class EdmManifestMapping {
         String europeanaId = getEuropeanaId(jsonDoc);
         String isShownBy = getIsShownBy(europeanaId, jsonDoc);
         ManifestV2 manifest = new ManifestV2(europeanaId, Definitions.getManifestId(europeanaId), isShownBy);
+        manifest.setService(getServiceDescriptionV2(europeanaId));
         manifest.setWithin(getWithinV2(jsonDoc));
         manifest.setLabel(getLabelsV2(jsonDoc));
         manifest.setDescription(getDescriptionV2(jsonDoc));
@@ -71,6 +72,21 @@ public final class EdmManifestMapping {
             manifest.setStartCanvasPageNr(getStartCanvasV2(manifest.getSequences()[0].getCanvases(), isShownBy));
         }
         return manifest;
+    }
+
+    /**
+     * Generates a serviceV2 description for the manifest
+     */
+    private static eu.europeana.iiif.model.v2.Service getServiceDescriptionV2(String europeanaId) {
+        return new eu.europeana.iiif.model.v2.Service(Definitions.getSearchId(europeanaId), Definitions.SEARCH_CONTEXT_VALUE, Definitions.SEARCH_PROFILE_VALUE);
+    }
+
+
+    /**
+     * Generates Service descriptions for the manifest
+     */
+    private static Service[] getServiceDescriptionV3(String europeanaId) {
+        return new Service[]{new Service(Definitions.getSearchId(europeanaId), null, Definitions.SEARCH_CONTEXT_VALUE, Definitions.SEARCH_PROFILE_VALUE)};
     }
 
     /**
@@ -113,6 +129,7 @@ public final class EdmManifestMapping {
         }
 
         ManifestV3 manifest = new ManifestV3(europeanaId, Definitions.getManifestId(europeanaId), isShownBy);
+        manifest.setService(getServiceDescriptionV3(europeanaId));
         manifest.setWithin(EdmManifestMapping.getWithinV3(jsonDoc));
         manifest.setLabel(EdmManifestMapping.getLabelsV3(jsonDoc));
         manifest.setSummary(EdmManifestMapping.getDescriptionV3(jsonDoc));
@@ -127,6 +144,8 @@ public final class EdmManifestMapping {
         manifest.setStart(getStartCanvasV3(manifest.getItems(), isShownBy));
         return manifest;
     }
+
+
 
     /**
      * Extract the Europeana object ID from the 'about' field.
@@ -776,7 +795,7 @@ public final class EdmManifestMapping {
         // body can have a service
         String serviceId = getServiceId(webResource, europeanaId);
         if (serviceId != null) {
-            eu.europeana.iiif.model.v2.Service service = new eu.europeana.iiif.model.v2.Service(serviceId);
+            eu.europeana.iiif.model.v2.Service service = new eu.europeana.iiif.model.v2.Service(serviceId, Definitions.IMAGE_CONTEXT_VALUE);
             service.setProfile(lookupServiceDoapImplements(services, serviceId, europeanaId));
             annoBody.setService(service);
         }
@@ -856,7 +875,7 @@ public final class EdmManifestMapping {
         // body can have a service
         String serviceId = getServiceId(webResource, europeanaId);
         if (serviceId != null) {
-            eu.europeana.iiif.model.v3.Service service = new eu.europeana.iiif.model.v3.Service(serviceId);
+            eu.europeana.iiif.model.v3.Service service = new eu.europeana.iiif.model.v3.Service(serviceId, Definitions.IMAGE_SERVICE_TYPE_3);
             service.setProfile(lookupServiceDoapImplements(services, serviceId, europeanaId));
             annoBody.setService(service);
         }

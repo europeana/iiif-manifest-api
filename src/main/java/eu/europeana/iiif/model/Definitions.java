@@ -1,5 +1,8 @@
 package eu.europeana.iiif.model;
 
+import eu.europeana.iiif.config.ManifestSettings;
+import eu.europeana.iiif.service.SpringContext;
+
 /**
  * @author Patrick Ehlert
  * Created on 26-01-2018
@@ -94,6 +97,25 @@ public final class Definitions {
     public static final String EDM_SCHEMA_URL = "http://www.europeana.eu/schemas/edm/";
 
 
+    /**
+     * Context value for search service description
+     */
+    public static final String SEARCH_CONTEXT_VALUE = "http://iiif.io/api/search/1/context.json";
+
+    /**
+     * Profile value for search service description
+     */
+    public static final String SEARCH_PROFILE_VALUE = "http://iiif.io/api/search/1/search";
+
+    /**
+     * Context value for image service description
+     */
+    public static final String IMAGE_CONTEXT_VALUE = "http://iiif.io/api/image/2/context.json";
+
+    public static final String IMAGE_SERVICE_TYPE_3 = "ImageService3";
+
+    private static String fullTextUrl;
+
     private Definitions() {
         // empty constructor to avoid initializationRE
     }
@@ -126,4 +148,19 @@ public final class Definitions {
         return Definitions.DATASET_ID_BASE_URL + europeanaId + postFix;
     }
 
+    /**
+     * Creates a search ID for the manifest service description.
+     * @param europeanaId * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
+     * @return string containing the search ID
+     */
+    public static String getSearchId(String europeanaId){
+        return getFullTextUrl() + "/presentation" + europeanaId + "/search";
+    }
+
+    private static String getFullTextUrl(){
+        if(fullTextUrl == null){
+            fullTextUrl = SpringContext.getBean(ManifestSettings.class).getFullTextApiBaseUrl();
+        }
+        return fullTextUrl;
+    }
 }

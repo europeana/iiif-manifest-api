@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
@@ -102,7 +103,11 @@ public class ManifestService {
         // configure Jackson serialization
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
-        mapper.registerModule(new JsonldModule());
+        mapper.registerModule(new JsonldModule())
+                // add support for Java 8 Optionals
+                .registerModule(new Jdk8Module())
+                // ignore empty optionals
+                .setSerializationInclusion(JsonInclude.Include.NON_ABSENT);
     }
 
     protected ObjectMapper getJsonMapper() {
