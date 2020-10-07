@@ -105,6 +105,7 @@ public class ManifestControllerTest {
                 .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\""))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", containsString("profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\"")))
+                .andExpect(header().string("Content-Type", containsString("application/json")))
                 .andExpect(header().string("eTag", notNullValue()))
                 .andExpect(content().json(JSONLD_V2_OUTPUT));
 
@@ -113,6 +114,7 @@ public class ManifestControllerTest {
                 .header("Accept", "application/ld+json;profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\""))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", containsString("profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\"")))
+                .andExpect(header().string("Content-Type", containsString("application/ld+json")))
                 .andExpect(header().string("eTag", notNullValue()))
                 .andExpect(content().json(JSONLD_V3_OUTPUT));
 
@@ -121,6 +123,7 @@ public class ManifestControllerTest {
                 .header("Accept", "application/json;profile=X"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", containsString("profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\"")))
+                .andExpect(header().string("Content-Type", containsString("application/json")))
                 .andExpect(content().json(JSONLD_V2_OUTPUT));
 
         // finally check if we get a 406 for unsupported accept headers

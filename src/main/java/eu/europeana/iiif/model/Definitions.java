@@ -52,6 +52,10 @@ public final class Definitions {
      */
     public static final String MEDIA_TYPE_JSONLD = "application/ld+json";
 
+    public static final String MEDIA_TYPE_JSON = "application/json";
+
+    public static final String UTF_8 = "charset=UTF-8";
+
     /**
      * Media type for IIIF version 2
      */
@@ -69,17 +73,28 @@ public final class Definitions {
     public static final String MEDIA_TYPE_IIIF_JSONLD_V2 = MEDIA_TYPE_JSONLD
                                                            + ";profile=\""
                                                            + MEDIA_TYPE_IIIF_V2
-                                                           + "\""
-                                                           + ";charset=UTF-8";
+                                                           + "\";"
+                                                           + UTF_8;
 
+    public static final String MEDIA_TYPE_IIIF_JSON_V2 = MEDIA_TYPE_JSON
+            + ";profile=\""
+            + MEDIA_TYPE_IIIF_V2
+            + "\";"
+            + UTF_8;
     /**
      * Default Content-type returned on manifest requests for version 3
      */
     public static final String MEDIA_TYPE_IIIF_JSONLD_V3 = MEDIA_TYPE_JSONLD
                                                            + ";profile=\""
                                                            + MEDIA_TYPE_IIIF_V3
-                                                           + "\""
-                                                           + ";charset=UTF-8";
+                                                           + "\";"
+                                                           + UTF_8;
+
+    public static final String MEDIA_TYPE_IIIF_JSON_V3 = MEDIA_TYPE_JSON
+            + ";profile=\""
+            + MEDIA_TYPE_IIIF_V3
+            + "\";"
+            + UTF_8;
 
     /**
      * Media type for rdf
