@@ -80,7 +80,7 @@ public class ManifestController {
             @RequestParam(value = "fullTextApi", required = false) URL fullTextApi,
             HttpServletRequest request,
             HttpServletResponse response) throws IIIFException {
-        return handleRequest(collectionId, recordId, wskey, version, recordApi, addFullText, fullTextApi, true, request, response);
+        return handleRequest(collectionId, recordId, wskey, version, recordApi, addFullText, fullTextApi, true, request);
     }
 
     @GetMapping(value = "/{collectionId}/{recordId}/manifest", headers = ACCEPT_JSONLD)
@@ -94,11 +94,10 @@ public class ManifestController {
             @RequestParam(value = "fullTextApi", required = false) URL fullTextApi,
             HttpServletRequest request,
             HttpServletResponse response) throws IIIFException {
-        return handleRequest(collectionId, recordId, wskey, version, recordApi, addFullText, fullTextApi, false, request, response);
+        return handleRequest(collectionId, recordId, wskey, version, recordApi, addFullText, fullTextApi, false, request);
     }
 
-    private ResponseEntity<String> handleRequest(
-            String collectionId,
+    private ResponseEntity<String> handleRequest( String collectionId,
             String recordId,
             String wskey,
             String version,
@@ -106,8 +105,7 @@ public class ManifestController {
             boolean addFullText,
             URL fullTextApi,
             boolean isJson,
-            HttpServletRequest request,
-            HttpServletResponse response
+            HttpServletRequest request
     ) throws IIIFException {
         String id = "/" + collectionId + "/" + recordId;
         ValidateUtils.validateWskeyFormat(wskey);
