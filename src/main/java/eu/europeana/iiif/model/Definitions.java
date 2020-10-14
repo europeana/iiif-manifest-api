@@ -52,6 +52,10 @@ public final class Definitions {
      */
     public static final String MEDIA_TYPE_JSONLD = "application/ld+json";
 
+    public static final String MEDIA_TYPE_JSON = "application/json";
+
+    public static final String UTF_8 = "charset=UTF-8";
+
     /**
      * Media type for IIIF version 2
      */
@@ -62,24 +66,36 @@ public final class Definitions {
      */
     public static final String MEDIA_TYPE_IIIF_V3 = "http://iiif.io/api/presentation/3/context.json";
 
+    private static final String PROFILE = ";profile=\"";
 
     /**
      * Default Content-type returned on manifest requests for version 2
      */
     public static final String MEDIA_TYPE_IIIF_JSONLD_V2 = MEDIA_TYPE_JSONLD
-                                                           + ";profile=\""
-                                                           + MEDIA_TYPE_IIIF_V2
-                                                           + "\""
-                                                           + ";charset=UTF-8";
+            + PROFILE
+            + MEDIA_TYPE_IIIF_V2
+            + "\";"
+            + UTF_8;
 
+    public static final String MEDIA_TYPE_IIIF_JSON_V2 = MEDIA_TYPE_JSON
+            + PROFILE
+            + MEDIA_TYPE_IIIF_V2
+            + "\";"
+            + UTF_8;
     /**
      * Default Content-type returned on manifest requests for version 3
      */
     public static final String MEDIA_TYPE_IIIF_JSONLD_V3 = MEDIA_TYPE_JSONLD
-                                                           + ";profile=\""
-                                                           + MEDIA_TYPE_IIIF_V3
-                                                           + "\""
-                                                           + ";charset=UTF-8";
+            + PROFILE
+            + MEDIA_TYPE_IIIF_V3
+            + "\";"
+            + UTF_8;
+
+    public static final String MEDIA_TYPE_IIIF_JSON_V3 = MEDIA_TYPE_JSON
+            + PROFILE
+            + MEDIA_TYPE_IIIF_V3
+            + "\";"
+            + UTF_8;
 
     /**
      * Media type for rdf
@@ -122,6 +138,7 @@ public final class Definitions {
 
     /**
      * Create the IIIF manifest ID
+     *
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
      * @return string containing the IIIF manifest ID
      */
@@ -131,8 +148,9 @@ public final class Definitions {
 
     /**
      * Create a canvas ID
+     *
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
-     * @param order number
+     * @param order       number
      * @return String containing the canvas ID
      */
     public static String getCanvasId(String europeanaId, int order) {
@@ -141,6 +159,7 @@ public final class Definitions {
 
     /**
      * Create a dataset ID (datasets information are part of the manifest)
+     *
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
      * @return string containing the dataset ID consisting of a base url, Europeana ID and postfix (rdf/xml, json or json-ld)
      */
@@ -150,15 +169,16 @@ public final class Definitions {
 
     /**
      * Creates a search ID for the manifest service description.
+     *
      * @param europeanaId * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
      * @return string containing the search ID
      */
-    public static String getSearchId(String europeanaId){
+    public static String getSearchId(String europeanaId) {
         return getFullTextUrl() + "/presentation" + europeanaId + "/search";
     }
 
-    private static String getFullTextUrl(){
-        if(fullTextUrl == null){
+    private static String getFullTextUrl() {
+        if (fullTextUrl == null) {
             fullTextUrl = SpringContext.getBean(ManifestSettings.class).getFullTextApiBaseUrl();
         }
         return fullTextUrl;
