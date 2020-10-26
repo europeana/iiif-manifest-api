@@ -30,12 +30,15 @@ public class ManifestV2 extends JsonLdId {
     private String license;
     private String logo = Definitions.EUROPEANA_LOGO_URL;
     private DataSet[] seeAlso;
+    private Service service;
     private Sequence[] sequences;
 
     @JsonIgnore
+    private Integer startCanvasPageNr; // for internal use only, similar to 'start' field in v3
+    @JsonIgnore
     private String europeanaId; // for internal use only
     @JsonIgnore
-    private String isShownBy;
+    private String isShownBy; // for internal use only
 
     /**
      * Create a new empty manifest (only id is filled)
@@ -140,11 +143,33 @@ public class ManifestV2 extends JsonLdId {
         this.seeAlso = seeAlso;
     }
 
+    /**
+     * Page number of the most important canvas; either the one referring to edmIsShownBy or the first canvas
+     * It's available used to check if there are fulltexts available
+     * @return Integer containing the page number of the 'start' canvas
+     */
+    @JsonIgnore
+    public Integer getStartCanvasPageNr() {
+        return startCanvasPageNr;
+    }
+
+    public void setStartCanvasPageNr(Integer pageNr) {
+        this.startCanvasPageNr = pageNr;
+    }
+
     public Sequence[] getSequences() {
         return sequences;
     }
 
     public void setSequences(Sequence[] sequences) {
         this.sequences = sequences;
+    }
+
+    public Service getService() {
+        return service;
+    }
+
+    public void setService(Service service) {
+        this.service = service;
     }
 }

@@ -11,7 +11,7 @@ the following form:
  
 `https://<hostname>/presentation/<collectionId>/<recordId>/manifest?wskey=<apikey>`
 
-By default a IIIF v2 will be generated, but you can specify which version you want by adding 
+By default an IIIF v2 will be generated, but you can specify which version you want by adding 
  
  - a format parameter, e.g. `https://<hostname>/presentation/<collectionId>/<recordId>/manifest?wskey=<apikey>&format=3`
  - or add an accept header to your request, e.g. `Accept: application/json; profile="http://iiif.io/api/presentation/3/context.json"`

@@ -3,35 +3,40 @@ package eu.europeana.iiif.model.v3;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import eu.europeana.iiif.model.Definitions;
 
 /**
+ * Manifest v3 root document
+ *
  * @author Patrick Ehlert
  * Created on 24-01-2018
+ * Modified to latest v3 developments on March 2020
  */
-@JsonPropertyOrder({"context", "id"})
+@JsonPropertyOrder({"context", "id", "type"})
 public class ManifestV3 extends JsonLdIdType {
 
     private static final long serialVersionUID = -4087877560219592406L;
 
-    @JsonProperty("@context")
-    private String[] context = {"http://www.w3.org/ns/anno.jsonld", "http://iiif.io/api/presentation/3/context.json"};
+    private static final String[] context = {"http://www.w3.org/ns/anno.jsonld",
+                                             "http://iiif.io/api/presentation/3/context.json"};
+    private static final Agent[] provider = new Agent[]{ new Agent() };
     private Collection[] within;
-    private LanguageMap label;
-    private LanguageMap description;
+    private LanguageMap label; // edm:title
+    private LanguageMap summary; // edm:description
     private MetaData[] metaData;
     private Image[] thumbnail;
+    private Text[] homepage;
     private String navDate;
-    private LanguageMap attribution;
+    private LanguageMap requiredStatement; // edm:attribution
     private Rights rights;
-    private Image[] logo;
     private DataSet[] seeAlso;
+    private Service[] service;
+    private Canvas start;
     private Canvas[] items;
 
     @JsonIgnore
     private String europeanaId; // for internal use only
     @JsonIgnore
-    private String isShownBy;
+    private String isShownBy; // for internal use only
 
     /**
      * Create a new empty manifest (only id, context and logo ar filled in)
@@ -42,9 +47,7 @@ public class ManifestV3 extends JsonLdIdType {
         super(manifestId, "Manifest");
         this.europeanaId = europeanaId;
         this.isShownBy = isShownBy;
-        logo = new Image[] { new Image(Definitions.EUROPEANA_LOGO_URL) };
     }
-
 
     public String getEuropeanaId() {
         return europeanaId;
@@ -54,8 +57,9 @@ public class ManifestV3 extends JsonLdIdType {
         return isShownBy;
     }
 
+    @JsonProperty("@context")
     public String[] getContext() {
-        return context;
+        return ManifestV3.context;
     }
 
     public Collection[] getWithin() {
@@ -66,6 +70,9 @@ public class ManifestV3 extends JsonLdIdType {
         this.within = within;
     }
 
+    /**
+     * @return {@link LanguageMap} containing proxy/title, or if empty proxy/description
+     */
     public LanguageMap getLabel() {
         return label;
     }
@@ -74,12 +81,15 @@ public class ManifestV3 extends JsonLdIdType {
         this.label = label;
     }
 
-    public LanguageMap getDescription() {
-        return description;
+    /**
+     * @return {@link LanguageMap} containing proxy/description (but only if proxy/title exists)
+     */
+    public LanguageMap getSummary() {
+        return summary;
     }
 
-    public void setDescription(LanguageMap description) {
-        this.description = description;
+    public void setSummary(LanguageMap summary) {
+        this.summary = summary;
     }
 
     public MetaData[] getMetaData() {
@@ -106,12 +116,26 @@ public class ManifestV3 extends JsonLdIdType {
         this.navDate = navDate;
     }
 
-    public LanguageMap getAttribution() {
-        return attribution;
+    /**
+     * @return array of {@link Text} containing only 1 reference to the Europeana homepage (in English)
+     */
+    public Text[] getHomepage() {
+        return homepage;
     }
 
-    public void setAttribution(LanguageMap attribution) {
-        this.attribution = attribution;
+    public void setHomePage(Text[] homepage) {
+        this.homepage = homepage;
+    }
+
+    /**
+     * @return {@link LanguageMap} containing only an English attribution snippet (in html format)
+     */
+    public LanguageMap getRequiredStatement() {
+        return requiredStatement;
+    }
+
+    public void setRequiredStatement(LanguageMap requiredStatement) {
+        this.requiredStatement = requiredStatement;
     }
 
     public Rights getRights() {
@@ -122,20 +146,31 @@ public class ManifestV3 extends JsonLdIdType {
         this.rights = rights;
     }
 
-    public Image[] getLogo() {
-        return logo;
-    }
-
-    public void setLogo(Image[] logo) {
-        this.logo = logo;
-    }
-
     public DataSet[] getSeeAlso() {
         return seeAlso;
     }
 
+    /**
+     * @return array of {@link Agent} containing only 1 "Europeana" agent (with Europeana homepage)
+     */
+    public Agent[] getProvider() {
+        return ManifestV3.provider;
+    }
+
     public void setSeeAlso(DataSet[] seeAlso) {
         this.seeAlso = seeAlso;
+    }
+
+    /**
+     * @return {@link Canvas} only containing an id and type. The id refers to the Canvas/page with edm:isShownBy.
+     * If that doesn't exists we return the first canvas (p1)
+     */
+    public Canvas getStart() {
+        return start;
+    }
+
+    public void setStart(Canvas startCanvas) {
+        this.start = startCanvas;
     }
 
     public Canvas[] getItems() {
@@ -144,5 +179,13 @@ public class ManifestV3 extends JsonLdIdType {
 
     public void setItems(Canvas[] items) {
         this.items = items;
+    }
+
+    public Service[] getService() {
+        return service;
+    }
+
+    public void setService(Service[] service) {
+        this.service = service;
     }
 }

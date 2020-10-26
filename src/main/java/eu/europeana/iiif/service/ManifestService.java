@@ -4,24 +4,22 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
 import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
-import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
-import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import eu.europeana.iiif.config.ManifestSettings;
-import eu.europeana.iiif.model.v2.FullText;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v2.Sequence;
 import eu.europeana.iiif.model.v3.AnnotationPage;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.exception.*;
 import ioinformarics.oss.jackson.module.jsonld.JsonldModule;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
@@ -53,7 +51,9 @@ public class ManifestService {
     private static ObjectMapper mapper = new ObjectMapper();
 
     private ManifestSettings settings;
-    private CloseableHttpClient httpClient;
+    private CloseableHttpClient gethttpClient;
+    private CloseableHttpClient headhttpClient;
+
 
     public ManifestService(ManifestSettings settings) {
         this.settings = settings;
@@ -62,7 +62,15 @@ public class ManifestService {
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
         cm.setMaxTotal(200);
         cm.setDefaultMaxPerRoute(100);
-        httpClient = HttpClients.custom().setConnectionManager(cm).build();
+
+        // configure for head requests to Fulltext API (with specific timeouts)
+        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(8 * 1000)
+                .setSocketTimeout(5 * 1000).build();
+        headhttpClient = HttpClients.custom().setConnectionManager(cm)
+                .setDefaultRequestConfig(requestConfig).build();
+
+        //configure for get requests to Record API
+        gethttpClient = HttpClients.custom().setConnectionManager(cm).build();
 
         // configure jsonpath: we use jsonpath in combination with Jackson because that makes it easier to know what
         // type of objects are returned (see also https://stackoverflow.com/a/40963445)
@@ -83,7 +91,7 @@ public class ManifestService {
 
             @Override
             public Set<Option> options() {
-                if (settings.getSuppressParseException()) {
+                if (Boolean.TRUE.equals(settings.getSuppressParseException())) {
                     // we want to be fault tolerant in production, but for testing we may want to disable this option
                     return EnumSet.of(Option.SUPPRESS_EXCEPTIONS);
                 } else {
@@ -95,7 +103,11 @@ public class ManifestService {
         // configure Jackson serialization
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
-        mapper.registerModule(new JsonldModule());
+        mapper.registerModule(new JsonldModule())
+                // add support for Java 8 Optionals
+                .registerModule(new Jdk8Module())
+                // ignore empty optionals
+                .setSerializationInclusion(JsonInclude.Include.NON_ABSENT);
     }
 
     protected ObjectMapper getJsonMapper() {
@@ -166,7 +178,7 @@ public class ManifestService {
 
         try {
             String recordUrl = url.toString();
-            try (CloseableHttpResponse response = httpClient.execute(new HttpGet(recordUrl))) {
+            try (CloseableHttpResponse response = gethttpClient.execute(new HttpGet(recordUrl))) {
                 int responseCode = response.getStatusLine().getStatusCode();
                 LOG.debug("Record request: {}, status code = {}", recordId, responseCode);
                 if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
@@ -197,7 +209,7 @@ public class ManifestService {
      * Generates a url to a full text resource
      * @param fullTextApiUrl optional, if not specified then the default Full-Text API specified in .properties is used
      */
-    public String generateFullTextUrl(String europeanaId, String pageId, URL fullTextApiUrl) {
+    String generateFullTextUrl(String europeanaId, String pageId, URL fullTextApiUrl) {
         StringBuilder url;
         if (fullTextApiUrl == null) {
             url = new StringBuilder(settings.getFullTextApiBaseUrl());
@@ -219,10 +231,10 @@ public class ManifestService {
 //            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "5000"),
 //            @HystrixProperty(name = "fallback.enabled", value="true")
 //    }, fallbackMethod = "fallbackExistsFullText")
-    public Boolean existsFullText(String fullTextUrl) throws IIIFException {
+    Boolean existsFullText(String fullTextUrl) throws IIIFException {
         Boolean result;
         try {
-            try (CloseableHttpResponse response = httpClient.execute(new HttpHead(fullTextUrl))) {
+            try (CloseableHttpResponse response = headhttpClient.execute(new HttpHead(fullTextUrl))) {
                 int responseCode = response.getStatusLine().getStatusCode();
                 LOG.debug("Full-Text head request: {}, status code = {}", fullTextUrl, responseCode);
                 if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
@@ -232,11 +244,17 @@ public class ManifestService {
                 } else if (responseCode == HttpStatus.SC_OK) {
                     result = Boolean.TRUE;
                 } else {
-                    throw new FullTextCheckException("Error checking if full text exists: "+response.getStatusLine().getReasonPhrase());
+                    // TODO when hysterix is enabled again, we can simply throw an error again
+                    //throw new FullTextCheckException("Error checking if full text exists: "+response.getStatusLine().getReasonPhrase());
+                    LOG.error("Error checking if full text exists: {}", response.getStatusLine().getReasonPhrase());
+                    result = null;
                 }
             }
         } catch (IOException e) {
-            throw new FullTextCheckException("Error checking if full text exists", e);
+            // TODO when hysterix is enabled again, we can simply throw an error again
+            //throw new FullTextCheckException("Error checking if full text exists", e);
+            LOG.error("Error checking if full text exists", e);
+            result = null;
         }
         return result;
     }
@@ -257,7 +275,7 @@ public class ManifestService {
     public ManifestV2 generateManifestV2 (String json, boolean addFullText, URL fullTextApi)    {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        ManifestV2 result = EdmManifestMapping.getManifestV2(settings, document);
+        ManifestV2 result = EdmManifestMapping.getManifestV2(document);
 
         if (addFullText) {
             try {
@@ -286,7 +304,7 @@ public class ManifestService {
     public ManifestV3 generateManifestV3 (String json, boolean addFullText, URL fullTextApi)  {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        ManifestV3 result = EdmManifestMapping.getManifestV3(settings, document);
+        ManifestV3 result = EdmManifestMapping.getManifestV3(document);
 
         if (addFullText) {
             try {
@@ -314,19 +332,19 @@ public class ManifestService {
             Sequence s = manifest.getSequences()[0];
 
             // We don't want to check for all images if they have a fulltext because that takes too long
-            // Instead we use only do a fulltext exists check for the canvas returned by findMatchingCanvas()
-            String canvasId = findMatchingCanvas(manifest.getIsShownBy(), s.getCanvases(), null);
+            // Instead we use only do a fulltext exists check for the canvas specified as start canvas
+            Integer canvasId = manifest.getStartCanvasPageNr();
             if (canvasId != null) {
                 // do the actual fulltext check
-                String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
-                if (existsFullText(fullTextUrl)) {
+                String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId.toString(), fullTextApi);
+                if (Boolean.TRUE.equals(existsFullText(fullTextUrl))) {
                     // loop over canvases to add full-text link to all
                     for (eu.europeana.iiif.model.v2.Canvas c : s.getCanvases()) {
                         String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()),
                                 fullTextApi);
                         // always 1 value in array
-                        FullText[] ft = new FullText[1];
-                        ft[0] = new FullText(ftUrl);
+                        String[] ft = new String[1];
+                        ft[0] = ftUrl;
                         c.setOtherContent(ft);
                     }
                 }
@@ -334,45 +352,7 @@ public class ManifestService {
         }
     }
 
-    /**
-     * Find the canvas that has an image with resource id that matches the provided edmIsShownBy.
-     * We do this because the number of this canvas will be used in doing the existsFullText check
-     * Note that we use this method both for either v2 and v3 (depending on which is parameter is set)
-     */
-    private String findMatchingCanvas(String edmIsShownBy, eu.europeana.iiif.model.v2.Canvas[] canvasesV2, eu.europeana.iiif.model.v3.Canvas[] canvasesV3) {
-        String result = null;
-        if (StringUtils.isEmpty(edmIsShownBy)) {
-            LOG.trace ("No full-text check because edmIsShownBy is empty");
-            return result;
-        } else if (canvasesV2 == null && canvasesV3 == null) {
-            LOG.trace ("No full-text check because there are no canvases");
-            return result;
-        }
 
-        if (canvasesV2 != null) {
-            for (eu.europeana.iiif.model.v2.Canvas c : canvasesV2) {
-                String annotationBodyId = c.getImages()[0].getResource().getId();
-                if (edmIsShownBy.equals(annotationBodyId)) {
-                    result = Integer.toString(c.getPageNr());
-                    LOG.trace("Canvas {} matches with edmIsShownBy", result);
-                    break;
-                }
-            }
-        } else {
-            for (eu.europeana.iiif.model.v3.Canvas c : canvasesV3) {
-                String annotationBodyId = c.getItems()[0].getItems()[0].getBody().getId();
-                if (edmIsShownBy.equals(annotationBodyId)) {
-                    result = Integer.toString(c.getPageNr());
-                    LOG.trace("Canvas {} matches with edmIsShownBy", result);
-                    break;
-                }
-            }
-        }
-        if (result == null) {
-            LOG.trace("No full-text check because there was no match with edmIsShownBy");
-        }
-        return result;
-    }
 
     /**
      * We generate all full text links in one place, so we can raise a timeout if retrieving the necessary
@@ -383,36 +363,18 @@ public class ManifestService {
         if (canvases != null) {
 
             // We don't want to check for all images if they have a fulltext because that takes too long
-            // Instead we use only do a fulltext exists check for the canvas returned by findMatchingCanvas()
-            String canvasId = findMatchingCanvas(manifest.getIsShownBy(), null, canvases);
-            if (canvasId != null) {
-                // do the actual fulltext check
-                String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
-                if (existsFullText(fullTextUrl)) {
-                    // loop over canvases to add an extra annotation page
-                    for (eu.europeana.iiif.model.v3.Canvas c : canvases) {
-                        String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()),
-                                fullTextApi);
-                        addFullTextAnnotationPageV3(c, ftUrl);
-                    }
+            // Instead we use only do a fulltext exists check for the canvas specified as start canvas
+            String canvasId = Integer.toString(manifest.getStart().getPageNr());
+            String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
+            if (Boolean.TRUE.equals(existsFullText(fullTextUrl))) {
+                // loop over canvases to add an extra annotation page
+                for (eu.europeana.iiif.model.v3.Canvas c : canvases) {
+                    String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()), fullTextApi);
+                    c.setAnnotations(new AnnotationPage[]{ new AnnotationPage(ftUrl) });
                 }
             }
         }
     }
-
-    /**
-     *  If there is a full text available we have to add a new annotation page with just the full text url as id
-     */
-    private void addFullTextAnnotationPageV3(eu.europeana.iiif.model.v3.Canvas c, String fullTextUrl) {
-        List<AnnotationPage> aps = new ArrayList<>();
-
-        if (c.getItems() != null && c.getItems().length > 0) {
-            aps.addAll(Arrays.asList(c.getItems()));
-        }
-        aps.add(new AnnotationPage(fullTextUrl));
-        c.setItems(aps.toArray(new AnnotationPage[0]));
-    }
-
 
    /**
      * Serialize manifest to JSON-LD
@@ -426,7 +388,7 @@ public class ManifestService {
                     writerWithDefaultPrettyPrinter().
                     writeValueAsString(m);
         } catch (IOException e) {
-            throw new RecordParseException("Error serializing data: "+e.getMessage(), e);
+            throw new RecordParseException(String.format("Error serializing data: %s", e.getMessage()), e);
         }
     }
 
@@ -439,9 +401,13 @@ public class ManifestService {
 
     @PreDestroy
     public void close() throws IOException {
-        if (this.httpClient != null) {
-            LOG.info("Closing http-client...");
-            this.httpClient.close();
+        if (this.gethttpClient != null) {
+            LOG.info("Closing get request http-client...");
+            this.gethttpClient.close();
+        }
+        if (this.headhttpClient != null) {
+            LOG.info("Closing head request http-client...");
+            this.headhttpClient.close();
         }
     }
 

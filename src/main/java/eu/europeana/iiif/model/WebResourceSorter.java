@@ -38,13 +38,15 @@ public final class WebResourceSorter {
 
     /**
      * Sorts the provided webResource array. All sequences should be listed first (in reverse sequence order), then
-     * all webresources that are not part of a sequence
+     * all webresources that are not part of a sequence should be ordered according to orderViews List
+     * if the records contains multiple sequences, then the one containing edmIsShownBY should be the first sequence.
+     * orderViews List contains edm:isShownBy/edmIsShowAt (EUScreen items) as the first element and then order of the edm:hasView
      * If there are multiple sequences, the order between sequences doesn't matter. Also the order between webresources
      * not part of a sequence doesn't matter.
      * @throws DataInconsistentException when
      * @return sorted array of webResources
      */
-    public static List<WebResource> sort(List<WebResource> webResources) throws DataInconsistentException {
+    public static List<WebResource> sort(List<WebResource> webResources, List<String> orderViews) throws DataInconsistentException {
         LOG.trace("WebResources = {}", webResources);
 
         // to simplify/speed up processing we generate a hashmap that links all ids to the appropriate webResource object
@@ -72,22 +74,43 @@ public final class WebResourceSorter {
             String startNodeId = startNodeIds.next();
             List<WebResource> sequence = getSequence(startNodeId, idsWebResources, idsNextInSequence);
             LOG.trace("  Sequence = {}", sequence);
-            result.addAll(sequence);
+            // add the edmIsShowmBy sequence first in the results
+            if (seqContainsEdmIsShownBy(orderViews.get(0), sequence)) {
+                result.addAll(0, sequence);
+            } else {
+                result.addAll(sequence);
+            }
         }
 
-        // add any remaining nodes (these should be isolated webresources, not part of any sequence)
-        for (Map.Entry<String, WebResource> idWebResource : idsWebResources.entrySet()) {
-            WebResource isolated = idWebResource.getValue();
-            if (isolated.hasNextInSequence()) {
-                throw new DataInconsistentException("Expected webresource "+isolated.getId()+" to not have a nextInSequence value");
+        // add any remaining nodes as the order of orderViews List
+        // (these should be isolated webresources, not part of any sequence)
+        for (String orderId : orderViews) {
+            if(idsWebResources.keySet().contains(orderId)) {
+                WebResource isolated = idsWebResources.get(orderId);
+                if (isolated.hasNextInSequence()) {
+                    throw new DataInconsistentException("Expected webresource "+isolated.getId()+" to not have a nextInSequence value");
+                }
+                LOG.trace("  Adding ordered isolated node = {}", isolated);
+                result.add(isolated);
             }
-            result.add(isolated);
         }
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Webresources = {}", result);
         }
         return result;
+    }
+
+    /**
+     * Iterate over the sequence and find if the sequence contains edmIsShownBy
+     */
+    private static boolean seqContainsEdmIsShownBy(String edmIsShownBy, List<WebResource> sequence) {
+        for(WebResource wr : sequence) {
+            if(wr.getId().equals(edmIsShownBy)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

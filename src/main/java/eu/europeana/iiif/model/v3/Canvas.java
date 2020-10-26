@@ -17,9 +17,20 @@ public class Canvas extends JsonLdIdType {
     private Integer height;
     private Integer width;
     private Double duration;
-    private LanguageMap attribution;
+    private LanguageMap requiredStatement; // attribution
     private Rights rights;
     private AnnotationPage[] items;
+    private AnnotationPage[] annotations; // full text identifiers
+
+    /**
+     * Create a new canvas object
+     * @param id
+     * @param pageNr
+     */
+    public Canvas(String id, int pageNr) {
+        super(id, "Canvas");
+        this.pageNr = pageNr;
+    }
 
     /**
      * Create a new canvas object
@@ -55,6 +66,14 @@ public class Canvas extends JsonLdIdType {
         return width;
     }
 
+    public void setHeight(Integer height) {
+        this.height = height;
+    }
+
+    public void setWidth(Integer width) {
+        this.width = width;
+    }
+
     public Double getDuration() {
         return duration;
     }
@@ -63,12 +82,12 @@ public class Canvas extends JsonLdIdType {
         this.duration = duration;
     }
 
-    public LanguageMap getAttribution() {
-        return attribution;
+    public LanguageMap getRequiredStatement() {
+        return requiredStatement;
     }
 
-    public void setAttribution(LanguageMap attribution) {
-        this.attribution = attribution;
+    public void setRequiredStatement(LanguageMap requiredStatement) {
+        this.requiredStatement = requiredStatement;
     }
 
     public Rights getRights() {
@@ -83,7 +102,27 @@ public class Canvas extends JsonLdIdType {
         return items;
     }
 
+    @JsonIgnore
+    public Annotation getStartCanvasAnnotation() {
+        if (items == null || items.length == 0) {
+            return null;
+        }
+        return items[0].getItems()[0];
+    }
+
     public void setItems(AnnotationPage[] items) {
         this.items = items;
+    }
+
+    /**
+     * If fulltext is available they this will contain AnnotationPages with only the full text identifier
+     * @return array of {@link AnnotationPage} with full text identifiers (if fulltext is available)
+     */
+    public AnnotationPage[] getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(AnnotationPage[] annotations) {
+        this.annotations = annotations;
     }
 }

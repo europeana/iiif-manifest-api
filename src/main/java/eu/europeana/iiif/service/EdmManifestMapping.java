@@ -2,7 +2,6 @@ package eu.europeana.iiif.service;
 
 import com.jayway.jsonpath.Filter;
 import com.jayway.jsonpath.JsonPath;
-import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.Definitions;
 import eu.europeana.iiif.model.WebResource;
 import eu.europeana.iiif.model.WebResourceSorter;
@@ -32,10 +31,18 @@ import static com.jayway.jsonpath.Filter.filter;
  * @author Patrick Ehlert
  * Created on 08-02-2018
  */
-@SuppressWarnings("squid:S1168") // ignore sonarqube rule: we return null on purpose in this class
+// ignore sonarqube rule: we return null on purpose in this class
+// ignore pmd rule:  we want to make a clear which objects are v2 and which v3
+@SuppressWarnings({"squid:S1168", "pmd:UnnecessaryFullyQualifiedName"})
 public final class EdmManifestMapping {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestMapping.class);
+
+    private static final String ABOUT = "about";
+    private static final String TEXT_ATTRIB_SNIPPET = "textAttributionSnippet";
+    private static final String HTML_ATTRIB_SNIPPET = "htmlAttributionSnippet";
+    private static final String EBUCORE_HEIGHT = "ebucoreHeight";
+    private static final String EBUCORE_WIDTH = "ebucoreWidth";
 
     private EdmManifestMapping() {
         // private constructor to prevent initialization
@@ -43,14 +50,14 @@ public final class EdmManifestMapping {
 
     /**
      * Generates a IIIF v2 manifest based on the provided (parsed) json document
-     * @param settings manifest settings object loaded from properties file
      * @param jsonDoc parsed json document
      * @return IIIF Manifest v2 object
      */
-    public static ManifestV2 getManifestV2(ManifestSettings settings, Object jsonDoc) {
+    static ManifestV2 getManifestV2(Object jsonDoc) {
         String europeanaId = getEuropeanaId(jsonDoc);
         String isShownBy = getIsShownBy(europeanaId, jsonDoc);
         ManifestV2 manifest = new ManifestV2(europeanaId, Definitions.getManifestId(europeanaId), isShownBy);
+        manifest.setService(getServiceDescriptionV2(europeanaId));
         manifest.setWithin(getWithinV2(jsonDoc));
         manifest.setLabel(getLabelsV2(jsonDoc));
         manifest.setDescription(getDescriptionV2(jsonDoc));
@@ -60,32 +67,85 @@ public final class EdmManifestMapping {
         manifest.setAttribution(getAttributionV2(europeanaId, isShownBy, jsonDoc));
         manifest.setLicense(getLicense(europeanaId, jsonDoc));
         manifest.setSeeAlso(getDataSetsV2(europeanaId));
-        manifest.setSequences(getSequencesV2(settings, europeanaId, isShownBy, jsonDoc));
+        manifest.setSequences(getSequencesV2(europeanaId, isShownBy, jsonDoc));
+        if (manifest.getSequences() != null) {
+            manifest.setStartCanvasPageNr(getStartCanvasV2(manifest.getSequences()[0].getCanvases(), isShownBy));
+        }
         return manifest;
     }
 
     /**
+     * Generates a serviceV2 description for the manifest
+     */
+    private static eu.europeana.iiif.model.v2.Service getServiceDescriptionV2(String europeanaId) {
+        return new eu.europeana.iiif.model.v2.Service(Definitions.getSearchId(europeanaId), Definitions.SEARCH_CONTEXT_VALUE, Definitions.SEARCH_PROFILE_VALUE);
+    }
+
+
+    /**
+     * Generates Service descriptions for the manifest
+     */
+    private static Service[] getServiceDescriptionV3(String europeanaId) {
+        return new Service[]{new Service(Definitions.getSearchId(europeanaId), null, Definitions.SEARCH_CONTEXT_VALUE, Definitions.SEARCH_PROFILE_VALUE)};
+    }
+
+    /**
      * Generates a IIIF v3 manifest based on the provided (parsed) json document
-     * @param settings manifest settings object loaded from properties file
      * @param jsonDoc parsed json document
      * @return IIIF Manifest v3 object
      */
-    public static ManifestV3 getManifestV3(ManifestSettings settings, Object jsonDoc) {
+    static ManifestV3 getManifestV3(Object jsonDoc) {
         String europeanaId = getEuropeanaId(jsonDoc);
         String isShownBy = getIsShownBy(europeanaId, jsonDoc);
+
+        // EA-1973 + EA-2002 temporary(?) workaround for EUScreen; use isShownAt and use edmType instead of ebucoreMimetype
+        MediaType euScreenTypeHack = null;
+        if (StringUtils.isEmpty(isShownBy)) {
+            LOG.debug("isShownBy is empty");
+            // find edmType (try first Europeana Proxy, use other proxies as fallback)
+            String edmType = (String) getFirstValueArray("edmType", europeanaId,
+                    JsonPath.parse(jsonDoc).read("$.object.proxies[?(@.europeanaProxy == true)].edmType", String[].class));
+            if (StringUtils.isEmpty(edmType)) {
+                edmType = (String) getFirstValueArray("edmType", europeanaId,
+                        JsonPath.parse(jsonDoc).read("$.object.proxies[?(@.europeanaProxy != true)].edmType", String[].class));
+            }
+            // find isShownAt
+            String isShownAt = (String) getFirstValueArray("edmIsShownAt", europeanaId,
+                    JsonPath.parse(jsonDoc).read("$.object.aggregations[*].edmIsShownAt", String[].class));
+            LOG.debug("edmType = {}, isShownAt = {}", edmType, isShownAt);
+            if (isShownAt != null && ("VIDEO".equalsIgnoreCase(edmType) || "SOUND".equalsIgnoreCase(edmType))  &&
+                    (isShownAt.startsWith("http://www.euscreen.eu/item.html") ||
+                     isShownAt.startsWith("https://www.euscreen.eu/item.html")) ){
+                LOG.debug("Using isShownAt because item is EUScreen video or audio");
+                isShownBy = isShownAt;
+                if ("SOUND".equalsIgnoreCase(edmType)) {
+                    euScreenTypeHack = MediaType.AUDIO;
+                } else {
+                    euScreenTypeHack = MediaType.VIDEO;
+                }
+            }
+        } else {
+            LOG.debug("isShownBy = {}", isShownBy);
+        }
+
         ManifestV3 manifest = new ManifestV3(europeanaId, Definitions.getManifestId(europeanaId), isShownBy);
+        manifest.setService(getServiceDescriptionV3(europeanaId));
         manifest.setWithin(EdmManifestMapping.getWithinV3(jsonDoc));
         manifest.setLabel(EdmManifestMapping.getLabelsV3(jsonDoc));
-        manifest.setDescription(EdmManifestMapping.getDescriptionV3(jsonDoc));
+        manifest.setSummary(EdmManifestMapping.getDescriptionV3(jsonDoc));
         manifest.setMetaData(EdmManifestMapping.getMetaDataV3(jsonDoc));
         manifest.setThumbnail(getThumbnailImageV3(europeanaId, jsonDoc));
         manifest.setNavDate(getNavDate(europeanaId, jsonDoc));
-        manifest.setAttribution(getAttributionV3(europeanaId, isShownBy, jsonDoc));
+        manifest.setHomePage(getHomePage(europeanaId, jsonDoc));
+        manifest.setRequiredStatement(getAttributionV3(europeanaId, isShownBy, jsonDoc));
         manifest.setRights(getRights(europeanaId, jsonDoc));
         manifest.setSeeAlso(getDataSetsV3(europeanaId));
-        manifest.setItems(getItems(settings, europeanaId, isShownBy, jsonDoc));
+        manifest.setItems(getItems(europeanaId, isShownBy, jsonDoc, euScreenTypeHack));
+        manifest.setStart(getStartCanvasV3(manifest.getItems(), isShownBy));
         return manifest;
     }
+
+
 
     /**
      * Extract the Europeana object ID from the 'about' field.
@@ -251,31 +311,15 @@ public final class EdmManifestMapping {
             LOG.trace("START '{}' value map: {} ", fieldName, metaDataValue);
 
             List<LanguageMap> extraPrefLabelMaps = new ArrayList<>(); // keep track of extra prefLabels we need to add
-            for (Object k : metaDataValue.keySet()) {
-                String key = (String) k;
-                String[] values = metaDataValue.get(key);
+            for (Map.Entry<String, String[]> entry : metaDataValue.entrySet()) {
+                String      key = entry.getKey();
+                String[] values = entry.getValue();
+
                 LOG.trace("  checking key {} with {} values", key, values.length);
 
                 List<String> newValues = new ArrayList<>(); // recreate all values (because we may change one)
-
                 for (String value : values) {
-                    LOG.trace("  processing value {}", value);
-                    if (isUrl(value)) {
-                        // 1. add html anchor tag to current value
-                        String newValue = "<a href='" + value + "'>" + value + "</a>";
-                        LOG.trace("    isUrl -> newValue = {} ", newValue);
-                        newValues.add(newValue);
-
-                        // 2. check if we should add extra preflabels
-                        LanguageMap extraPrefLabelMap = getTimespanAgentConceptOrPlaceLabels(jsonDoc, value);
-                        if (extraPrefLabelMap != null) {
-                            LOG.trace("    isUrl -> extraLabels = {}", extraPrefLabelMap);
-                            extraPrefLabelMaps.add(extraPrefLabelMap);
-                        }
-                    } else {
-                        // no url, we keep it.
-                        newValues.add(value);
-                    }
+                    processMetaDataValue(value, newValues, jsonDoc, extraPrefLabelMaps);
                 }
 
                 // replace old values with new ones for the current key
@@ -292,6 +336,27 @@ public final class EdmManifestMapping {
             LOG.trace("FINISH '{}' value map = {}", fieldName, metaDataValue);
 
             metaData.add(new eu.europeana.iiif.model.v3.MetaData(metaDataLabel, metaDataValue));
+        }
+    }
+
+    private static void processMetaDataValue(String value, List<String> newValues, Object jsonDoc,
+                                        List<LanguageMap> extraPrefLabelMaps) {
+        LOG.trace("  processing value {}", value);
+        if (isUrl(value)) {
+            // 1. add html anchor tag to current value
+            String newValue = "<a href='" + value + "'>" + value + "</a>";
+            LOG.trace("    isUrl -> newValue = {} ", newValue);
+            newValues.add(newValue);
+
+            // 2. check if we should add extra preflabels
+            LanguageMap extraPrefLabelMap = getTimespanAgentConceptOrPlaceLabels(jsonDoc, value);
+            if (extraPrefLabelMap != null) {
+                LOG.trace("    isUrl -> extraLabels = {}", extraPrefLabelMap);
+                extraPrefLabelMaps.add(extraPrefLabelMap);
+            }
+        } else {
+            // no url, we keep it.
+            newValues.add(value);
         }
     }
 
@@ -324,7 +389,7 @@ public final class EdmManifestMapping {
     }
 
     private static LanguageMap getEntityPrefLabels(Object jsonDoc, String entityName, String value) {
-        Filter aboutFilter = filter(where("about").is(value));
+        Filter aboutFilter = filter(where(ABOUT).is(value));
         LanguageMap[] labels = JsonPath.parse(jsonDoc).
                 read("$.object[?(@." + entityName + ")]." + entityName + "[?].prefLabel", LanguageMap[].class, aboutFilter);
         if (labels.length > 0) {
@@ -343,17 +408,21 @@ public final class EdmManifestMapping {
                 String language = entry.getKey();
                 String[] values = entry.getValue();
                 for (String value: values) {
-                    List<LanguageObject> langObjects;
-                    if (!metaData.keySet().contains(fieldName)) {
-                        langObjects = new ArrayList<>();
-                        metaData.put(fieldName, langObjects);
-                    } else {
-                        langObjects = metaData.get(fieldName);
-                    }
-                    langObjects.add(new LanguageObject(language, value));
+                    processMetaDataField(fieldName, metaData, language, value);
                 }
             }
         }
+    }
+
+    private static void processMetaDataField(String fieldName,  Map<String, List<LanguageObject>> metaData, String language, String value) {
+        List<LanguageObject> langObjects;
+        if (!metaData.containsKey(fieldName)) {
+            langObjects = new ArrayList<>();
+            metaData.put(fieldName, langObjects);
+        } else {
+            langObjects = metaData.get(fieldName);
+        }
+        langObjects.add(new LanguageObject(language, value));
     }
 
     /**
@@ -419,6 +488,20 @@ public final class EdmManifestMapping {
     }
 
     /**
+     * @param europeanaId consisting of dataset ID and record ID separated by a slash
+     * @param jsonDoc parsed json document
+     * @return {@link Text} containing reference to the landing page of the item on Europeana website
+     */
+    static Text[] getHomePage(String europeanaId, Object jsonDoc) {
+        String[] landingPages = JsonPath.parse(jsonDoc).read("$.object.europeanaAggregation[?(@.edmLandingPage)].edmLandingPage", String[].class);
+        String landingPage = (String) getFirstValueArray("landingPage", europeanaId, landingPages);
+        if (landingPage == null) {
+            return null;
+        }
+        return new Text[]{new Text(landingPage, new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, "Europeana"))};
+    }
+
+    /**
      * Return attribution text as a String
      * We look for the webResource that corresponds to our edmIsShownBy and return the 'textAttributionSnippet' for that.
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
@@ -427,30 +510,29 @@ public final class EdmManifestMapping {
      * @return
      */
     static String getAttributionV2(String europeanaId, String isShownBy, Object jsonDoc) {
-        return getAttributionSnippetEdmIsShownBy(europeanaId, isShownBy, jsonDoc);
+        Filter isShownByFilter = filter(where(ABOUT).is(isShownBy));
+        String[] attributions = JsonPath.parse(jsonDoc).
+                read("$.object.aggregations[*].webResources[?]." + TEXT_ATTRIB_SNIPPET, String[].class, isShownByFilter);
+        return (String) getFirstValueArray(TEXT_ATTRIB_SNIPPET, europeanaId, attributions);
     }
 
     /**
      * Return attribution text as a String
-     * We look for the webResource that corresponds to our edmIsShownBY and return the 'textAttributionSnippet' for that.
+     * We look for the webResource that corresponds to our edmIsShownBy and return the attribution snippet for that.
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
      * @param isShownBy edmIsShownBy value
      * @param jsonDoc parsed json document
      * @return
      */
     static LanguageMap getAttributionV3(String europeanaId, String isShownBy, Object jsonDoc) {
-        String attribution = getAttributionSnippetEdmIsShownBy(europeanaId, isShownBy, jsonDoc);
+        Filter isShownByFilter = filter(where(ABOUT).is(isShownBy));
+        String[] attributions = JsonPath.parse(jsonDoc).
+                read("$.object.aggregations[*].webResources[?]."+ HTML_ATTRIB_SNIPPET, String[].class, isShownByFilter);
+        String attribution = (String) getFirstValueArray(HTML_ATTRIB_SNIPPET, europeanaId, attributions);
         if (StringUtils.isEmpty(attribution)) {
             return null;
         }
         return new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, attribution);
-    }
-
-    private static String getAttributionSnippetEdmIsShownBy(String europeanaId, String edmIsShownBy, Object jsonDoc) {
-        Filter isShownByFilter = filter(where("about").is(edmIsShownBy));
-        String[] attributions = JsonPath.parse(jsonDoc).
-                read("$.object.aggregations[*].webResources[?].textAttributionSnippet", String[].class, isShownByFilter);
-        return (String) getFirstValueArray("textAttributionSnippet", europeanaId, attributions);
     }
 
     /**
@@ -522,13 +604,12 @@ public final class EdmManifestMapping {
     }
 
     /**
-     * @param settings manifest settings object loaded from properties file*
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
      * @param isShownBy
      * @param jsonDoc parsed json document
      * @return
      */
-    static eu.europeana.iiif.model.v2.Sequence[] getSequencesV2(ManifestSettings settings, String europeanaId, String isShownBy, Object jsonDoc) {
+    static eu.europeana.iiif.model.v2.Sequence[] getSequencesV2(String europeanaId, String isShownBy, Object jsonDoc) {
         // generate canvases in a same order as the web resources
         List<WebResource> sortedResources = getSortedWebResources(europeanaId, isShownBy, jsonDoc);
         if (sortedResources.isEmpty()) {
@@ -539,18 +620,26 @@ public final class EdmManifestMapping {
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
         List<eu.europeana.iiif.model.v2.Canvas> canvases = new ArrayList<>(sortedResources.size());
         for (WebResource webResource: sortedResources) {
-            canvases.add(getCanvasV2(settings, europeanaId, order, webResource, services));
+            canvases.add(getCanvasV2(europeanaId, order, webResource, services));
             order++;
         }
         // there should be only 1 sequence, so sequence number is always 1
         eu.europeana.iiif.model.v2.Sequence[] result = new eu.europeana.iiif.model.v2.Sequence[1];
-        result[0] = new eu.europeana.iiif.model.v2.Sequence(Definitions.getSequenceId(europeanaId, 1));
+        result[0] = new eu.europeana.iiif.model.v2.Sequence();
         result[0].setStartCanvas(Definitions.getCanvasId(europeanaId, 1));
         result[0].setCanvases(canvases.toArray(new eu.europeana.iiif.model.v2.Canvas[0]));
         return result;
     }
 
-    static eu.europeana.iiif.model.v3.Canvas[] getItems(ManifestSettings settings, String europeanaId, String isShownBy, Object jsonDoc) {
+    /**
+     * Generates an ordered array of {@link Canvas}es referring to edmIsShownBy and hasView {@link WebResource}s.
+     * For more information about the ordering @see {@link WebResourceSorter}
+     * @param europeanaId
+     * @param isShownBy
+     * @param jsonDoc
+     * @return array of Canvases
+     */
+    static eu.europeana.iiif.model.v3.Canvas[] getItems(String europeanaId, String isShownBy, Object jsonDoc, MediaType euScreenTypeHack) {
         // generate canvases in a same order as the web resources
         List<WebResource> sortedResources = getSortedWebResources(europeanaId, isShownBy, jsonDoc);
         if (sortedResources.isEmpty()) {
@@ -560,11 +649,64 @@ public final class EdmManifestMapping {
         int order = 1;
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
         List<eu.europeana.iiif.model.v3.Canvas> canvases = new ArrayList<>(sortedResources.size());
-        for (WebResource webResource: getSortedWebResources(europeanaId, isShownBy, jsonDoc)) {
-            canvases.add(getCanvasV3(settings, europeanaId, order, webResource, services));
+        for (WebResource webResource: sortedResources) {
+            canvases.add(getCanvasV3(europeanaId, order, webResource, services, euScreenTypeHack));
             order++;
         }
         return canvases.toArray(new eu.europeana.iiif.model.v3.Canvas[0]);
+    }
+
+    /**
+     * @return the {@link eu.europeana.iiif.model.v3.Canvas} that refers to edmIsShownBy, or else just the first Canvas
+     */
+    static eu.europeana.iiif.model.v3.Canvas getStartCanvasV3(eu.europeana.iiif.model.v3.Canvas[] items, String edmIsShownBy) {
+        if (items == null) {
+            LOG.trace("Start canvas = null (no canvases present)");
+            return null;
+        }
+
+        eu.europeana.iiif.model.v3.Canvas result = null;
+        for (eu.europeana.iiif.model.v3.Canvas c : items) {
+            String annotationBodyId = c.getStartCanvasAnnotation().getBody().getId();
+            if (!StringUtils.isEmpty(edmIsShownBy) && edmIsShownBy.equals(annotationBodyId)) {
+                result = c;
+                LOG.trace("Start canvas = {} (matches with edmIsShownBy)", result.getPageNr());
+                break;
+            }
+        }
+        // nothing found, return first canvas
+        if (result == null) {
+            result = items[0];
+            LOG.trace("Start canvas = {} (no match with edmIsShownBy, select first)", result.getPageNr());
+        }
+        return new eu.europeana.iiif.model.v3.Canvas(result.getId(), result.getPageNr());
+    }
+
+    /**
+     * @return Integer containing the page number of the canvas that refers to the edmIsShownBy, or else just the first
+     *  Canvas. Null if there are no canvases
+     */
+    static Integer getStartCanvasV2(eu.europeana.iiif.model.v2.Canvas[] items, String edmIsShownBy) {
+        if (items == null) {
+            LOG.trace("Start canvas = null (no canvases present)");
+            return null;
+        }
+
+        eu.europeana.iiif.model.v2.Canvas result = null;
+        for (eu.europeana.iiif.model.v2.Canvas c : items) {
+            String annotationBodyId = c.getStartImageAnnotation().getResource().getId();
+            if (!StringUtils.isEmpty(edmIsShownBy) && edmIsShownBy.equals(annotationBodyId)) {
+                result = c;
+                LOG.trace("Start canvas = {} (matches with edmIsShownBy)", result.getPageNr());
+                break;
+            }
+        }
+        // nothing found, return first canvas
+        if (result == null) {
+            result = items[0];
+            LOG.trace("Start canvas = {} (no match with edmIsShownBy, select first)", result.getPageNr());
+        }
+        return result.getPageNr();
     }
 
     /**
@@ -598,7 +740,7 @@ public final class EdmManifestMapping {
 
         List<WebResource> sorted;
         try {
-            sorted = WebResourceSorter.sort(unsorted);
+            sorted = WebResourceSorter.sort(unsorted, validWebResources);
         } catch (DataInconsistentException e) {
             LOG.error("Error trying to sort webresources for {}. Cause: {}", europeanaId, e);
             sorted = unsorted;
@@ -609,17 +751,27 @@ public final class EdmManifestMapping {
     /**
      * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That is done later
      */
-    static eu.europeana.iiif.model.v2.Canvas getCanvasV2(ManifestSettings settings,
+    private static eu.europeana.iiif.model.v2.Canvas getCanvasV2(
                                                          String europeanaId,
                                                          int order,
                                                          WebResource webResource,
                                                          Map<String, Object>[] services) {
         eu.europeana.iiif.model.v2.Canvas c = new eu.europeana.iiif.model.v2.Canvas(Definitions.getCanvasId(europeanaId, order),
-                order, settings.getCanvasHeight(), settings.getCanvasWidth());
+                order);
 
         c.setLabel("p. "+order);
 
-        String attributionText = (String) webResource.get("textAttributionSnippet");
+        Object obj = webResource.get(EBUCORE_HEIGHT);
+        if (obj instanceof Integer){
+            c.setHeight((Integer) obj);
+        }
+
+        obj = webResource.get(EBUCORE_WIDTH);
+        if (obj instanceof Integer){
+            c.setWidth((Integer) obj);
+        }
+
+        String attributionText = (String) webResource.get(TEXT_ATTRIB_SNIPPET);
         if (!StringUtils.isEmpty(attributionText)){
             c.setAttribution(attributionText);
         }
@@ -631,11 +783,11 @@ public final class EdmManifestMapping {
 
         // canvas has 1 annotation (image field)
         c.setImages(new eu.europeana.iiif.model.v2.Annotation[1]);
-        c.getImages()[0] = new eu.europeana.iiif.model.v2.Annotation(Definitions.getAnnotationId(europeanaId, order));
+        c.getImages()[0] = new eu.europeana.iiif.model.v2.Annotation();
         c.getImages()[0].setOn(c.getId());
 
         // annotation has 1 annotationBody
-        eu.europeana.iiif.model.v2.AnnotationBody annoBody = new eu.europeana.iiif.model.v2.AnnotationBody((String) webResource.get("about"));
+        eu.europeana.iiif.model.v2.AnnotationBody annoBody = new eu.europeana.iiif.model.v2.AnnotationBody((String) webResource.get(ABOUT));
         String ebuCoreMimeType = (String) webResource.get("ebucoreHasMimeType");
         if (!StringUtils.isEmpty(ebuCoreMimeType)) {
             annoBody.setFormat(ebuCoreMimeType);
@@ -644,7 +796,7 @@ public final class EdmManifestMapping {
         // body can have a service
         String serviceId = getServiceId(webResource, europeanaId);
         if (serviceId != null) {
-            eu.europeana.iiif.model.v2.Service service = new eu.europeana.iiif.model.v2.Service(serviceId);
+            eu.europeana.iiif.model.v2.Service service = new eu.europeana.iiif.model.v2.Service(serviceId, Definitions.IMAGE_CONTEXT_VALUE);
             service.setProfile(lookupServiceDoapImplements(services, serviceId, europeanaId));
             annoBody.setService(service);
         }
@@ -653,17 +805,27 @@ public final class EdmManifestMapping {
     }
 
     /**
-     * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That is done later
+     * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That's done later.
      */
-    static eu.europeana.iiif.model.v3.Canvas getCanvasV3(ManifestSettings settings,
+    private static eu.europeana.iiif.model.v3.Canvas getCanvasV3(
                                                          String europeanaId,
                                                          int order,
                                                          WebResource webResource,
-                                                         Map<String, Object>[] services) {
-        eu.europeana.iiif.model.v3.Canvas c = new eu.europeana.iiif.model.v3.Canvas(Definitions.getCanvasId(europeanaId, order), order,
-                settings.getCanvasHeight(), settings.getCanvasWidth());
+                                                         Map<String, Object>[] services, MediaType euScreenTypeHack) {
+        eu.europeana.iiif.model.v3.Canvas c =
+                new eu.europeana.iiif.model.v3.Canvas(Definitions.getCanvasId(europeanaId, order), order);
 
         c.setLabel(new LanguageMap(null, "p. "+order));
+
+        Object obj = webResource.get(EBUCORE_HEIGHT);
+        if (obj instanceof Integer){
+            c.setHeight((Integer) obj);
+        }
+
+        obj = webResource.get(EBUCORE_WIDTH);
+        if (obj instanceof Integer){
+            c.setWidth((Integer) obj);
+        }
 
         String durationText = (String) webResource.get("ebucoreDuration");
         if (durationText != null) {
@@ -671,9 +833,9 @@ public final class EdmManifestMapping {
             c.setDuration(durationInMs / 1000D);
         }
 
-        String attributionText = (String) webResource.get("textAttributionSnippet");
+        String attributionText = (String) webResource.get(HTML_ATTRIB_SNIPPET);
         if (!StringUtils.isEmpty(attributionText)){
-            c.setAttribution(new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, attributionText));
+            c.setRequiredStatement(new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, attributionText));
         }
 
         LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get("webResourceEdmRights");
@@ -688,17 +850,26 @@ public final class EdmManifestMapping {
         // annotation page has 1 annotation
         Annotation anno = new Annotation(null);
         annoPage.setItems(new Annotation[] { anno });
+
         // we use Metis to determine if it's an image, video, audio or text based on mimetype
         String ebucoreMimeType = (String) webResource.get("ebucoreHasMimeType");
-        MediaType resourceType = MediaType.getMediaType(ebucoreMimeType);
-        if (resourceType == MediaType.AUDIO || resourceType == MediaType.VIDEO) {
+        MediaType mediaType = MediaType.getMediaType(ebucoreMimeType);
+
+        // EA-1973 + EA-2002 temporary(?) workaround for EUScreen; use isShownAt and use edmType instead of ebucoreMimetype
+        if (euScreenTypeHack != null) {
+            LOG.debug("Override mediaType {} with {} because of EUScreen hack", mediaType, euScreenTypeHack);
+            mediaType = euScreenTypeHack;
+            ebucoreMimeType = null;
+        }
+
+        if (mediaType == MediaType.AUDIO || mediaType == MediaType.VIDEO) {
             anno.setTimeMode("trim");
         }
         anno.setTarget(c.getId());
 
         // annotation has 1 annotationBody
         eu.europeana.iiif.model.v3.AnnotationBody annoBody = new AnnotationBody(
-                (String) webResource.get("about"),  StringUtils.capitalize(resourceType.toString().toLowerCase(Locale.GERMANY)));
+                (String) webResource.get(ABOUT),  StringUtils.capitalize(mediaType.toString().toLowerCase(Locale.GERMANY)));
         anno.setBody(annoBody);
 
         if (!StringUtils.isEmpty(ebucoreMimeType)) {
@@ -708,7 +879,7 @@ public final class EdmManifestMapping {
         // body can have a service
         String serviceId = getServiceId(webResource, europeanaId);
         if (serviceId != null) {
-            eu.europeana.iiif.model.v3.Service service = new eu.europeana.iiif.model.v3.Service(serviceId);
+            eu.europeana.iiif.model.v3.Service service = new eu.europeana.iiif.model.v3.Service(serviceId, Definitions.IMAGE_SERVICE_TYPE_3);
             service.setProfile(lookupServiceDoapImplements(services, serviceId, europeanaId));
             annoBody.setService(service);
         }
@@ -733,7 +904,7 @@ public final class EdmManifestMapping {
     private static String lookupServiceDoapImplements(Map<String, Object>[] services, String serviceId, String europeanaId) {
         String result = null;
         for (Map<String, Object> s : services) {
-            String sId = (String) s.get("about");
+            String sId = (String) s.get(ABOUT);
             if (sId != null && sId.equalsIgnoreCase(serviceId)) {
                 // Note: there is a problem with cardinality of the doapImplements field. It should be a String, but at the moment
                 // it is defined in EDM as a String[]. So we need to check what we get here.

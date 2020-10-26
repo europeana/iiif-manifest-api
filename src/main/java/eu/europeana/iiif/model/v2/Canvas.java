@@ -21,7 +21,7 @@ public class Canvas extends JsonLdId {
     private String attribution;
     private String license;
     private Annotation[] images;
-    private FullText[] otherContent; // only 1 value is expected (or null)
+    private String [] otherContent;  // only 1 value is expected (or null)
 
     /**
      * Create a new canvas object
@@ -35,6 +35,16 @@ public class Canvas extends JsonLdId {
         this.pageNr = pageNr;
         this.height = height;
         this.width = width;
+    }
+
+    /**
+     * Create a new canvas object
+     * @param id
+     * @param pageNr
+     */
+    public Canvas(String id, int pageNr) {
+        super(id);
+        this.pageNr = pageNr;
     }
 
     public int getPageNr() {
@@ -55,6 +65,14 @@ public class Canvas extends JsonLdId {
 
     public Integer getWidth() {
         return width;
+    }
+
+    public void setHeight(Integer height) {
+        this.height = height;
+    }
+
+    public void setWidth(Integer width) {
+        this.width = width;
     }
 
     public String getAttribution() {
@@ -81,11 +99,19 @@ public class Canvas extends JsonLdId {
         this.images = images;
     }
 
-    public FullText[] getOtherContent() {
+    @JsonIgnore
+    public Annotation getStartImageAnnotation() {
+        if (images == null || images.length == 0) {
+            return null;
+        }
+        return images[0];
+    }
+
+    public String[] getOtherContent() {
         return otherContent;
     }
 
-    public void setOtherContent(FullText[] otherContent) {
+    public void setOtherContent(String[] otherContent) {
         this.otherContent = otherContent;
     }
 }

@@ -42,7 +42,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @TestPropertySource(locations = "classpath:iiif-test.properties")
-@SpringBootTest(classes = {ManifestService.class, ManifestSettings.class})
+@SpringBootTest(classes = {ManifestService.class, ManifestSettings.class, SpringContext.class})
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 // The following 2 annotations are needed to enable hystrix so we can test timeouts and fallbacks
 @EnableCircuitBreaker
@@ -55,6 +55,13 @@ public class ManifestServiceTest {
     private static final String EXAMPLE_WSKEY = "junit";
     private static final String EXAMPLE_ERROR_ID = "/server/error";
     private static final String EXAMPLE_TIMEOUT_ID = "/timeout/1234";
+    private static final String ANNOPAGE = "/annopage/";
+    private static final String PRESENTATION = "/presentation";
+    private static final String CONTENT_LENGTH = "Content-Length";
+    private static final String CONTENT_TYPE = "Content-Type";
+    private static final String APPLICATION_JSON = "application/json;charset=UTF-8";
+    private static final String API_V2_RECORD = "/record/v2";
+    private static final String JSON_WSKEY = ".json?wskey=";
 
     @Autowired
     private ManifestService ms;
@@ -64,74 +71,81 @@ public class ManifestServiceTest {
         LogManager.getLogger(ManifestServiceTest.class).info("Mock API port {}, httpsPort {}", wireMockRule.port(), wireMockRule.httpsPort());
 
         // Record API, return 401 for all unknown wskeys
-        stubFor(get(urlPathMatching("/api/v2/record/.*"))
+        stubFor(get(urlPathMatching(API_V2_RECORD + "/.*"))
                 .withQueryParam("wskey", matching(".*"))
                 .willReturn(aResponse()
                         .withStatus(401)
-                        .withHeader("Content-Type", "application/json;charset=UTF-8")
+                        .withHeader(CONTENT_TYPE, APPLICATION_JSON)
                         .withBody("{\"error\": \"Invalid API key\"}")));
 
         // Record API, return 404 for all unknown record ids (that have a valid wskey)
-        stubFor(get(urlPathMatching("/api/v2/record/.*"))
+        stubFor(get(urlPathMatching(API_V2_RECORD + "/.*"))
                 .withQueryParam("wskey", equalTo(EXAMPLE_WSKEY))
                 .willReturn(aResponse()
                         .withStatus(404)
-                        .withHeader("Content-Type", "application/json;charset=UTF-8")
+                        .withHeader(CONTENT_TYPE, APPLICATION_JSON)
                         .withBody("{\"error\": \"Invalid record identifier\"}")));
 
         // Record API, parent record
-        stubFor(get(urlEqualTo("/api/v2/record" + ExampleData.EXAMPLE_RECORD_PARENT_ID+ ".json?wskey="+EXAMPLE_WSKEY))
+        stubFor(get(urlEqualTo(API_V2_RECORD + ExampleData.EXAMPLE_RECORD_PARENT_ID + JSON_WSKEY+EXAMPLE_WSKEY))
                 .willReturn(aResponse()
                         .withStatus(200)
-                        .withHeader("Content-Type", "application/json;charset=UTF-8")
+                        .withHeader(CONTENT_TYPE, APPLICATION_JSON)
                         .withBody(ExampleData.EXAMPLE_RECORD_PARENT_RESPONSE)));
 
         // Record API, child record
-        stubFor(get(urlEqualTo("/api/v2/record" +ExampleData.EXAMPLE_RECORD_CHILD_ID+ ".json?wskey="+EXAMPLE_WSKEY))
+        stubFor(get(urlEqualTo(API_V2_RECORD + ExampleData.EXAMPLE_RECORD_CHILD_ID + JSON_WSKEY+EXAMPLE_WSKEY))
                 .willReturn(aResponse()
                         .withStatus(200)
-                        .withHeader("Content-Type", "application/json;charset=UTF-8")
+                        .withHeader(CONTENT_TYPE, APPLICATION_JSON)
                         .withBody(ExampleData.EXAMPLE_RECORD_CHILD_RESPONSE)));
 
+        //Record API, minimal data
+        stubFor(get(urlEqualTo(API_V2_RECORD + ExampleData.EXAMPLE_RECORD_MINIMAL_ID + JSON_WSKEY+EXAMPLE_WSKEY))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader(CONTENT_TYPE, APPLICATION_JSON)
+                        .withBody(ExampleData.EXAMPLE_RECORD_MINIMAL_RESPONSE)));
+
         // Record API, simulate timeout exception
-        stubFor(get(urlEqualTo("/api/v2/record" +EXAMPLE_ERROR_ID+ ".json?wskey="+EXAMPLE_WSKEY))
+        stubFor(get(urlEqualTo(API_V2_RECORD + EXAMPLE_ERROR_ID + JSON_WSKEY + EXAMPLE_WSKEY))
                 .willReturn(aResponse()
                         .withStatus(500)
-                        .withHeader("Content-Type", "application/json;charset=UTF-8")
+                        .withHeader(CONTENT_TYPE, APPLICATION_JSON)
                         .withBody("{\"error\": \"Server error\"}")));
 
         // Record API, simulate timeout exception
-        stubFor(get(urlEqualTo("/api/v2/record" +EXAMPLE_TIMEOUT_ID+ ".json?wskey="+EXAMPLE_WSKEY))
+        stubFor(get(urlEqualTo(API_V2_RECORD + EXAMPLE_TIMEOUT_ID + JSON_WSKEY + EXAMPLE_WSKEY))
                 .willReturn(aResponse()
                         .withFixedDelay(60000) // value should be longer than configured timeout for getRecord
                         .withStatus(200)
-                        .withHeader("Content-Type", "application/json;charset=UTF-8")
+                        .withHeader(CONTENT_TYPE, APPLICATION_JSON)
                         .withBody(ExampleData.EXAMPLE_RECORD_CHILD_RESPONSE)));
 
         // Full Text API, return 404 for all unknown annotation pages
         stubFor(head(urlPathMatching("/presentation/.*/.*/annopage/.*"))
                 .willReturn(aResponse()
                         .withStatus(404)
-                        .withHeader("Content-Length", "0")));
+                        .withHeader(CONTENT_LENGTH, "0")));
 
         // Full Text API, return 200 for proper HEAD request
-        stubFor(head(urlEqualTo("/presentation" + ExampleData.EXAMPLE_FULLTEXT_ID + "/annopage/" +ExampleData.EXAMPLE_FULLTEXT_PAGENR))
+        stubFor(head(urlEqualTo(PRESENTATION + ExampleData.EXAMPLE_FULLTEXT_ID + ANNOPAGE + ExampleData.EXAMPLE_FULLTEXT_PAGENR))
                 .willReturn(aResponse()
                         .withStatus(200)
-                        .withHeader("Content-Length", "0")));
+                        .withHeader(CONTENT_LENGTH, "0")));
 
         // Full Text API, simulate server error
-        stubFor(head(urlEqualTo("/presentation" + EXAMPLE_ERROR_ID + "/annopage/" +ExampleData.EXAMPLE_FULLTEXT_PAGENR))
+        stubFor(head(urlEqualTo(PRESENTATION + EXAMPLE_ERROR_ID + ANNOPAGE + ExampleData.EXAMPLE_FULLTEXT_PAGENR))
                 .willReturn(aResponse()
                         .withStatus(500)
-                        .withHeader("Content-Length", "0")));
+                        .withHeader(CONTENT_LENGTH, "0")));
 
         // Full Text API, simulate (timeout?) exception
-        stubFor(head(urlEqualTo("/presentation" + EXAMPLE_TIMEOUT_ID + "/annopage/" +ExampleData.EXAMPLE_FULLTEXT_PAGENR))
+        stubFor(head(urlEqualTo(PRESENTATION + EXAMPLE_TIMEOUT_ID + ANNOPAGE + ExampleData.EXAMPLE_FULLTEXT_PAGENR))
                 .willReturn(aResponse()
                         .withFixedDelay(30000)
                         .withStatus(200)
-                        .withHeader("Content-Length", "0")));
+                        .withHeader(CONTENT_LENGTH, "0")));
     }
 
     private URL getRecordApiUrl() {
@@ -165,7 +179,7 @@ public class ManifestServiceTest {
         return json;
     }
 
-    private ManifestV2 getManifestV2(String recordId) throws IIIFException{
+    private ManifestV2 getManifestV2(String recordId) throws IIIFException {
         ManifestV2 m = ms.generateManifestV2(getRecord(recordId), true, getFullTextApiUrl());
         assertNotNull(m);
         assertTrue(m.getId().contains(recordId));
@@ -268,6 +282,7 @@ public class ManifestServiceTest {
     @Test
     public void testGetManifestV2() throws IIIFException {
         getManifestV2(ExampleData.EXAMPLE_RECORD_CHILD_ID);
+        getManifestV2(ExampleData.EXAMPLE_RECORD_MINIMAL_ID);
     }
 
     /**
@@ -276,6 +291,7 @@ public class ManifestServiceTest {
     @Test
     public void testGetManifestV3() throws IIIFException {
         getManifestV3(ExampleData.EXAMPLE_RECORD_PARENT_ID);
+        getManifestV2(ExampleData.EXAMPLE_RECORD_MINIMAL_ID);
     }
 
     /**

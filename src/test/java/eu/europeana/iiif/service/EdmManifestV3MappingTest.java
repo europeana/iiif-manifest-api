@@ -38,7 +38,7 @@ public class EdmManifestV3MappingTest {
         assertNotNull(col);
         assertTrue(col.length > 0);
         assertEquals("https://data.theeuropeanlibrary.org/someurl", col[0].getId());
-        assertEquals("Collection", col[0].getType());
+        assertEquals("Collection", col[0].getType().get());
     }
 
     @Test
@@ -183,7 +183,7 @@ public class EdmManifestV3MappingTest {
         assertNotNull(images);
         assertEquals(1, images.length);
         assertEquals(EdmManifestData.TEST_THUMBNAIL_ID, images[0].getId());
-        assertEquals("Image", images[0].getType());
+        assertEquals("Image", images[0].getType().get());
     }
 
     /**
@@ -196,13 +196,37 @@ public class EdmManifestV3MappingTest {
     }
 
     /**
+     * Test if we retrieve and set a homepage field properly
+     */
+    @Test
+    public void testHomepage() {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_HOMEPAGE);
+        Text[] text = EdmManifestMapping.getHomePage("test", document);
+        assertNotNull(text);
+        assertEquals(1, text.length);
+        assertEquals(EdmManifestData.TEST_HOMEPAGE_ID, text[0].getId());
+        testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"Europeana"}, text[0].getLabel());
+        assertEquals("Text", text[0].getType().get());
+        assertEquals("text/html", text[0].getFormat());
+    }
+
+    /**
+     * Test if we handle non-existing landingPages properly
+     */
+    @Test
+    public void testHomepageEmpty() {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
+        assertNull(EdmManifestMapping.getHomePage("test", document));
+    }
+
+    /**
      * Test if we retrieve attribution properly
      */
     @Test
     public void testAttribution() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_ATTRIBUTION);
         LanguageMap attribution = EdmManifestMapping.getAttributionV3("test", EdmManifestData.TEST_IS_SHOWN_BY, document);
-        testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"attributionTextOk"}, attribution);
+        testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{EdmManifestData.TEST_ATTRIBUTION_TEXT_V3}, attribution);
     }
 
     /**
@@ -223,7 +247,7 @@ public class EdmManifestV3MappingTest {
         Rights rights = EdmManifestMapping.getRights("test", document);
         assertNotNull(rights);
         assertEquals("licenseTextEuropeana", rights.getId());
-        assertEquals("Text", rights.getType());
+        assertEquals("Text", rights.getType().get());
         assertEquals("text/html", rights.getFormat());
     }
 
@@ -261,12 +285,49 @@ public class EdmManifestV3MappingTest {
     }
 
     /**
+     * Test if we set a proper start canvas
+     */
+    @Test
+    public void testStartCanvas() {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
+        String edmIsShownBy = EdmManifestMapping.getIsShownBy(null, document);
+        Canvas[] canvases = EdmManifestMapping.getItems("/test-id", edmIsShownBy, document, null);
+        Canvas start = EdmManifestMapping.getStartCanvasV3(canvases, edmIsShownBy);
+
+        // test if only a few fields are set and the rest is null
+        ExpectedCanvasAndAnnotationPageValues expectedCanvas = new ExpectedCanvasAndAnnotationPageValues();
+        expectedCanvas.idEndsWith = "/test-id/canvas/p1";
+        expectedCanvas.type = "Canvas";
+        checkCanvas(expectedCanvas, start);
+    }
+
+    @Test
+    public void startCanvasNoIsShownByShouldNotThrow() {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_NOISSHOWNBY);
+        String edmIsShownBy = EdmManifestMapping.getIsShownBy(null, document);
+
+        Canvas[] canvases = EdmManifestMapping.getItems("/test-id", edmIsShownBy, document, null);
+        Canvas start = EdmManifestMapping.getStartCanvasV3(canvases, edmIsShownBy);
+
+        // test if only a few fields are set and the rest is null
+        ExpectedCanvasAndAnnotationPageValues expectedCanvas = new ExpectedCanvasAndAnnotationPageValues();
+        expectedCanvas.idEndsWith = "/test-id/canvas/p1";
+        expectedCanvas.type = "Canvas";
+        checkCanvas(expectedCanvas, start);
+    }
+
+    @Test
+    public void testStartCanvasEmpty() {
+       assertNull(EdmManifestMapping.getStartCanvasV3(null, null));
+    }
+
+    /**
      * Test that we do not create canvases if there are no webresources
      */
     @Test
     public void testCanvasEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getItems(ms.getSettings(), "test", null, document));
+        assertNull(EdmManifestMapping.getItems("test", null, document, null));
     }
 
     /**
@@ -274,8 +335,8 @@ public class EdmManifestV3MappingTest {
      */
     @Test
     public void testCanvasMissingIsShownAtHasView() {
-        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_NOISSHOWNAT);
-        assertNull(EdmManifestMapping.getItems(ms.getSettings(), "test", null, document));
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_NOISSHOWNBY);
+        assertNull(EdmManifestMapping.getItems("test", null, document, null));
     }
 
     /**
@@ -283,10 +344,11 @@ public class EdmManifestV3MappingTest {
      */
     @Test
     public void testCanvases() {
-        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_1SERVICE);
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
         String edmIsShownBy = EdmManifestMapping.getIsShownBy(null, document);
-        Canvas[] canvases = EdmManifestMapping.getItems(ms.getSettings(), "/test-id", edmIsShownBy, document);
+        Canvas[] canvases = EdmManifestMapping.getItems("/test-id", edmIsShownBy, document, null);
         assertNotNull(canvases);
+        // note that the 3rd canvas is not edmIsShownBy or hasView so not included
         assertEquals(2, canvases.length);
 
         // CANVAS 1
@@ -296,8 +358,8 @@ public class EdmManifestV3MappingTest {
         expectedCanvas.type = "Canvas";
         expectedCanvas.label = new LanguageMap(LanguageMap.NO_LANGUAGE_KEY, "p. 1");
         expectedCanvas.duration = 98.765;
-        expectedCanvas.attribution = new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, "wr1Attribution");
-        expectedCanvas.rightsId = "wr1License";
+        expectedCanvas.attribution = new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, "<span>wr3Attribution</span>");
+        expectedCanvas.rightsId = "wr3License";
         expectedCanvas.annoPageid = null; // we only set if for fulltext annopages
         expectedCanvas.annoPageType = "AnnotationPage";
 
@@ -308,11 +370,11 @@ public class EdmManifestV3MappingTest {
         expectedAnnotation.motivation = "painting";
         expectedAnnotation.timeMode = "trim";
         expectedAnnotation.target = "https://iiif.europeana.eu/presentation/test-id/canvas/p1";
-        expectedAnnotation.bodyId = "wr1Id";
+        expectedAnnotation.bodyId = "wr3Id";
         expectedAnnotation.bodyType = "Video";
         expectedAnnotation.bodyFormat = "video/mp4";
         expectedAnnotation.hasService = true;
-        expectedAnnotation.bodyServiceId = "service1Id";
+        expectedAnnotation.bodyServiceId = "service3Id";
         expectedAnnotation.bodyServiceProfile = "serviceProfile";
         expectedAnnotation.bodyServiceType = "ImageService3";
         checkCanvas(expectedCanvas, canvas1);
@@ -324,7 +386,7 @@ public class EdmManifestV3MappingTest {
         expectedCanvas2.type = "Canvas";
         expectedCanvas2.label = new LanguageMap(LanguageMap.NO_LANGUAGE_KEY, "p. 2");
         expectedCanvas2.duration = null;
-        expectedCanvas2.attribution = new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, "wr2Attribution");
+        expectedCanvas2.attribution = new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, "<span>wr2Attribution</span>");
         expectedCanvas2.rightsId = "wr2License";
         expectedCanvas2.annoPageid = null; // we only set if for fulltext annopages
         expectedCanvas2.annoPageType = "AnnotationPage";
@@ -337,7 +399,7 @@ public class EdmManifestV3MappingTest {
         expectedAnnotation2.timeMode = null;
         expectedAnnotation2.target = "https://iiif.europeana.eu/presentation/test-id/canvas/p2";
         expectedAnnotation2.bodyId = "wr2Id";
-        expectedAnnotation2.bodyType = "Unknown";
+        expectedAnnotation2.bodyType = "Other";
         expectedAnnotation2.bodyFormat = "wr2MimeType";
         expectedAnnotation2.hasService = false;
         checkCanvas(expectedCanvas2, canvas2);
@@ -347,18 +409,25 @@ public class EdmManifestV3MappingTest {
         assertNotNull(canvas);
         assertTrue("Expected id ending with " + expected.idEndsWith + " but id is "+canvas.getId(),
                 canvas.getId().endsWith(expected.idEndsWith));
-        assertEquals(expected.type, canvas.getType());
+        assertEquals(expected.type, canvas.getType().get());
         testLanguageMap(expected.label, canvas.getLabel());
         assertEquals(expected.duration, canvas.getDuration());
-        testLanguageMap(expected.attribution, canvas.getAttribution());
-        assertEquals(expected.rightsId, canvas.getRights().getId());
-
-        assertNotNull(canvas.getItems());
-        AnnotationPage ap = canvas.getItems()[0];
-        assertNotNull(ap);
-        assertEquals(expected.annoPageid, ap.getId());
-        assertEquals(expected.annoPageType, ap.getType());
-        checkAnnotationAndBodyAndServiceValues(expected.annoPageAnnotationAndBody, ap.getItems());
+        testLanguageMap(expected.attribution, canvas.getRequiredStatement());
+        if (expected.rightsId == null) {
+            assertNull(canvas.getRights());
+        } else {
+            assertEquals(expected.rightsId, canvas.getRights().getId());
+        }
+        if (expected.annoPageAnnotationAndBody == null) {
+            assertNull(canvas.getItems());
+        } else {
+            assertNotNull(canvas.getItems());
+            AnnotationPage ap = canvas.getItems()[0];
+            assertNotNull(ap);
+            assertEquals(expected.annoPageid, ap.getId());
+            assertEquals(expected.annoPageType, ap.getType().get());
+            checkAnnotationAndBodyAndServiceValues(expected.annoPageAnnotationAndBody, ap.getItems());
+        }
     }
 
     private void checkAnnotationAndBodyAndServiceValues(ExpectedAnnotationAndBodyValues[] expectedAnnotations, Annotation[] annotations) {
@@ -368,20 +437,20 @@ public class EdmManifestV3MappingTest {
             ExpectedAnnotationAndBodyValues expected = expectedAnnotations[i];
             Annotation annotation = annotations[i];
             assertEquals("Annotation id", expected.id, annotation.getId());
-            assertEquals("Annotation type", expected.type, annotation.getType());
+            assertEquals("Annotation type", expected.type, annotation.getType().get());
             assertEquals("Annotation motivation", expected.motivation, annotation.getMotivation());
             assertEquals("Annotation timeMode", expected.timeMode, annotation.getTimeMode());
             assertEquals("Annotation target", expected.target, annotation.getTarget());
             AnnotationBody body = annotation.getBody();
             assertNotNull(body); // body should always be present
             assertEquals("AnnotationBody id", expected.bodyId, body.getId());
-            assertEquals("AnnotationBody type",expected.bodyType, body.getType());
+            assertEquals("AnnotationBody type",expected.bodyType, body.getType().get());
             assertEquals("AnnotationBody format", expected.bodyFormat, body.getFormat());
             if (expected.hasService) {
                 Service service = body.getService();
                 assertNotNull(service);
                 assertEquals("Service id", expected.bodyServiceId, service.getId());
-                assertEquals("Service type", expected.bodyServiceType, service.getType());
+                assertEquals("Service type", expected.bodyServiceType, service.getType().get());
                 assertEquals("Service profile", expected.bodyServiceProfile, service.getProfile());
             } else {
                 assertNull (annotation.getBody().getService());
