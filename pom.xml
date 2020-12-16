@@ -27,6 +27,7 @@
 		<spring-hysterix.version>2.1.1.RELEASE</spring-hysterix.version>
 		<jackson.version>2.11.0</jackson.version>
 		<metis.version>1.9.0</metis.version>
+		<swagger.version>2.9.2</swagger.version>
 	</properties>
 
 	<dependencyManagement>
@@ -129,7 +130,18 @@
 		<dependency>
 			<groupId>io.springfox</groupId>
 			<artifactId>springfox-swagger2</artifactId>
-			<version>2.8.0</version>
+			<version>${swagger.version}</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>slf4j-api</artifactId>
+					<groupId>org.slf4j</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-swagger-ui</artifactId>
+			<version>${swagger.version}</version>
 		</dependency>
 
 		<!-- test dependencies -->
