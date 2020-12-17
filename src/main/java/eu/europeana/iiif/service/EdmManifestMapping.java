@@ -908,7 +908,12 @@ public final class EdmManifestMapping {
                 if (doapImplements == null) {
                     LOG.warn("Record {} has service {} with no doapImplements field", europeanaId, serviceId);
                 } else if (doapImplements instanceof List) {
-                    result = ((List<String>) doapImplements).get(0);
+                    List<String> diList = (List<String>) doapImplements;
+                    if (diList.isEmpty()) {
+                        LOG.warn("Record {} has service {} with empty doapImplements list", europeanaId, serviceId);
+                    } else {
+                        result = diList.get(0);
+                    }
                 } else {
                     result = (String) doapImplements;
                 }
