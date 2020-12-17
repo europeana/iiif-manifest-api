@@ -584,9 +584,12 @@ public final class EdmManifestMapping {
      */
     static eu.europeana.iiif.model.v2.DataSet[] getDataSetsV2(String europeanaId) {
         eu.europeana.iiif.model.v2.DataSet[] result = new eu.europeana.iiif.model.v2.DataSet[3];
-        result[0] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".json-ld"), Definitions.MEDIA_TYPE_JSONLD);
-        result[1] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".json"), org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
-        result[2] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".rdf"), Definitions.MEDIA_TYPE_RDF);
+        result[0] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".json-ld"),
+                Definitions.MEDIA_TYPE_JSONLD);
+        result[1] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".json"),
+                org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
+        result[2] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".rdf"),
+                Definitions.MEDIA_TYPE_RDF);
         return result;
     }
 
@@ -597,9 +600,12 @@ public final class EdmManifestMapping {
      */
     static eu.europeana.iiif.model.v3.DataSet[] getDataSetsV3(String europeanaId) {
         eu.europeana.iiif.model.v3.DataSet[] result = new eu.europeana.iiif.model.v3.DataSet[3];
-        result[0] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json-ld"), Definitions.MEDIA_TYPE_JSONLD);
-        result[1] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json"), org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
-        result[2] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".rdf"), Definitions.MEDIA_TYPE_RDF);
+        result[0] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json-ld"),
+                Definitions.MEDIA_TYPE_JSONLD);
+        result[1] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json"),
+                org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
+        result[2] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".rdf"),
+                Definitions.MEDIA_TYPE_RDF);
         return result;
     }
 
@@ -902,21 +908,7 @@ public final class EdmManifestMapping {
         for (Map<String, Object> s : services) {
             String sId = (String) s.get(ABOUT);
             if (sId != null && sId.equalsIgnoreCase(serviceId)) {
-                // Note: there is a problem with cardinality of the doapImplements field. It should be a String, but at the moment
-                // it is defined in EDM as a String[]. So we need to check what we get here.
-                Object doapImplements = s.get("doapImplements");
-                if (doapImplements == null) {
-                    LOG.warn("Record {} has service {} with no doapImplements field", europeanaId, serviceId);
-                } else if (doapImplements instanceof List) {
-                    List<String> diList = (List<String>) doapImplements;
-                    if (diList.isEmpty()) {
-                        LOG.warn("Record {} has service {} with empty doapImplements list", europeanaId, serviceId);
-                    } else {
-                        result = diList.get(0);
-                    }
-                } else {
-                    result = (String) doapImplements;
-                }
+                result = getDoapImplementsValue(s.get("doapImplements"), europeanaId, serviceId);
                 break;
             }
         }
@@ -924,6 +916,26 @@ public final class EdmManifestMapping {
             LOG.warn("Record {} defined service {} in webresource, but no such service is defined (with a doapImplements field)", europeanaId, serviceId);
         }
         return result;
+    }
+
+    /**
+     * there is a problem with cardinality of the doapImplements field. It should be a String, but at the moment it is
+     * defined in EDM as a String[]. So we need to check what we get here.
+     */
+    private static String getDoapImplementsValue(Object doapImplements, String europeanaId, String serviceId) {
+        if (doapImplements == null) {
+            LOG.warn("Record {} has service {} with no doapImplements field", europeanaId, serviceId);
+        } else if (doapImplements instanceof List) {
+            List<String> diList = (List<String>) doapImplements;
+            if (diList.isEmpty()) {
+                LOG.warn("Record {} has service {} with empty doapImplements list", europeanaId, serviceId);
+            } else {
+                return diList.get(0);
+            }
+        } else {
+            return (String) doapImplements;
+        }
+        return null;
     }
 
     /**
@@ -946,7 +958,7 @@ public final class EdmManifestMapping {
 
     /**
      * Parses record information in json format and returns the record's 'timestamp_update' value
-     * @param json
+     * @param json record data in json format
      * @return LocalDateTime object with the record's 'timestamp_update' value (UTC)
      */
     public static ZonedDateTime getRecordTimestampUpdate(String json) {
