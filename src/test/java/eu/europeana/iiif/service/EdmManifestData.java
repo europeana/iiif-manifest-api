@@ -49,9 +49,10 @@ public class EdmManifestData {
                                                  "\"htmlAttributionSnippet\":\""+TEST_ATTRIBUTION_TEXT_V3+"\"}" +"]}]}}";
     
     public static final String TEST_LICENSE_EUROPEANAAGGREGATION = "{\"object\": { \"aggregations\": [{\"edmRights\": { \"en\": [\"licenseTextAggregation\"]}}], \"europeanaAggregation\" : {\"edmRights\": { \"en\": [\"licenseTextEuropeana\"]}}}}";
-    public static final String TEST_LICENSE_OTHERAGGREGATION = "{\"object\": { \"europeanaAggregation\" : {\"edmRights\":{}}, \"aggregations\": [{}, {\"edmRights\": { \"en\": [\"licenseTextAggregation\"]}}] }}";
+    public static final String TEST_LICENSE_OTHERAGGREGATION = "{\"object\": {\"proxies\":[{\"about\":\"/proxy/provider/testing\",\"proxyIn\":[\"/aggregation/provider/testing\"]}], \"europeanaAggregation\" : {\"edmRights\":{}}, \"aggregations\": [{}, {\"about\":\"/aggregation/provider/testing\",\"edmRights\": { \"en\": [\"licenseTextAggregation\"]}}] }}";
     
-    public static final String TEST_SEQUENCE_3CANVAS_1SERVICE = "{\"object\": { \"aggregations\": [ {\"edmIsShownBy\": \"wr3Id\", \"hasView\": [\"wr2Id\"], \"webResources\": [ "+
+    public static final String TEST_SEQUENCE_3CANVAS_1SERVICE = "{\"object\": { \"proxies\":[{\"about\":\"/proxy/provider/testing\",\"proxyIn\":[\"/aggregation/provider/testing\"]}]," +
+            "\"aggregations\": [ {\"about\":\"/aggregation/provider/testing\",\"edmIsShownBy\": \"wr3Id\", \"hasView\": [\"wr2Id\"], \"webResources\": [ "+
             "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":"+
             "{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"wr1MimeType\" },"+
             "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"htmlAttributionSnippet\": \"<span>wr2Attribution</span>\", \"webResourceEdmRights\":"+
@@ -60,7 +61,8 @@ public class EdmManifestData {
             "{\"def\":[\"wr3License\"]}, \"ebucoreHasMimeType\": \"video/mp4\", \"svcsHasService\": [\"service3Id\"], \"ebucoreDuration\": \"98765\"  }"+
             "] } ], \"services\": [{\"about\": \"service3Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
 
-    public static final String TEST_SEQUENCE_3CANVAS_NOISSHOWNBY = "{\"object\": { \"aggregations\": [ {\"hasView\": [\"wr2Id\"], \"webResources\": [ "+
+    public static final String TEST_SEQUENCE_3CANVAS_NOISSHOWNBY = "{\"object\": { \"proxies\":[{\"about\":\"/proxy/provider/testing\",\"proxyIn\":[\"/aggregation/provider/testing\"]}]," +
+            "\"aggregations\": [ {\"hasView\": [\"wr2Id\"], \"webResources\": [ "+
             "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":"+
             "{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"wr1MimeType\" },"+
             "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"htmlAttributionSnippet\": \"<span>wr2Attribution</span>\", \"webResourceEdmRights\":"+

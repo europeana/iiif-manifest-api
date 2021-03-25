@@ -34,7 +34,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testWithinV3() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_WITHIN);
-        Collection[] col = EdmManifestMapping.getWithinV3(document);
+        Collection[] col = EdmManifestMappingV3.getWithinV3(document);
         assertNotNull(col);
         assertTrue(col.length > 0);
         assertEquals("https://data.theeuropeanlibrary.org/someurl", col[0].getId());
@@ -44,7 +44,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testWithinV3Empty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getWithinV3(document));
+        assertNull(EdmManifestMappingV3.getWithinV3(document));
     }
 
     /**
@@ -53,7 +53,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testLabelIsTitle() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_TITLE);
-        LanguageMap labels = EdmManifestMapping.getLabelsV3(document);
+        LanguageMap labels = EdmManifestMappingV3.getLabelsV3(document);
         testLanguageMap("en", new String[]{"Title"}, labels);
     }
 
@@ -63,7 +63,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testLabelIsDescription() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_DESCRIPTION);
-        LanguageMap labels = EdmManifestMapping.getLabelsV3(document);
+        LanguageMap labels = EdmManifestMappingV3.getLabelsV3(document);
         testLanguageMap(LanguageMap.NO_LANGUAGE_KEY, new String[]{"Description"}, labels);
     }
 
@@ -73,7 +73,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testLabelEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getLabelsV3(document));
+        assertNull(EdmManifestMappingV3.getLabelsV3(document));
     }
 
     /**
@@ -82,7 +82,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testDescription() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_TITLE_DESCRIPTION);
-        LanguageMap descriptions = EdmManifestMapping.getDescriptionV3(document);
+        LanguageMap descriptions = EdmManifestMappingV3.getDescriptionV3(document);
         testLanguageMap(LanguageMap.NO_LANGUAGE_KEY, new String[]{"Description"}, descriptions);
     }
 
@@ -93,10 +93,10 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testDescriptionEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_DESCRIPTION);
-        assertNull(EdmManifestMapping.getDescriptionV3(document));
+        assertNull(EdmManifestMappingV3.getDescriptionV3(document));
 
         document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_TITLE); // no description
-        assertNull(EdmManifestMapping.getDescriptionV3(document));
+        assertNull(EdmManifestMappingV3.getDescriptionV3(document));
     }
 
     /**
@@ -105,7 +105,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testMetaDataSimple() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_METADATA_SIMPLE);
-        MetaData[] metaData = EdmManifestMapping.getMetaDataV3(document);
+        MetaData[] metaData = EdmManifestMappingV3.getMetaDataV3(document);
         assertNotNull(metaData);
         assertEquals(3, metaData.length);
 
@@ -131,7 +131,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testMetaDataComplicated() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_METADATA_COMPLICATED);
-        MetaData[] metaData = EdmManifestMapping.getMetaDataV3(document);
+        MetaData[] metaData = EdmManifestMappingV3.getMetaDataV3(document);
         assertNotNull(metaData);
         assertEquals(3, metaData.length);
 
@@ -170,7 +170,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testMetaDataV3Empty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getMetaDataV3(document));
+        assertNull(EdmManifestMappingV3.getMetaDataV3(document));
     }
 
     /**
@@ -179,7 +179,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testThumbnail() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_THUMBNAIL);
-        Image[] images = EdmManifestMapping.getThumbnailImageV3("test", document);
+        Image[] images = EdmManifestMappingV3.getThumbnailImageV3("test", document);
         assertNotNull(images);
         assertEquals(1, images.length);
         assertEquals(EdmManifestData.TEST_THUMBNAIL_ID, images[0].getId());
@@ -192,7 +192,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testThumbnailEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getThumbnailImageV3( "test", document));
+        assertNull(EdmManifestMappingV3.getThumbnailImageV3( "test", document));
     }
 
     /**
@@ -201,7 +201,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testHomepage() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_HOMEPAGE);
-        Text[] text = EdmManifestMapping.getHomePage("test", document);
+        Text[] text = EdmManifestUtils.getHomePage("test", document);
         assertNotNull(text);
         assertEquals(1, text.length);
         assertEquals(EdmManifestData.TEST_HOMEPAGE_ID, text[0].getId());
@@ -216,7 +216,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testHomepageEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getHomePage("test", document));
+        assertNull(EdmManifestUtils.getHomePage("test", document));
     }
 
     /**
@@ -225,7 +225,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testAttribution() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_ATTRIBUTION);
-        LanguageMap attribution = EdmManifestMapping.getAttributionV3("test", EdmManifestData.TEST_IS_SHOWN_BY, document);
+        LanguageMap attribution = EdmManifestMappingV3.getAttributionV3("test", EdmManifestData.TEST_IS_SHOWN_BY, document);
         testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{EdmManifestData.TEST_ATTRIBUTION_TEXT_V3}, attribution);
     }
 
@@ -235,7 +235,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testAttributionEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getAttributionV3("test", EdmManifestData.TEST_IS_SHOWN_BY, document));
+        assertNull(EdmManifestMappingV3.getAttributionV3("test", EdmManifestData.TEST_IS_SHOWN_BY, document));
     }
 
     /**
@@ -244,7 +244,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testRightsFromEuropeanaAggregation() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_LICENSE_EUROPEANAAGGREGATION);
-        Rights rights = EdmManifestMapping.getRights("test", document);
+        Rights rights = EdmManifestMappingV3.getRights("test", document);
         assertNotNull(rights);
         assertEquals("licenseTextEuropeana", rights.getId());
         assertEquals("Text", rights.getType().get());
@@ -257,7 +257,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testRightsFromOtherAggregations() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_LICENSE_OTHERAGGREGATION);
-        Rights rights = EdmManifestMapping.getRights("test", document);
+        Rights rights = EdmManifestMappingV3.getRights("test", document);
         assertNotNull(rights);
         assertEquals("licenseTextAggregation", rights.getId());
     }
@@ -268,7 +268,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testRightsEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getRights("test", document));
+        assertNull(EdmManifestMappingV3.getRights("test", document));
     }
 
     /**
@@ -276,7 +276,7 @@ public class EdmManifestV3MappingTest {
      */
     @Test
     public void testSeeAlso() {
-        DataSet[] datasets = EdmManifestMapping.getDataSetsV3("TEST-ID");
+        DataSet[] datasets = EdmManifestMappingV3.getDataSetsV3("TEST-ID");
         assertNotNull(datasets);
         assertEquals(3, datasets.length);
         for (DataSet dataset : datasets) {
@@ -290,9 +290,9 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testStartCanvas() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
-        String edmIsShownBy = EdmManifestMapping.getIsShownBy(null, document);
-        Canvas[] canvases = EdmManifestMapping.getItems("/test-id", edmIsShownBy, document, null);
-        Canvas start = EdmManifestMapping.getStartCanvasV3(canvases, edmIsShownBy);
+        String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
+        Canvas[] canvases = EdmManifestMappingV3.getItems("/test-id", edmIsShownBy, document, null);
+        Canvas start = EdmManifestMappingV3.getStartCanvasV3(canvases, edmIsShownBy);
 
         // test if only a few fields are set and the rest is null
         ExpectedCanvasAndAnnotationPageValues expectedCanvas = new ExpectedCanvasAndAnnotationPageValues();
@@ -304,10 +304,10 @@ public class EdmManifestV3MappingTest {
     @Test
     public void startCanvasNoIsShownByShouldNotThrow() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_NOISSHOWNBY);
-        String edmIsShownBy = EdmManifestMapping.getIsShownBy(null, document);
+        String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
 
-        Canvas[] canvases = EdmManifestMapping.getItems("/test-id", edmIsShownBy, document, null);
-        Canvas start = EdmManifestMapping.getStartCanvasV3(canvases, edmIsShownBy);
+        Canvas[] canvases = EdmManifestMappingV3.getItems("/test-id", edmIsShownBy, document, null);
+        Canvas start = EdmManifestMappingV3.getStartCanvasV3(canvases, edmIsShownBy);
 
         // test if only a few fields are set and the rest is null
         ExpectedCanvasAndAnnotationPageValues expectedCanvas = new ExpectedCanvasAndAnnotationPageValues();
@@ -318,7 +318,7 @@ public class EdmManifestV3MappingTest {
 
     @Test
     public void testStartCanvasEmpty() {
-       assertNull(EdmManifestMapping.getStartCanvasV3(null, null));
+       assertNull(EdmManifestMappingV3.getStartCanvasV3(null, null));
     }
 
     /**
@@ -327,7 +327,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testCanvasEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getItems("test", null, document, null));
+        assertNull(EdmManifestMappingV3.getItems("test", null, document, null));
     }
 
     /**
@@ -336,7 +336,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testCanvasMissingIsShownAtHasView() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_NOISSHOWNBY);
-        assertNull(EdmManifestMapping.getItems("test", null, document, null));
+        assertNull(EdmManifestMappingV3.getItems("test", null, document, null));
     }
 
     /**
@@ -345,8 +345,8 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testCanvases() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
-        String edmIsShownBy = EdmManifestMapping.getIsShownBy(null, document);
-        Canvas[] canvases = EdmManifestMapping.getItems("/test-id", edmIsShownBy, document, null);
+        String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
+        Canvas[] canvases = EdmManifestMappingV3.getItems("/test-id", edmIsShownBy, document, null);
         assertNotNull(canvases);
         // note that the 3rd canvas is not edmIsShownBy or hasView so not included
         assertEquals(2, canvases.length);
