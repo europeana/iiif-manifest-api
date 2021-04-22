@@ -251,7 +251,7 @@ public class ManifestServiceTest {
     /**
      * Test whether we get a null value if a request for a full text existence times out
      */
-//    @Test
+    @Test
     public void testFullTextTimeout() throws IIIFException {
         String url = ms.generateFullTextSummaryUrl(EXAMPLE_TIMEOUT_ID, getFullTextApiUrl());
         Map<String, String[]> result = ms.getFullTextSummary(url);
