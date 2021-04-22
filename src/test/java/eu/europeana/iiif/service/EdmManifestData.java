@@ -50,7 +50,8 @@ public class EdmManifestData {
     
     public static final String TEST_LICENSE_EUROPEANAAGGREGATION = "{\"object\": { \"aggregations\": [{\"edmRights\": { \"en\": [\"licenseTextAggregation\"]}}], \"europeanaAggregation\" : {\"edmRights\": { \"en\": [\"licenseTextEuropeana\"]}}}}";
     public static final String TEST_LICENSE_OTHERAGGREGATION = "{\"object\": {\"proxies\":[{\"about\":\"/proxy/provider/testing\",\"proxyIn\":[\"/aggregation/provider/testing\"]}], \"europeanaAggregation\" : {\"edmRights\":{}}, \"aggregations\": [{}, {\"about\":\"/aggregation/provider/testing\",\"edmRights\": { \"en\": [\"licenseTextAggregation\"]}}] }}";
-    
+    public static final String TEST_LICENSE_MULTIPLE_PROXY_AGGREGATION =  "{\"object\": { \"europeanaAggregation\" : {\"edmRights\":{}}, \"aggregations\": [{\"about\": \"/aggregation/provider/test\",\"edmIsShownBy\": \"http://repos.europeanafashion.eu/gdcdpp/images/00000004N.jpg\",\"edmRights\": {\"def\": [\"http://test.org/test/\"]}},{\"about\": \"/aggregation/aggregator/1/\",\"edmIsShownBy\": \"http://repos.europeanafashion.eu/gdcdpp/images/00000004N.jpg\"}],\"proxies\": [{\"about\": \"/proxy/europeana/1/\",\"proxyIn\": [\"/aggregation/europeana/1/\"],\"lineage\": [\"/proxy/provider/1/\",\"/proxy/aggregator/1/\"],\"europeanaProxy\": true},{\"about\": \"/proxy/aggregator/1/\",\"proxyIn\": [\"/aggregation/aggregator/1/\"],\"lineage\": [\"/proxy/provider/1/\"],\"edmType\": \"IMAGE\",\"europeanaProxy\": false},{\"about\": \"/proxy/provider/1/\",\"proxyIn\": [\"/aggregation/provider/test\"],\"proxyFor\": \"/item/1/\",\"edmType\": \"IMAGE\",\"europeanaProxy\": false}]}}";
+
     public static final String TEST_SEQUENCE_3CANVAS_1SERVICE = "{\"object\": { \"proxies\":[{\"about\":\"/proxy/provider/testing\",\"proxyIn\":[\"/aggregation/provider/testing\"]}]," +
             "\"aggregations\": [ {\"about\":\"/aggregation/provider/testing\",\"edmIsShownBy\": \"wr3Id\", \"hasView\": [\"wr2Id\"], \"webResources\": [ "+
             "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":"+
@@ -60,6 +61,22 @@ public class EdmManifestData {
             "{\"about\": \"wr3Id\", \"textAttributionSnippet\": \"wr3Attribution\", \"htmlAttributionSnippet\": \"<span>wr3Attribution</span>\", \"webResourceEdmRights\":"+
             "{\"def\":[\"wr3License\"]}, \"ebucoreHasMimeType\": \"video/mp4\", \"svcsHasService\": [\"service3Id\"], \"ebucoreDuration\": \"98765\"  }"+
             "] } ], \"services\": [{\"about\": \"service3Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
+
+
+    public static final String TEST_SEQUENCE_MULTIPLE_PROXY_AGG = "{ \"object\" : { \"aggregations\": [" +
+            "{\"about\": \"/aggregation/provider/1/\", \"edmIsShownBy\": \"provider_edmIsShownBy\", \"hasView\": [\"wr2Id\"]," +
+            "\"webResources\": [{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"wr1MimeType\"}," +
+            "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"htmlAttributionSnippet\": \"<span>wr2Attribution</span>\", \"webResourceEdmRights\": {\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"wr2MimeType\" }," +
+            "{\"about\": \"wr3Id\", \"textAttributionSnippet\": \"wr3Attribution\", \"htmlAttributionSnippet\": \"<span>wr3Attribution</span>\", \"webResourceEdmRights\":{\"def\":[\"wr3License\"]}, \"ebucoreHasMimeType\": \"video/mp4\", \"svcsHasService\": [\"service3Id\"], \"ebucoreDuration\": \"98765\"  }" +
+            "] }," +
+            "{\"about\": \"/aggregation/aggregator/1/europeana_fashion_00000004\",\"edmIsShownBy\": \"SecondAggregation_edmIsShowByTest\"}]," +
+            "\"proxies\": [{\"about\": \"/proxy/europeana/1/\",\"proxyIn\": [\"/aggregation/europeana/1/europeana_fashion_00000004\"],\"lineage\": [\"/proxy/provider/1/\",\"/proxy/aggregator/1/\"],\"europeanaProxy\": true}," +
+            "{\"about\": \"/proxy/aggregator/1/\",\"proxyIn\": [\"/aggregation/aggregator/1/europeana_fashion_00000004\"],\"lineage\": [\"/proxy/provider/1/europeana_fashion_00000004\"],\"edmType\": \"IMAGE\",\"europeanaProxy\": false}," +
+            "{\"about\": \"/proxy/provider/1/\",\"proxyIn\": [\"/aggregation/provider/1/\"],\"proxyFor\": \"/item/1/europeana_fashion_00000004\",\"edmType\": \"IMAGE\",\"europeanaProxy\": false}] }}";
+
+    public static final String MULTIPLE_PROXY_IN = "{\"object\": { \"proxies\": [{\"about\": \"/proxy/europeana/1/\",\"proxyIn\": [\"/aggregation/europeana/1/europeana_fashion_00000004\"],\"lineage\": [\"/proxy/provider/1/\",\"/proxy/aggregator/1/\"],\"europeanaProxy\": true}," +
+            "{\"about\": \"/proxy/aggregator/1/\",\"proxyIn\": [\"/aggregation/aggregator/1/europeana_fashion_00000004\"],\"lineage\": [\"/proxy/provider/1/europeana_fashion_00000004\"],\"edmType\": \"IMAGE\",\"europeanaProxy\": false}," +
+            "{\"about\": \"/proxy/provider/1/\",\"proxyIn\": [\"/first/provider/test\",\"second proxyIn value\"],\"proxyFor\": \"/item/1/europeana_fashion_00000004\",\"edmType\": \"IMAGE\",\"europeanaProxy\": false}]}}";
 
     public static final String TEST_SEQUENCE_3CANVAS_NOISSHOWNBY = "{\"object\": { \"proxies\":[{\"about\":\"/proxy/provider/testing\",\"proxyIn\":[\"/aggregation/provider/testing\"]}]," +
             "\"aggregations\": [ {\"hasView\": [\"wr2Id\"], \"webResources\": [ "+

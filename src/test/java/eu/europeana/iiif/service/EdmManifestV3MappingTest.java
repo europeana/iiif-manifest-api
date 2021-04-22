@@ -5,6 +5,7 @@ import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.v3.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -196,30 +197,6 @@ public class EdmManifestV3MappingTest {
     }
 
     /**
-     * Test if we retrieve and set a homepage field properly
-     */
-    @Test
-    public void testHomepage() {
-        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_HOMEPAGE);
-        Text[] text = EdmManifestUtils.getHomePage("test", document);
-        assertNotNull(text);
-        assertEquals(1, text.length);
-        assertEquals(EdmManifestData.TEST_HOMEPAGE_ID, text[0].getId());
-        testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"Europeana"}, text[0].getLabel());
-        assertEquals("Text", text[0].getType().get());
-        assertEquals("text/html", text[0].getFormat());
-    }
-
-    /**
-     * Test if we handle non-existing landingPages properly
-     */
-    @Test
-    public void testHomepageEmpty() {
-        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestUtils.getHomePage("test", document));
-    }
-
-    /**
      * Test if we retrieve attribution properly
      */
     @Test
@@ -295,6 +272,30 @@ public class EdmManifestV3MappingTest {
         Canvas start = EdmManifestMappingV3.getStartCanvasV3(canvases, edmIsShownBy);
 
         // test if only a few fields are set and the rest is null
+        ExpectedCanvasAndAnnotationPageValues expectedCanvas = new ExpectedCanvasAndAnnotationPageValues();
+        expectedCanvas.idEndsWith = "/test-id/canvas/p1";
+        expectedCanvas.type = "Canvas";
+        checkCanvas(expectedCanvas, start);
+    }
+
+    /**
+     * Test if it works fine with multiple proxy aggregation object
+     */
+    @Test
+    public void testStartCanvasWithMultipleProxyAggregation() {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_MULTIPLE_PROXY_AGG);
+        String proxyIn = EdmManifestUtils.getDataProviderFromProxyWithOutLineage(document, null);
+        Assert.assertNotNull(proxyIn);
+
+        String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
+        String isShownAt = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownAt");
+
+        Assert.assertNotNull(edmIsShownBy);
+        Assert.assertNull(isShownAt);
+
+        Canvas[] canvases = EdmManifestMappingV3.getItems("/test-id", edmIsShownBy, document, null);
+        Canvas start = EdmManifestMappingV3.getStartCanvasV3(canvases, edmIsShownBy);
+
         ExpectedCanvasAndAnnotationPageValues expectedCanvas = new ExpectedCanvasAndAnnotationPageValues();
         expectedCanvas.idEndsWith = "/test-id/canvas/p1";
         expectedCanvas.type = "Canvas";
@@ -490,7 +491,7 @@ public class EdmManifestV3MappingTest {
     /**
      * Test if the provided languageMap contains a particular key and set of values. Ordering of values is also checked
      */
-    private void testLanguageMap(String expectedKey, String[] expectedValues, LanguageMap map) {
+    protected static void testLanguageMap(String expectedKey, String[] expectedValues, LanguageMap map) {
         assertNotNull(map);
         if (expectedKey == null) {
             assertEquals(0, map.size());

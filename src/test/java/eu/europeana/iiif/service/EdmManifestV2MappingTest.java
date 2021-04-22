@@ -3,6 +3,7 @@ package eu.europeana.iiif.service;
 import com.jayway.jsonpath.Configuration;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.v2.*;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -176,26 +177,6 @@ public class EdmManifestV2MappingTest {
     }
 
     /**
-     * Test if we output a date in the proper format
-     */
-    @Test
-    public void testNavDate() {
-        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_NAVDATE);
-        String navDate = EdmManifestUtils.getNavDate("test", document);
-        assertNotNull(navDate);
-        assertEquals("1922-03-15T00:00:00Z", navDate);
-    }
-
-    /**
-     * Test if we handle non-existing navDates properly
-     */
-    @Test
-    public void testNavDateEmpty() {
-        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestUtils.getNavDate("test", document));
-    }
-
-    /**
      * Test if we retrieve attribution properly
      */
     @Test
@@ -238,12 +219,30 @@ public class EdmManifestV2MappingTest {
     }
 
     /**
+     * Test if we retrieve license text from other aggregations (multiple aggregations) (if there isn't any in the europeanaAggregation)
+     */
+    @Test
+    public void testLicenseFromOtherAggregations_MultipleProxyAgg() {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_LICENSE_MULTIPLE_PROXY_AGGREGATION);
+        String license = EdmManifestMappingV2.getLicense("test", document);
+        assertNotNull(license);
+        assertEquals("http://test.org/test/", license);
+    }
+
+    /**
      * Test if we handle non-existing license properly
      */
     @Test
     public void testLicenseEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
         assertNull(EdmManifestMappingV2.getLicense("test", document));
+    }
+
+    @Test
+    public void isShownByMultipleProxyAgg() {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_MULTIPLE_PROXY_AGG);
+        String isShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
+        Assert.assertNotNull(isShownBy);
     }
 
     /**
