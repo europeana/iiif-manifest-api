@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static eu.europeana.iiif.ExampleData.EXAMPLE_FULLTEXT_ID;
 import static eu.europeana.iiif.ExampleData.EXAMPLE_FULLTEXT_SUMMARY_FRAGMENT;
 import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertFalse;
@@ -66,7 +67,6 @@ public class ManifestServiceTest {
     private static final String API_V2_RECORD = "/record/v2";
     private static final String JSON_WSKEY = ".json?wskey=";
     private static final String TEST_BLA = "/test/bla";
-    private static final String FULLTEXT_SUMMARY_ID = "/123/BGR_123";
 
     @Autowired
     private ManifestService ms;
@@ -127,59 +127,48 @@ public class ManifestServiceTest {
                         .withHeader(CONTENT_TYPE, APPLICATION_JSON)
                         .withBody(ExampleData.EXAMPLE_RECORD_CHILD_RESPONSE)));
 
-        // Full Text API, return 404 for all unknown annotation pages
-//        stubFor(head(urlPathMatching("/presentation/.*/.*/annopage/.*"))
-//                        .willReturn(aResponse()
-//                                            .withStatus(404)
-//                                            .withHeader(CONTENT_LENGTH, "0")));
 
-        // Full Text API, return 200 for proper HEAD request
-        stubFor(head(urlEqualTo(PRESENTATION + ExampleData.EXAMPLE_FULLTEXT_ID + ANNOPAGE + ExampleData.EXAMPLE_FULLTEXT_PAGENR))
+
+        // Full Text API, return 200 for proper Summary request
+        stubFor(get(urlEqualTo(PRESENTATION + EXAMPLE_FULLTEXT_ID + ANNOPAGE))
                         .willReturn(aResponse()
                                             .withStatus(200)
-                                            .withHeader(CONTENT_LENGTH, "0")));
+                                            .withHeader(CONTENT_TYPE, APPLICATION_JSON)
+                                            .withBody(ExampleData.EXAMPLE_FULLTEXT_SUMMARY_RESPONSE)));
 
-        // Full Text API, simulate server error
-        stubFor(head(urlEqualTo(PRESENTATION + EXAMPLE_ERROR_ID + ANNOPAGE + ExampleData.EXAMPLE_FULLTEXT_PAGENR))
+        // Full Text API, return 404 for unknown Summary request
+        stubFor(get(urlEqualTo(PRESENTATION + TEST_BLA + ANNOPAGE))
                         .willReturn(aResponse()
-                                            .withStatus(500)
-                                            .withHeader(CONTENT_LENGTH, "0")));
+                                            .withStatus(404)
+                                            .withBody("{\"error\": \"Not Found\"}")));
 
-        // Full Text API, simulate (timeout?) exception
-        stubFor(head(urlEqualTo(PRESENTATION + EXAMPLE_TIMEOUT_ID + ANNOPAGE + ExampleData.EXAMPLE_FULLTEXT_PAGENR))
+        // Full Text API, simulate server error for Summary request
+        stubFor(get(urlEqualTo(PRESENTATION + EXAMPLE_ERROR_ID + ANNOPAGE))
+                        .willReturn(aResponse()
+                                            .withHeader(CONTENT_TYPE, APPLICATION_JSON)
+                                            .withBody("{\"error\": \"Server error\"}")));
+
+        // Full Text API, simulate (timeout?) exception for Summary request
+        stubFor(get(urlEqualTo(PRESENTATION + EXAMPLE_TIMEOUT_ID + ANNOPAGE))
                         .willReturn(aResponse()
                                             .withFixedDelay(30000)
                                             .withStatus(200)
                                             .withHeader(CONTENT_LENGTH, "0")));
 
+        // Full Text API, return 200 for EXAMPLE_RECORD_CHILD_ID
+        stubFor(get(urlEqualTo(PRESENTATION + ExampleData.EXAMPLE_RECORD_CHILD_ID + ANNOPAGE))
+                        .willReturn(aResponse()
+                                            .withStatus(200)
+                                            .withHeader(CONTENT_TYPE, APPLICATION_JSON)
+                                            .withBody(ExampleData.EXAMPLE_FULLTEXT_SUMMARY_RESPONSE)));
 
 
-//        // Full Text API, return 200 for proper Summary request
-//        stubFor(get(urlEqualTo(PRESENTATION + FULLTEXT_SUMMARY_ID + ANNOPAGE))
-//                        .willReturn(aResponse()
-//                                            .withStatus(200)
-//                                            .withHeader(CONTENT_TYPE, APPLICATION_JSON)
-//                                            .withBody(ExampleData.EXAMPLE_FULLTEXT_SUMMARY_RESPONSE)));
-//
-//        // Full Text API, return 404 for unknown Summary request
-//        stubFor(get(urlEqualTo(PRESENTATION + TEST_BLA + ANNOPAGE))
-//                        .willReturn(aResponse()
-//                                            .withStatus(404)
-//                                            .withBody("{\"error\": \"Not Found\"}")));
-//
-//        // Full Text API, simulate server error for Summary request
-//        stubFor(get(urlEqualTo(PRESENTATION + EXAMPLE_ERROR_ID + ANNOPAGE))
-//                        .willReturn(aResponse()
-//                                            .withHeader(CONTENT_TYPE, APPLICATION_JSON)
-//                                            .withBody("{\"error\": \"Server error\"}")));
-//
-//        // Full Text API, simulate (timeout?) exception for Summary request
-//        stubFor(get(urlEqualTo(PRESENTATION + EXAMPLE_TIMEOUT_ID + ANNOPAGE))
-//                        .willReturn(aResponse()
-//                                            .withFixedDelay(30000)
-//                                            .withStatus(200)
-//                                            .withHeader(CONTENT_LENGTH, "0")));
-
+        // Full Text API, return 200 for EXAMPLE_RECORD_PARENT_ID
+        stubFor(get(urlEqualTo(PRESENTATION + ExampleData.EXAMPLE_RECORD_PARENT_ID + ANNOPAGE))
+                        .willReturn(aResponse()
+                                            .withStatus(200)
+                                            .withHeader(CONTENT_TYPE, APPLICATION_JSON)
+                                            .withBody(ExampleData.EXAMPLE_FULLTEXT_SUMMARY_RESPONSE)));
     }
 
     private URL getRecordApiUrl() {
@@ -232,7 +221,7 @@ public class ManifestServiceTest {
      */
     @Test
     public void testFullTextSummaryExists() throws IIIFException {
-        String                url    = ms.generateFullTextSummaryUrl(FULLTEXT_SUMMARY_ID, getFullTextApiUrl());
+        String                url    = ms.generateFullTextSummaryUrl(EXAMPLE_FULLTEXT_ID, getFullTextApiUrl());
         Map<String, String[]> result = ms.getFullTextSummary(url);
         Assert.assertEquals(1, result.keySet().size());
         Assert.assertEquals(2, result.get("1").length);

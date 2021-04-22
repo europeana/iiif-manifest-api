@@ -297,7 +297,7 @@ public class EdmManifestV3MappingTest {
         // test if only a few fields are set and the rest is null
         ExpectedCanvasAndAnnotationPageValues expectedCanvas = new ExpectedCanvasAndAnnotationPageValues();
         expectedCanvas.idEndsWith = "/test-id/canvas/p1";
-        expectedCanvas.type = "SummaryCanvas";
+        expectedCanvas.type = "Canvas";
         checkCanvas(expectedCanvas, start);
     }
 
@@ -312,7 +312,7 @@ public class EdmManifestV3MappingTest {
         // test if only a few fields are set and the rest is null
         ExpectedCanvasAndAnnotationPageValues expectedCanvas = new ExpectedCanvasAndAnnotationPageValues();
         expectedCanvas.idEndsWith = "/test-id/canvas/p1";
-        expectedCanvas.type = "SummaryCanvas";
+        expectedCanvas.type = "Canvas";
         checkCanvas(expectedCanvas, start);
     }
 
@@ -355,7 +355,7 @@ public class EdmManifestV3MappingTest {
         Canvas canvas1 = canvases[0];
         ExpectedCanvasAndAnnotationPageValues expectedCanvas = new ExpectedCanvasAndAnnotationPageValues();
         expectedCanvas.idEndsWith = "/test-id/canvas/p1";
-        expectedCanvas.type = "SummaryCanvas";
+        expectedCanvas.type = "Canvas";
         expectedCanvas.label = new LanguageMap(LanguageMap.NO_LANGUAGE_KEY, "p. 1");
         expectedCanvas.duration = 98.765;
         expectedCanvas.attribution = new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, "<span>wr3Attribution</span>");
@@ -383,7 +383,7 @@ public class EdmManifestV3MappingTest {
         Canvas canvas2 = canvases[1];
         ExpectedCanvasAndAnnotationPageValues expectedCanvas2 = new ExpectedCanvasAndAnnotationPageValues();
         expectedCanvas2.idEndsWith = "/test-id/canvas/p2";
-        expectedCanvas2.type = "SummaryCanvas";
+        expectedCanvas2.type = "Canvas";
         expectedCanvas2.label = new LanguageMap(LanguageMap.NO_LANGUAGE_KEY, "p. 2");
         expectedCanvas2.duration = null;
         expectedCanvas2.attribution = new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, "<span>wr2Attribution</span>");

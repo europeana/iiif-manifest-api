@@ -302,33 +302,33 @@ public class ManifestService {
 //            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "5000"),
 //            @HystrixProperty(name = "fallback.enabled", value="true")
 //    }, fallbackMethod = "fallbackExistsFullText")
-    Boolean existsFullTextOld(String fullTextUrl) throws IIIFException {
-        Boolean result;
-        try {
-            try (CloseableHttpResponse response = headhttpClient.execute(new HttpHead(fullTextUrl))) {
-                int responseCode = response.getStatusLine().getStatusCode();
-                LOG.debug("Full-Text head request: {}, status code = {}", fullTextUrl, responseCode);
-                if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
-                    throw new InvalidApiKeyException(APIKEY_NOT_VALID);
-                } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
-                    result = Boolean.FALSE;
-                } else if (responseCode == HttpStatus.SC_OK) {
-                    result = Boolean.TRUE;
-                } else {
-                    // TODO when hysterix is enabled again, we can simply throw an error again
-                    //throw new FullTextCheckException("Error checking if full text exists: "+response.getStatusLine().getReasonPhrase());
-                    LOG.error("Error checking if full text exists: {}", response.getStatusLine().getReasonPhrase());
-                    result = null;
-                }
-            }
-        } catch (IOException e) {
-            // TODO when hysterix is enabled again, we can simply throw an error again
-            //throw new FullTextCheckException("Error checking if full text exists", e);
-            LOG.error("Error checking if full text exists", e);
-            result = null;
-        }
-        return result;
-    }
+//    Boolean existsFullTextOld(String fullTextUrl) throws IIIFException {
+//        Boolean result;
+//        try {
+//            try (CloseableHttpResponse response = headhttpClient.execute(new HttpHead(fullTextUrl))) {
+//                int responseCode = response.getStatusLine().getStatusCode();
+//                LOG.debug("Full-Text head request: {}, status code = {}", fullTextUrl, responseCode);
+//                if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
+//                    throw new InvalidApiKeyException(APIKEY_NOT_VALID);
+//                } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
+//                    result = Boolean.FALSE;
+//                } else if (responseCode == HttpStatus.SC_OK) {
+//                    result = Boolean.TRUE;
+//                } else {
+//                    // TODO when hysterix is enabled again, we can simply throw an error again
+//                    //throw new FullTextCheckException("Error checking if full text exists: "+response.getStatusLine().getReasonPhrase());
+//                    LOG.error("Error checking if full text exists: {}", response.getStatusLine().getReasonPhrase());
+//                    result = null;
+//                }
+//            }
+//        } catch (IOException e) {
+//            // TODO when hysterix is enabled again, we can simply throw an error again
+//            //throw new FullTextCheckException("Error checking if full text exists", e);
+//            LOG.error("Error checking if full text exists", e);
+//            result = null;
+//        }
+//        return result;
+//    }
 
     @SuppressWarnings({"unused", "squid:S2447"}) // method is used by hysterix as fallback
     private Boolean fallbackExistsFullText(String fullTextUrl) {
@@ -433,7 +433,7 @@ public class ManifestService {
                     for (String annoPageId : fulltextSummary.get(Integer.toString(canvas.getPageNr()))){
                         summaryAnnoPages.add(new AnnotationPage(annoPageId));
                     }
-                    canvas.setAnnotations((AnnotationPage[]) summaryAnnoPages.toArray());
+                    canvas.setAnnotations(summaryAnnoPages.toArray(new AnnotationPage[0]));
                 }
             }
         }
