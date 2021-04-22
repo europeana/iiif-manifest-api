@@ -33,8 +33,12 @@ public class ManifestSettings {
 
     @Value("${fulltext-api.baseurl}")
     private String fullTextApiBaseUrl;
+
     @Value("${fulltext-api.path}")
     private String fullTextApiPath;
+
+    @Value("${fulltext.summary.path}")
+    private String fullTextSummaryPath;
 
     @Value("${suppress-parse-exception}")
     private Boolean suppressParseException = Boolean.FALSE; // default value if we run this outside of Spring (i.e. JUnit)
@@ -47,7 +51,7 @@ public class ManifestSettings {
     }
 
     /**
-     * @return Record resource path (should be appended to the record API base url)
+     * @return SummaryManifest resource path (should be appended to the record API base url)
      */
     public String getRecordApiPath() {
         return recordApiPath;
@@ -61,10 +65,17 @@ public class ManifestSettings {
     }
 
     /**
-     * @return record resource path (note that <collectionId>, <itemId>, and <pageId> should be replaced with actual values
+     * @return Fulltext Api AnnoPage path (note that <collectionId>, <itemId>, and <pageId> should be replaced with actual values
      */
     public String getFullTextApiPath() {
         return fullTextApiPath;
+    }
+
+    /**
+     * @return Fulltext Api AnnoPage summary path (note that <collectionId> and <itemId> should be replaced with actual values
+     */
+    public String getFullTextSummaryPath() {
+        return fullTextSummaryPath;
     }
 
     /**
@@ -98,7 +109,7 @@ public class ManifestSettings {
     @PostConstruct
     private void logImportantSettings() {
         LOG.info("Manifest settings:");
-        LOG.info("  Record API Url = {}{} ", this.getRecordApiBaseUrl(), this.getRecordApiPath());
+        LOG.info("  SummaryManifest API Url = {}{} ", this.getRecordApiBaseUrl(), this.getRecordApiPath());
         LOG.info("  Full-Text API Url = {}{} ", this.getFullTextApiBaseUrl(), this.getFullTextApiPath());
         LOG.info("  Suppress parse exceptions = {}", this.getSuppressParseException());
     }

@@ -59,12 +59,17 @@ public final class Definitions {
     /**
      * Media type for IIIF version 2
      */
-    public static final String MEDIA_TYPE_IIIF_V2 = "http://iiif.io/api/presentation/2/context.json";
+    public static final String MEDIA_TYPE_IIIF_V2 = "https://iiif.io/api/presentation/2/context.json";
 
     /**
      * Media type for IIIF version 3
      */
-    public static final String MEDIA_TYPE_IIIF_V3 = "http://iiif.io/api/presentation/3/context.json";
+    public static final String MEDIA_TYPE_IIIF_V3 = "https://iiif.io/api/presentation/3/context.json";
+
+    /**
+     * Media type used in @context tag of Fulltext Summary
+     */
+    public static final String MEDIA_TYPE_W3ORG_JSONLD  = "https://www.w3.org/ns/anno.jsonld";
 
     private static final String PROFILE = ";profile=\"";
 
@@ -129,6 +134,13 @@ public final class Definitions {
     public static final String IMAGE_CONTEXT_VALUE = "http://iiif.io/api/image/2/context.json";
 
     public static final String IMAGE_SERVICE_TYPE_3 = "ImageService3";
+
+
+    /**
+     * Titles of Fulltext summary types
+     */
+    public static final  String INFO_CANVAS_TYPE          = "SummaryCanvas";
+    public static final  String INFO_ANNOPAGE_TYPE        = "AnnotationPage";
 
     private static String fullTextUrl;
 

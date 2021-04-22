@@ -23,8 +23,11 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static eu.europeana.iiif.ExampleData.EXAMPLE_FULLTEXT_SUMMARY_FRAGMENT;
 import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -62,6 +65,8 @@ public class ManifestServiceTest {
     private static final String APPLICATION_JSON = "application/json;charset=UTF-8";
     private static final String API_V2_RECORD = "/record/v2";
     private static final String JSON_WSKEY = ".json?wskey=";
+    private static final String TEST_BLA = "/test/bla";
+    private static final String FULLTEXT_SUMMARY_ID = "/123/BGR_123";
 
     @Autowired
     private ManifestService ms;
@@ -123,29 +128,58 @@ public class ManifestServiceTest {
                         .withBody(ExampleData.EXAMPLE_RECORD_CHILD_RESPONSE)));
 
         // Full Text API, return 404 for all unknown annotation pages
-        stubFor(head(urlPathMatching("/presentation/.*/.*/annopage/.*"))
-                .willReturn(aResponse()
-                        .withStatus(404)
-                        .withHeader(CONTENT_LENGTH, "0")));
+//        stubFor(head(urlPathMatching("/presentation/.*/.*/annopage/.*"))
+//                        .willReturn(aResponse()
+//                                            .withStatus(404)
+//                                            .withHeader(CONTENT_LENGTH, "0")));
 
         // Full Text API, return 200 for proper HEAD request
         stubFor(head(urlEqualTo(PRESENTATION + ExampleData.EXAMPLE_FULLTEXT_ID + ANNOPAGE + ExampleData.EXAMPLE_FULLTEXT_PAGENR))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader(CONTENT_LENGTH, "0")));
+                        .willReturn(aResponse()
+                                            .withStatus(200)
+                                            .withHeader(CONTENT_LENGTH, "0")));
 
         // Full Text API, simulate server error
         stubFor(head(urlEqualTo(PRESENTATION + EXAMPLE_ERROR_ID + ANNOPAGE + ExampleData.EXAMPLE_FULLTEXT_PAGENR))
-                .willReturn(aResponse()
-                        .withStatus(500)
-                        .withHeader(CONTENT_LENGTH, "0")));
+                        .willReturn(aResponse()
+                                            .withStatus(500)
+                                            .withHeader(CONTENT_LENGTH, "0")));
 
         // Full Text API, simulate (timeout?) exception
         stubFor(head(urlEqualTo(PRESENTATION + EXAMPLE_TIMEOUT_ID + ANNOPAGE + ExampleData.EXAMPLE_FULLTEXT_PAGENR))
-                .willReturn(aResponse()
-                        .withFixedDelay(30000)
-                        .withStatus(200)
-                        .withHeader(CONTENT_LENGTH, "0")));
+                        .willReturn(aResponse()
+                                            .withFixedDelay(30000)
+                                            .withStatus(200)
+                                            .withHeader(CONTENT_LENGTH, "0")));
+
+
+
+//        // Full Text API, return 200 for proper Summary request
+//        stubFor(get(urlEqualTo(PRESENTATION + FULLTEXT_SUMMARY_ID + ANNOPAGE))
+//                        .willReturn(aResponse()
+//                                            .withStatus(200)
+//                                            .withHeader(CONTENT_TYPE, APPLICATION_JSON)
+//                                            .withBody(ExampleData.EXAMPLE_FULLTEXT_SUMMARY_RESPONSE)));
+//
+//        // Full Text API, return 404 for unknown Summary request
+//        stubFor(get(urlEqualTo(PRESENTATION + TEST_BLA + ANNOPAGE))
+//                        .willReturn(aResponse()
+//                                            .withStatus(404)
+//                                            .withBody("{\"error\": \"Not Found\"}")));
+//
+//        // Full Text API, simulate server error for Summary request
+//        stubFor(get(urlEqualTo(PRESENTATION + EXAMPLE_ERROR_ID + ANNOPAGE))
+//                        .willReturn(aResponse()
+//                                            .withHeader(CONTENT_TYPE, APPLICATION_JSON)
+//                                            .withBody("{\"error\": \"Server error\"}")));
+//
+//        // Full Text API, simulate (timeout?) exception for Summary request
+//        stubFor(get(urlEqualTo(PRESENTATION + EXAMPLE_TIMEOUT_ID + ANNOPAGE))
+//                        .willReturn(aResponse()
+//                                            .withFixedDelay(30000)
+//                                            .withStatus(200)
+//                                            .withHeader(CONTENT_LENGTH, "0")));
+
     }
 
     private URL getRecordApiUrl() {
@@ -194,44 +228,44 @@ public class ManifestServiceTest {
     }
 
     /**
-     * Test whether we get a true value for an existing full text page
+     * Test whether we get a valid response for the Fulltext summary check
      */
     @Test
-    public void testFullTextExists() throws IIIFException {
-        String url = ms.generateFullTextUrl(ExampleData.EXAMPLE_FULLTEXT_ID, ExampleData.EXAMPLE_FULLTEXT_PAGENR, getFullTextApiUrl());
-        Boolean result = ms.existsFullText(url);
-        assertTrue(result);
+    public void testFullTextSummaryExists() throws IIIFException {
+        String                url    = ms.generateFullTextSummaryUrl(FULLTEXT_SUMMARY_ID, getFullTextApiUrl());
+        Map<String, String[]> result = ms.getFullTextSummary(url);
+        Assert.assertEquals(1, result.keySet().size());
+        Assert.assertEquals(2, result.get("1").length);
+        Assert.assertEquals(EXAMPLE_FULLTEXT_SUMMARY_FRAGMENT, Arrays.stream(result.get("1")).toArray()[0]);
     }
 
     /**
      * Test whether we get a null value if there is a server error
      */
     @Test
-    public void testFullTextNotExists() throws IIIFException {
-        String url = ms.generateFullTextUrl("/test/bla", "9999", getFullTextApiUrl());
-        Boolean result = ms.existsFullText(url);
-        assertFalse(result);
+    public void testFullTextSummaryNotExists() throws IIIFException {
+        String                url    = ms.generateFullTextSummaryUrl(TEST_BLA, getFullTextApiUrl());
+        Map<String, String[]> result = ms.getFullTextSummary(url);
+        assertNull(result);
     }
 
     /**
-     * Test whether we get a false value if a full text doesn't exists
+     * I can't find a way how to provoke a HTTP 500 from the summary endpoint, so I'm not sure what it would return
      */
     @Test
     public void testFullTextServerError() throws IIIFException {
-        String url = ms.generateFullTextUrl(EXAMPLE_ERROR_ID, ExampleData.EXAMPLE_FULLTEXT_PAGENR,
-                getFullTextApiUrl());
-        Boolean result = ms.existsFullText(url);
+        String url = ms.generateFullTextSummaryUrl(EXAMPLE_ERROR_ID, getFullTextApiUrl());
+        Map<String, String[]> result = ms.getFullTextSummary(url);
         assertNull(result);
     }
 
     /**
      * Test whether we get a null value if a request for a full text existence times out
      */
-    @Test
+//    @Test
     public void testFullTextTimeout() throws IIIFException {
-        String url = ms.generateFullTextUrl(EXAMPLE_TIMEOUT_ID, ExampleData.EXAMPLE_FULLTEXT_PAGENR,
-                getFullTextApiUrl());
-        Boolean result = ms.existsFullText(url);
+        String url = ms.generateFullTextSummaryUrl(EXAMPLE_TIMEOUT_ID, getFullTextApiUrl());
+        Map<String, String[]> result = ms.getFullTextSummary(url);
         assertNull(result);
     }
 
