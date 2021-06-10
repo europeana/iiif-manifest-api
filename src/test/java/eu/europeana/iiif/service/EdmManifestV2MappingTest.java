@@ -3,6 +3,7 @@ package eu.europeana.iiif.service;
 import com.jayway.jsonpath.Configuration;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.v2.*;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -31,19 +32,19 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testId() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_ID);
-        assertEquals("id", EdmManifestMapping.getEuropeanaId(document));
+        assertEquals("id", EdmManifestUtils.getEuropeanaId(document));
     }
 
     @Test
     public void testWithin() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_WITHIN);
-        assertEquals("https://data.theeuropeanlibrary.org/someurl", EdmManifestMapping.getWithinV2(document));
+        assertEquals("https://data.theeuropeanlibrary.org/someurl", EdmManifestMappingV2.getWithinV2(document));
     }
 
     @Test
     public void testWithinEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getWithinV2(document));
+        assertNull(EdmManifestMappingV2.getWithinV2(document));
     }
 
      /**
@@ -52,7 +53,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testLabelIsTitle() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_TITLE);
-        LanguageObject[] labels = EdmManifestMapping.getLabelsV2(document);
+        LanguageObject[] labels = EdmManifestMappingV2.getLabelsV2(document);
         assertNotNull(labels);
         assertTrue(labels.length > 0);
         assertNotNull(labels[0]);
@@ -66,7 +67,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testLabelIsDescription() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_DESCRIPTION);
-        LanguageObject[] labels = EdmManifestMapping.getLabelsV2(document);
+        LanguageObject[] labels = EdmManifestMappingV2.getLabelsV2(document);
         assertNotNull(labels);
         assertTrue(labels.length > 0);
         assertNotNull(labels[0]);
@@ -80,7 +81,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testLabelEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getLabelsV2(document));
+        assertNull(EdmManifestMappingV2.getLabelsV2(document));
     }
 
     /**
@@ -89,7 +90,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testDescription() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_TITLE_DESCRIPTION);
-        LanguageObject[] descriptions = EdmManifestMapping.getDescriptionV2(document);
+        LanguageObject[] descriptions = EdmManifestMappingV2.getDescriptionV2(document);
         assertNotNull(descriptions);
         assertTrue(descriptions.length > 0);
         assertNotNull(descriptions[0]);
@@ -104,10 +105,10 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testDescriptionEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_DESCRIPTION);
-        assertNull(EdmManifestMapping.getDescriptionV2(document));
+        assertNull(EdmManifestMappingV2.getDescriptionV2(document));
 
         document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_TITLE); // no description
-        assertNull(EdmManifestMapping.getDescriptionV2(document));
+        assertNull(EdmManifestMappingV2.getDescriptionV2(document));
     }
 
     /**
@@ -116,7 +117,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testMetaData() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_METADATA_SIMPLE);
-        MetaData[] metaData = EdmManifestMapping.getMetaDataV2(document);
+        MetaData[] metaData = EdmManifestMappingV2.getMetaDataV2(document);
         assertNotNull(metaData);
         assertEquals(2, metaData.length);
 
@@ -152,7 +153,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testMetaDataEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getMetaDataV2(document));
+        assertNull(EdmManifestMappingV2.getMetaDataV2(document));
     }
 
     /**
@@ -161,7 +162,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testThumbnail() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_THUMBNAIL);
-        Image image = EdmManifestMapping.getThumbnailImageV2("test", document);
+        Image image = EdmManifestMappingV2.getThumbnailImageV2("test", document);
         assertNotNull(image);
         assertEquals(EdmManifestData.TEST_THUMBNAIL_ID, image.getId());
     }
@@ -172,27 +173,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testThumbnailEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getThumbnailImageV2( "test", document));
-    }
-
-    /**
-     * Test if we output a date in the proper format
-     */
-    @Test
-    public void testNavDate() {
-        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_NAVDATE);
-        String navDate = EdmManifestMapping.getNavDate("test", document);
-        assertNotNull(navDate);
-        assertEquals("1922-03-15T00:00:00Z", navDate);
-    }
-
-    /**
-     * Test if we handle non-existing navDates properly
-     */
-    @Test
-    public void testNavDateEmpty() {
-        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getNavDate("test", document));
+        assertNull(EdmManifestMappingV2.getThumbnailImageV2( "test", document));
     }
 
     /**
@@ -201,7 +182,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testAttribution() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_ATTRIBUTION);
-        String attribution = EdmManifestMapping.getAttributionV2("test", EdmManifestData.TEST_IS_SHOWN_BY, document);
+        String attribution = EdmManifestMappingV2.getAttributionV2("test", EdmManifestData.TEST_IS_SHOWN_BY, document);
         assertNotNull(attribution);
         assertEquals(EdmManifestData.TEST_ATTRIBUTION_TEXT_V2, attribution);
     }
@@ -212,7 +193,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testAttributionEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getAttributionV2("test", EdmManifestData.TEST_IS_SHOWN_BY, document));
+        assertNull(EdmManifestMappingV2.getAttributionV2("test", EdmManifestData.TEST_IS_SHOWN_BY, document));
     }
 
     /**
@@ -221,7 +202,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testLicenseFromEuropeanaAggregation() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_LICENSE_EUROPEANAAGGREGATION);
-        String license = EdmManifestMapping.getLicense("test", document);
+        String license = EdmManifestMappingV2.getLicense("test", document);
         assertNotNull(license);
         assertEquals("licenseTextEuropeana", license);
     }
@@ -232,9 +213,20 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testLicenseFromOtherAggregations() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_LICENSE_OTHERAGGREGATION);
-        String license = EdmManifestMapping.getLicense("test", document);
+        String license = EdmManifestMappingV2.getLicense("test", document);
         assertNotNull(license);
         assertEquals("licenseTextAggregation", license);
+    }
+
+    /**
+     * Test if we retrieve license text from other aggregations (multiple aggregations) (if there isn't any in the europeanaAggregation)
+     */
+    @Test
+    public void testLicenseFromOtherAggregations_MultipleProxyAgg() {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_LICENSE_MULTIPLE_PROXY_AGGREGATION);
+        String license = EdmManifestMappingV2.getLicense("test", document);
+        assertNotNull(license);
+        assertEquals("http://test.org/test/", license);
     }
 
     /**
@@ -243,7 +235,14 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testLicenseEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getLicense("test", document));
+        assertNull(EdmManifestMappingV2.getLicense("test", document));
+    }
+
+    @Test
+    public void isShownByMultipleProxyAgg() {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_MULTIPLE_PROXY_AGG);
+        String isShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
+        Assert.assertNotNull(isShownBy);
     }
 
     /**
@@ -251,7 +250,7 @@ public class EdmManifestV2MappingTest {
      */
     @Test
     public void testSeeAlso() {
-        DataSet[] datasets = EdmManifestMapping.getDataSetsV2("TEST-ID");
+        DataSet[] datasets = EdmManifestMappingV2.getDataSetsV2("TEST-ID");
         assertNotNull(datasets);
         assertEquals(3, datasets.length);
         for (DataSet dataset : datasets) {
@@ -265,7 +264,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testSequenceEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMapping.getSequencesV2("test", null, document));
+        assertNull(EdmManifestMappingV2.getSequencesV2("test", null, document));
     }
 
     /**
@@ -274,7 +273,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testSequenceMissingIsShownAtHasView() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_NOISSHOWNBY);
-        assertNull(EdmManifestMapping.getSequencesV2("test", null, document));
+        assertNull(EdmManifestMappingV2.getSequencesV2("test", null, document));
     }
 
     /**
@@ -283,8 +282,8 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testSequence() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
-        String edmIsShownBy = EdmManifestMapping.getIsShownBy(null, document);
-        Sequence[] sequence = EdmManifestMapping.getSequencesV2("/test-id", edmIsShownBy, document);
+        String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
+        Sequence[] sequence = EdmManifestMappingV2.getSequencesV2("/test-id", edmIsShownBy, document);
         assertNotNull(sequence);
         assertEquals(1, sequence.length); // there should always be only 1 sequence
 
@@ -382,7 +381,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testRetrieveRecordUpdate() {
         assertEquals(LocalDateTime.of(2017, 6, 6, 19, 40, 18, 82000000).atZone(ZoneOffset.UTC),
-                EdmManifestMapping.getRecordTimestampUpdate(
+                EdmManifestUtils.getRecordTimestampUpdate(
                 "{\"object\":{\"timestamp_update\":\"2017-06-06T19:40:18.082Z\"}}"));
     }
 
