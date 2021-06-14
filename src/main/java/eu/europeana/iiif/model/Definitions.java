@@ -48,6 +48,12 @@ public final class Definitions {
     public static final String DATASET_ID_BASE_URL = "https://www.europeana.eu/api/v2/record";
 
     /**
+     * Path to Fulltext Summary
+     */
+    public static final String FULLTEXT_SUMMARY_PATH = "/presentation/%s/annopage/";
+
+
+    /**
      * Media type for json-ld
      */
     public static final String MEDIA_TYPE_JSONLD = "application/ld+json";
@@ -139,13 +145,17 @@ public final class Definitions {
     /**
      * Titles of Fulltext summary types
      */
-    public static final  String INFO_CANVAS_TYPE          = "SummaryCanvas";
+    public static final  String INFO_CANVAS_TYPE          = "FulltextSummaryCanvas";
     public static final  String INFO_ANNOPAGE_TYPE        = "AnnotationPage";
 
     private static String fullTextUrl;
 
     private Definitions() {
         // empty constructor to avoid initializationRE
+    }
+
+    public static String getFulltextSummaryPath(String europeanaId) {
+        return String.format(FULLTEXT_SUMMARY_PATH, europeanaId);
     }
 
     /**

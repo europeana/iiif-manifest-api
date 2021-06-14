@@ -13,41 +13,41 @@ import static eu.europeana.iiif.model.Definitions.INFO_CANVAS_TYPE;
 /**
  * Created by luthien on 15/04/2021.
  */
-public class SummaryCanvas extends JsonLdIdType {
+public class FulltextSummaryCanvas extends JsonLdIdType {
 
     private static final long serialVersionUID = 7066577659030844718L;
 
-    private static final Pattern PAGENUMBERPATTERN = Pattern.compile("/canvas/(\\d+)$");
+    private static final Pattern PAGENUMBERPATTERN = Pattern.compile("/annopage/(\\d+)$");
 
     @JsonProperty("annotations")
-    private List<SummaryAnnoPage> annotations;
+    private List<FulltextSummaryAnnoPage> annotations;
 
-    public SummaryCanvas(){}
+    public FulltextSummaryCanvas(){}
 
     /**
-     * This is not a true IIIF SummaryCanvas object but merely a container object to group original and
+     * This is not a true IIIF FulltextSummaryCanvas object but merely a container object to group original and
      * translated Annopages
      *
-     * @param id String containing identifying URL of the SummaryCanvas
+     * @param id String containing identifying URL of the FulltextSummaryCanvas
      */
-    public SummaryCanvas(String id) {
+    public FulltextSummaryCanvas(String id) {
         super(id, INFO_CANVAS_TYPE);
         annotations = new ArrayList<>();
     }
 
     /**
-     * Adds an annotation - actually: an SummaryAnnoPage (AnnoPage for a specific language) to the SummaryCanvas
-     * @param alPage SummaryAnnoPage object to be added to the annotations List
+     * Adds an annotation - actually: an FulltextSummaryAnnoPage (AnnoPage for a specific language) to the FulltextSummaryCanvas
+     * @param alPage FulltextSummaryAnnoPage object to be added to the annotations List
      */
-    public void addAnnotation(SummaryAnnoPage alPage){
+    public void addAnnotation(FulltextSummaryAnnoPage alPage){
         annotations.add(alPage);
     }
 
-    public List<SummaryAnnoPage> getAnnotations() {
+    public List<FulltextSummaryAnnoPage> getAnnotations() {
         return new ArrayList<>(annotations);
     }
 
-    public void setAnnotations(List<SummaryAnnoPage> annotations) {
+    public void setAnnotations(List<FulltextSummaryAnnoPage> annotations) {
         this.annotations = new ArrayList<>(annotations);
     }
 

@@ -122,7 +122,7 @@ public class ManifestServiceTest {
         // Record API, simulate timeout exception
         stubFor(get(urlEqualTo(API_V2_RECORD + EXAMPLE_TIMEOUT_ID + JSON_WSKEY + EXAMPLE_WSKEY))
                 .willReturn(aResponse()
-                        .withFixedDelay(60000) // value should be longer than configured timeout for getRecord
+                        .withFixedDelay(10000) // value should be longer than configured timeout for getRecord
                         .withStatus(200)
                         .withHeader(CONTENT_TYPE, APPLICATION_JSON)
                         .withBody(ExampleData.EXAMPLE_RECORD_CHILD_RESPONSE)));
@@ -151,7 +151,7 @@ public class ManifestServiceTest {
         // Full Text API, simulate (timeout?) exception for Summary request
         stubFor(get(urlEqualTo(PRESENTATION + EXAMPLE_TIMEOUT_ID + ANNOPAGE))
                         .willReturn(aResponse()
-                                            .withFixedDelay(30000)
+                                            .withFixedDelay(5000)
                                             .withStatus(200)
                                             .withHeader(CONTENT_LENGTH, "0")));
 
@@ -280,15 +280,6 @@ public class ManifestServiceTest {
     @Test(expected = RecordRetrieveException.class)
     public void testGetJsonRecordServerError() throws IIIFException {
         getRecord(EXAMPLE_ERROR_ID);
-    }
-
-    /**
-     * Test whether we get a HysterixRuntimeException if a getRecord operation times out
-     */
-    @Ignore // TODO temporarily disabled because we need to fix hysterix
-    @Test(expected = HystrixRuntimeException.class)
-    public void testGetJsonRecordTimeout() throws IIIFException {
-        getRecord(EXAMPLE_TIMEOUT_ID);
     }
 
     /**

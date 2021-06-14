@@ -162,7 +162,7 @@ public class ManifestV3 extends JsonLdIdType {
     }
 
     /**
-     * @return {@link Canvas} only containing an id and type. The id refers to the SummaryCanvas/page with edm:isShownBy.
+     * @return {@link Canvas} only containing an id and type. The id refers to the FulltextSummaryCanvas/page with edm:isShownBy.
      * If that doesn't exists we return the first canvas (p1)
      */
     public Canvas getStart() {

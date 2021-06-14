@@ -138,7 +138,8 @@ public class ManifestController {
         }
 
         Object manifest;
-        if ("3".equalsIgnoreCase(iiifVersion)) { manifest = manifestService.generateManifestV3(json, addFullText, fullTextApi);
+        if ("3".equalsIgnoreCase(iiifVersion)) {
+            manifest = manifestService.generateManifestV3(json, addFullText, fullTextApi);
         } else {
             manifest = manifestService.generateManifestV2(json, addFullText, fullTextApi); // fallback option
         }
