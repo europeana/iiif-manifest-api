@@ -137,11 +137,11 @@ public class ManifestService {
     }
 
     /**
-     * Return record information in Json format from an instance of the SummaryManifest API
+     * Return record information in Json format from an instance of the Record API
      *
      * @param recordId Europeana record id in the form of "/datasetid/recordid" (so with leading slash and without trailing slash)
      * @param wsKey api key to send to record API
-     * @param recordApiUrl if not null we will use the provided URL as the address of the SummaryManifest API instead of the default configured address
+     * @param recordApiUrl if not null we will use the provided URL as the address of the Record API instead of the default configured address
      * @throws IIIFException (
      *      IllegalArgumentException if a parameter has an illegal format,
      *      InvalidApiKeyException if the provide key is not valid,
@@ -185,11 +185,11 @@ public class ManifestService {
             String recordUrl = url.toString();
             try (CloseableHttpResponse response = gethttpClient.execute(new HttpGet(recordUrl))) {
                 int responseCode = response.getStatusLine().getStatusCode();
-                LOG.debug("SummaryManifest request: {}, status code = {}", recordId, responseCode);
+                LOG.debug("Record request: {}, status code = {}", recordId, responseCode);
                 if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
                     throw new InvalidApiKeyException(APIKEY_NOT_VALID);
                 } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
-                    throw new RecordNotFoundException("SummaryManifest with id '"+recordId+"' not found");
+                    throw new RecordNotFoundException("Record with id '"+recordId+"' not found");
                 } else if (responseCode != HttpStatus.SC_OK) {
                     throw new RecordRetrieveException("Error retrieving record: "+response.getStatusLine().getReasonPhrase());
                 }
@@ -197,7 +197,7 @@ public class ManifestService {
                 HttpEntity entity = response.getEntity();
                 if (entity != null) {
                     result = EntityUtils.toString(entity);
-                    LOG.debug("SummaryManifest request: {}, response = {}", recordId, result);
+                    LOG.debug("Record request: {}, response = {}", recordId, result);
                     EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
                 } else {
                     LOG.warn("Request entity = null");
