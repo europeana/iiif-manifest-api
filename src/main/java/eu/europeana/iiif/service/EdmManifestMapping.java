@@ -663,7 +663,7 @@ public final class EdmManifestMapping {
     }
 
     /**
-     * @return the {@link eu.europeana.iiif.model.v3.Canvas} that refers to edmIsShownBy, or else just the first Canvas
+     * @return the {@link eu.europeana.iiif.model.v3.Canvas} that refers to edmIsShownBy, or else just the first FulltextSummaryCanvas
      */
     static eu.europeana.iiif.model.v3.Canvas getStartCanvasV3(eu.europeana.iiif.model.v3.Canvas[] items, String edmIsShownBy) {
         if (items == null) {
@@ -690,7 +690,7 @@ public final class EdmManifestMapping {
 
     /**
      * @return Integer containing the page number of the canvas that refers to the edmIsShownBy, or else just the first
-     *  Canvas. Null if there are no canvases
+     *  FulltextSummaryCanvas. Null if there are no canvases
      */
     static Integer getStartCanvasV2(eu.europeana.iiif.model.v2.Canvas[] items, String edmIsShownBy) {
         if (items == null) {
@@ -913,7 +913,7 @@ public final class EdmManifestMapping {
             }
         }
         if (result == null) {
-            LOG.warn("Record {} defined service {} in webresource, but no such service is defined (with a doapImplements field)", europeanaId, serviceId);
+            LOG.warn("FulltextSummary {} defined service {} in webresource, but no such service is defined (with a doapImplements field)", europeanaId, serviceId);
         }
         return result;
     }
@@ -924,11 +924,11 @@ public final class EdmManifestMapping {
      */
     private static String getDoapImplementsValue(Object doapImplements, String europeanaId, String serviceId) {
         if (doapImplements == null) {
-            LOG.warn("Record {} has service {} with no doapImplements field", europeanaId, serviceId);
+            LOG.warn("FulltextSummary {} has service {} with no doapImplements field", europeanaId, serviceId);
         } else if (doapImplements instanceof List) {
             List<String> diList = (List<String>) doapImplements;
             if (diList.isEmpty()) {
-                LOG.warn("Record {} has service {} with empty doapImplements list", europeanaId, serviceId);
+                LOG.warn("FulltextSummary {} has service {} with empty doapImplements list", europeanaId, serviceId);
             } else {
                 return diList.get(0);
             }

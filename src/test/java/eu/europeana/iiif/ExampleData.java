@@ -20,4 +20,6 @@ public class ExampleData {
     public static final String EXAMPLE_FULLTEXT_ID = "/9200396/BibliographicResource_3000118436342";
     public static final String EXAMPLE_FULLTEXT_PAGENR = "1";
 
+    public static String EXAMPLE_FULLTEXT_SUMMARY_RESPONSE = "{\"items\":[{\"id\":\"https://iiif.europeana.eu/presentation/9200396/BibliographicResource_3000118436342/annopage/1\",\"type\":\"Canvas\",\"annotations\":[{\"id\":\"https://iiif.europeana.eu/presentation/9200396/BibliographicResource_3000118436342/annopage/1?lang=fi\",\"type\":\"AnnotationPage\",\"language\":\"fi\"},{\"id\":\"https://iiif.europeana.eu/presentation/9200396/BibliographicResource_3000118436342/annopage/1?lang=se\",\"type\":\"AnnotationPage\",\"language\":\"se\"}]}]}";
+    public static final String EXAMPLE_FULLTEXT_SUMMARY_FRAGMENT = "https://iiif.europeana.eu/presentation/9200396/BibliographicResource_3000118436342/annopage/1?lang=fi";
 }
