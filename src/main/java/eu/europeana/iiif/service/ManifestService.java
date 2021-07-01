@@ -233,7 +233,9 @@ public class ManifestService {
                     throw new InvalidApiKeyException(APIKEY_NOT_VALID);
                 } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
                     result = false;
-                } else { result = responseCode == HttpStatus.SC_OK; }
+                } else {
+                    result = responseCode == HttpStatus.SC_OK;
+                }
                 HttpEntity entity = response.getEntity();
                 if (result && entity != null) {
                     summary = getJsonMapper().readValue(EntityUtils.toString(entity), FulltextSummary.class);
@@ -276,9 +278,9 @@ public class ManifestService {
      * @return Manifest v2 object
      */
     public ManifestV2 generateManifestV2(String json, boolean addFullText, URL fullTextApi) {
-        long       start    = System.currentTimeMillis();
-        Object     document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        ManifestV2 result   = EdmManifestMapping.getManifestV2(document);
+        long start = System.currentTimeMillis();
+        Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
+        ManifestV2 result = EdmManifestMappingV2.getManifestV2(document);
 
         if (addFullText) {
             try {
@@ -306,9 +308,9 @@ public class ManifestService {
      * @return Manifest v3 object
      */
     public ManifestV3 generateManifestV3(String json, boolean addFullText, URL fullTextApi) {
-        long       start    = System.currentTimeMillis();
-        Object     document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        ManifestV3 result   = EdmManifestMapping.getManifestV3(document);
+        long start = System.currentTimeMillis();
+        Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
+        ManifestV3 result = EdmManifestMappingV3.getManifestV3(document);
 
         if (addFullText) {
             try {

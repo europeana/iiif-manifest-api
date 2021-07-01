@@ -1,8 +1,8 @@
 package eu.europeana.iiif.web;
 
 import eu.europeana.iiif.model.Definitions;
-import eu.europeana.iiif.service.EdmManifestMapping;
 import eu.europeana.iiif.service.CacheUtils;
+import eu.europeana.iiif.service.EdmManifestUtils;
 import eu.europeana.iiif.service.ManifestService;
 import eu.europeana.iiif.service.ValidateUtils;
 import eu.europeana.iiif.service.exception.IIIFException;
@@ -128,7 +128,7 @@ public class ManifestController {
         }
 
         String json = manifestService.getRecordJson(id, wskey, recordApi);
-        ZonedDateTime lastModified = EdmManifestMapping.getRecordTimestampUpdate(json);
+        ZonedDateTime lastModified = EdmManifestUtils.getRecordTimestampUpdate(json);
         String eTag = generateETag(id, lastModified, iiifVersion);
         HttpHeaders headers = CacheUtils.generateCacheHeaders("no-cache", eTag, lastModified, ACCEPT_HEADER);
         ResponseEntity cached = CacheUtils.checkCached(request, headers, lastModified, eTag);
