@@ -11,6 +11,9 @@ import com.jayway.jsonpath.spi.json.JsonProvider;
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import eu.europeana.iiif.config.ManifestSettings;
+import eu.europeana.iiif.model.info.FulltextSummary;
+import eu.europeana.iiif.model.info.FulltextSummaryAnnoPage;
+import eu.europeana.iiif.model.info.FulltextSummaryCanvas;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v2.Sequence;
 import eu.europeana.iiif.model.v3.AnnotationPage;
@@ -22,7 +25,6 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -36,23 +38,26 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 
+import static eu.europeana.iiif.model.Definitions.getFulltextSummaryPath;
+
 /**
  * Service that loads record data, uses that to generate a Manifest object and serializes the manifest in JSON-LD
  *
-  * @author Patrick Ehlert
- *  Created on 06-12-2017
+ * @author Patrick Ehlert
+ * Created on 06-12-2017
  */
 @Service
 public class ManifestService {
 
-    private static final Logger LOG = LogManager.getLogger(ManifestService.class);
+    private static final Logger LOG              = LogManager.getLogger(ManifestService.class);
+    private static final String APIKEY_NOT_VALID = "API key is not valid";
 
     // create a single objectMapper for efficiency purposes (see https://github.com/FasterXML/jackson-docs/wiki/Presentation:-Jackson-Performance)
     private static ObjectMapper mapper = new ObjectMapper();
 
-    private ManifestSettings settings;
-    private CloseableHttpClient gethttpClient;
-    private CloseableHttpClient headhttpClient;
+    private final ManifestSettings    settings;
+    private final CloseableHttpClient gethttpClient;
+    private final CloseableHttpClient headhttpClient;
 
 
     public ManifestService(ManifestSettings settings) {
@@ -64,10 +69,11 @@ public class ManifestService {
         cm.setDefaultMaxPerRoute(100);
 
         // configure for head requests to Fulltext API (with specific timeouts)
-        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(8 * 1000)
-                .setSocketTimeout(5 * 1000).build();
-        headhttpClient = HttpClients.custom().setConnectionManager(cm)
-                .setDefaultRequestConfig(requestConfig).build();
+        RequestConfig requestConfig = RequestConfig.custom()
+                                                   .setConnectTimeout(8 * 1000)
+                                                   .setSocketTimeout(5 * 1000)
+                                                   .build();
+        headhttpClient = HttpClients.custom().setConnectionManager(cm).setDefaultRequestConfig(requestConfig).build();
 
         //configure for get requests to Record API
         gethttpClient = HttpClients.custom().setConnectionManager(cm).build();
@@ -104,10 +110,10 @@ public class ManifestService {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
         mapper.registerModule(new JsonldModule())
-                // add support for Java 8 Optionals
-                .registerModule(new Jdk8Module())
-                // ignore empty optionals
-                .setSerializationInclusion(JsonInclude.Include.NON_ABSENT);
+              // add support for Java 8 Optionals
+              .registerModule(new Jdk8Module())
+              // ignore empty optionals
+              .setSerializationInclusion(JsonInclude.Include.NON_ABSENT);
     }
 
     protected ObjectMapper getJsonMapper() {
@@ -118,14 +124,13 @@ public class ManifestService {
      * Return record information in Json format from the default configured Record API
      *
      * @param recordId Europeana record id in the form of "/datasetid/recordid" (so with leading slash and without trailing slash)
-     * @param wsKey api key to send to record API
-     *
+     * @param wsKey    api key to send to record API
      * @return record information in json format
      * @throws IIIFException (
-     *      IllegalArgumentException if a parameter has an illegal format,
-     *      InvalidApiKeyException if the provide key is not valid,
-     *      RecordNotFoundException if there was a 404,
-     *      RecordRetrieveException on all other problems)
+     *                       IllegalArgumentException if a parameter has an illegal format,
+     *                       InvalidApiKeyException if the provide key is not valid,
+     *                       RecordNotFoundException if there was a 404,
+     *                       RecordRetrieveException on all other problems)
      */
     public String getRecordJson(String recordId, String wsKey) throws IIIFException {
         return getRecordJson(recordId, wsKey, null);
@@ -134,34 +139,18 @@ public class ManifestService {
     /**
      * Return record information in Json format from an instance of the Record API
      *
-     * @param recordId Europeana record id in the form of "/datasetid/recordid" (so with leading slash and without trailing slash)
-     * @param wsKey api key to send to record API
+     * @param recordId     Europeana record id in the form of "/datasetid/recordid" (so with leading slash and without trailing slash)
+     * @param wsKey        api key to send to record API
      * @param recordApiUrl if not null we will use the provided URL as the address of the Record API instead of the default configured address
-     * @throws IIIFException (
-     *      IllegalArgumentException if a parameter has an illegal format,
-     *      InvalidApiKeyException if the provide key is not valid,
-     *      RecordNotFoundException if there was a 404,
-     *      RecordRetrieveException on all other problems)
      * @return record information in json format     *
-     *
+     * @throws IIIFException (
+     *                       IllegalArgumentException if a parameter has an illegal format,
+     *                       InvalidApiKeyException if the provide key is not valid,
+     *                       RecordNotFoundException if there was a 404,
+     *                       RecordRetrieveException on all other problems)
      */
-    // TODO only use hysterix for default connection!? Not for custom recordApiUrls?
-//    @HystrixCommand(groupKey = "record", commandKey = "record", threadPoolKey = "record",
-//                    ignoreExceptions = {InvalidApiKeyException.class, RecordNotFoundException.class}, commandProperties = {
-//                @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "30000"),
-//                @HystrixProperty(name = "fallback.enabled", value="false"),
-//                @HystrixProperty(name = "circuitBreaker.enabled", value="true"),
-//                @HystrixProperty(name = "circuitBreaker.requestVolumeThreshold", value="10") // short-circuit after 10 faulty requests
-//            },
-//            threadPoolProperties = {
-//                    @HystrixProperty(name = "coreSize", value = "3"),
-//                    //@HystrixProperty(name = "maximumSize", value="110"),
-//                    //@HystrixProperty(name = "allowMaximumSizeToDivergeFromCoreSize", value = "true") 
-//                    @HystrixProperty(name = "maxQueueSize", value = "-1") // use SynchronousQueue instead of LinkedBlockingQueue
-//            }
-//    )
     public String getRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
-        String result= null;
+        String result = null;
 
         StringBuilder url;
         if (recordApiUrl == null) {
@@ -182,11 +171,12 @@ public class ManifestService {
                 int responseCode = response.getStatusLine().getStatusCode();
                 LOG.debug("Record request: {}, status code = {}", recordId, responseCode);
                 if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
-                    throw new InvalidApiKeyException("API key is not valid");
+                    throw new InvalidApiKeyException(APIKEY_NOT_VALID);
                 } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
-                    throw new RecordNotFoundException("Record with id '"+recordId+"' not found");
+                    throw new RecordNotFoundException("Record with id '" + recordId + "' not found");
                 } else if (responseCode != HttpStatus.SC_OK) {
-                    throw new RecordRetrieveException("Error retrieving record: "+response.getStatusLine().getReasonPhrase());
+                    throw new RecordRetrieveException("Error retrieving record: " + response.getStatusLine()
+                                                                                            .getReasonPhrase());
                 }
 
                 HttpEntity entity = response.getEntity();
@@ -207,72 +197,87 @@ public class ManifestService {
 
     /**
      * Generates a url to a full text resource
+     *
      * @param fullTextApiUrl optional, if not specified then the default Full-Text API specified in .properties is used
      */
-    String generateFullTextUrl(String europeanaId, String pageId, URL fullTextApiUrl) {
-        StringBuilder url;
+    String generateFullTextSummaryUrl(String europeanaId, URL fullTextApiUrl) {
+        return fullTextBaseUrl(fullTextApiUrl) + getFulltextSummaryPath(europeanaId);
+    }
+
+    private String fullTextBaseUrl(URL fullTextApiUrl) {
         if (fullTextApiUrl == null) {
-            url = new StringBuilder(settings.getFullTextApiBaseUrl());
+            return settings.getFullTextApiBaseUrl();
         } else {
-            url = new StringBuilder(fullTextApiUrl.toString());
+            return fullTextApiUrl.toString();
         }
-        String path = settings.getFullTextApiPath().replace("/<collectionId>/<itemId>", europeanaId).replace("<pageId>", pageId);
-        url.append(path);
-        return url.toString();
     }
 
     /**
-     * Performs a HEAD request for a particular annotation page to see if the full text page exists or not
-     * @param fullTextUrl url to which HEAD request is sent
-     * @return true if it exists, false if it doesn't exists, null if we got no response
-     * @throws IIIFException when there is an error checking if a fulltext exists
+     * Performs a GET request for a particular EuropeanaID that:
+     * - replaces the 'exists' check;
+     * - lists all canvases found for that EuropeanaID;
+     * - lists all original and all translated AnnoPages for every canvas
+     *
+     * @param fullTextUrl url to FullText Summary endpoint
+     * @return Map with key PageId and as value an array of AnnoPage ID strings
+     * @throws IIIFException when there is an error retrieving the fulltext AnnoPage summary
      */
-//    @HystrixCommand(commandProperties = {
-//            @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "5000"),
-//            @HystrixProperty(name = "fallback.enabled", value="true")
-//    }, fallbackMethod = "fallbackExistsFullText")
-    Boolean existsFullText(String fullTextUrl) throws IIIFException {
-        Boolean result;
+    Map<String, String[]> getFullTextSummary(String fullTextUrl) throws IIIFException {
+        FulltextSummary summary = null;
+        boolean         result;
         try {
-            try (CloseableHttpResponse response = headhttpClient.execute(new HttpHead(fullTextUrl))) {
+            try (CloseableHttpResponse response = gethttpClient.execute(new HttpGet(fullTextUrl))) {
                 int responseCode = response.getStatusLine().getStatusCode();
-                LOG.debug("Full-Text head request: {}, status code = {}", fullTextUrl, responseCode);
+                LOG.debug("Full-Text summary GET request: {}, status code = {}", fullTextUrl, responseCode);
                 if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
-                    throw new InvalidApiKeyException("API key is not valid");
+                    throw new InvalidApiKeyException(APIKEY_NOT_VALID);
                 } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
-                    result = Boolean.FALSE;
-                } else if (responseCode == HttpStatus.SC_OK) {
-                    result = Boolean.TRUE;
+                    result = false;
                 } else {
-                    // TODO when hysterix is enabled again, we can simply throw an error again
-                    //throw new FullTextCheckException("Error checking if full text exists: "+response.getStatusLine().getReasonPhrase());
-                    LOG.error("Error checking if full text exists: {}", response.getStatusLine().getReasonPhrase());
-                    result = null;
+                    result = responseCode == HttpStatus.SC_OK;
+                }
+                HttpEntity entity = response.getEntity();
+                if (result && entity != null) {
+                    summary = getJsonMapper().readValue(EntityUtils.toString(entity), FulltextSummary.class);
+                    EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
+                } else {
+                    LOG.warn("Request entity = null");
                 }
             }
         } catch (IOException e) {
-            // TODO when hysterix is enabled again, we can simply throw an error again
-            //throw new FullTextCheckException("Error checking if full text exists", e);
             LOG.error("Error checking if full text exists", e);
-            result = null;
+            result = false;
         }
-        return result;
+        if (result && null != summary) {
+            return createAnnoPageMap(summary);
+        } else {
+            return null;
+        }
     }
 
-    @SuppressWarnings({"unused", "squid:S2447"}) // method is used by hysterix as fallback
-    private Boolean fallbackExistsFullText(String fullTextUrl) {
-        return null; // we return null, meaning that we were not able to check if a full text exists or not.
+    private Map<String, String[]> createAnnoPageMap(FulltextSummary summary) {
+        LinkedHashMap<String, String[]> annoPageMap = new LinkedHashMap<>();
+        for (FulltextSummaryCanvas fulltextSummaryCanvas : summary.getCanvases()) {
+            List<String>                  annoPageIDs  = new ArrayList<>();
+            List<FulltextSummaryAnnoPage> annoPageList = fulltextSummaryCanvas.getAnnotations();
+            for (FulltextSummaryAnnoPage sap : annoPageList) {
+                annoPageIDs.add(sap.getId());
+            }
+            annoPageMap.put(fulltextSummaryCanvas.getPageNumber(), annoPageIDs.toArray(String[]::new));
+        }
+        return annoPageMap;
     }
 
     /**
      * Generates a manifest object for IIIF v2 filled with data that is extracted from the provided JSON
-     * @param json record data in JSON format
+     *
+     * @param json        record data in JSON format
      * @param addFullText if true then for each canvas we will check if a full text exists and add the link to it's
-     *                   annotation page
+     *                    annotation page
      * @param fullTextApi optional, if provided this url will be used to check if a full text is available or not
      * @return Manifest v2 object
      */
-    public ManifestV2 generateManifestV2 (String json, boolean addFullText, URL fullTextApi)    {
+    public ManifestV2 generateManifestV2(String json, boolean addFullText, URL fullTextApi) {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
         ManifestV2 result = EdmManifestMappingV2.getManifestV2(document);
@@ -295,13 +300,14 @@ public class ManifestService {
 
     /**
      * Generates a manifest object for IIIF v3 filled with data that is extracted from the provided JSON
-     * @param json record data in JSON format
+     *
+     * @param json        record data in JSON format
      * @param addFullText if true then for each canvas we will check if a full text exists and add the link to it's
-     *                   annotation page
+     *                    annotation page
      * @param fullTextApi optional, if provided this url will be used to check if a full text is available or not
      * @return Manifest v3 object
      */
-    public ManifestV3 generateManifestV3 (String json, boolean addFullText, URL fullTextApi)  {
+    public ManifestV3 generateManifestV3(String json, boolean addFullText, URL fullTextApi) {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
         ManifestV3 result = EdmManifestMappingV3.getManifestV3(document);
@@ -329,30 +335,20 @@ public class ManifestService {
     private void fillInFullTextLinksV2(ManifestV2 manifest, URL fullTextApi) throws IIIFException {
         if (manifest.getSequences() != null && manifest.getSequences().length > 0) {
             // there is always only 1 sequence
-            Sequence s = manifest.getSequences()[0];
+            Sequence sequence = manifest.getSequences()[0];
 
-            // We don't want to check for all images if they have a fulltext because that takes too long
-            // Instead we use only do a fulltext exists check for the canvas specified as start canvas
-            Integer canvasId = manifest.getStartCanvasPageNr();
-            if (canvasId != null) {
-                // do the actual fulltext check
-                String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId.toString(), fullTextApi);
-                if (Boolean.TRUE.equals(existsFullText(fullTextUrl))) {
-                    // loop over canvases to add full-text link to all
-                    for (eu.europeana.iiif.model.v2.Canvas c : s.getCanvases()) {
-                        String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()),
-                                fullTextApi);
-                        // always 1 value in array
-                        String[] ft = new String[1];
-                        ft[0] = ftUrl;
-                        c.setOtherContent(ft);
-                    }
+            // Get all the available AnnoPages incl translations from the summary endpoint of Fulltext
+            String                fullTextSummaryUrl = generateFullTextSummaryUrl(manifest.getEuropeanaId(),
+                                                                                  fullTextApi);
+            Map<String, String[]> fulltextSummaryMap = getFullTextSummary(fullTextSummaryUrl);
+            if (null != fulltextSummaryMap) {
+                // loop over canvases to add full-text link(s) to all
+                for (eu.europeana.iiif.model.v2.Canvas canvas : sequence.getCanvases()) {
+                    canvas.setOtherContent(fulltextSummaryMap.get(Integer.toString(canvas.getPageNr())));
                 }
             }
         }
     }
-
-
 
     /**
      * We generate all full text links in one place, so we can raise a timeout if retrieving the necessary
@@ -362,31 +358,34 @@ public class ManifestService {
         eu.europeana.iiif.model.v3.Canvas[] canvases = manifest.getItems();
         if (canvases != null) {
 
-            // We don't want to check for all images if they have a fulltext because that takes too long
-            // Instead we use only do a fulltext exists check for the canvas specified as start canvas
-            String canvasId = Integer.toString(manifest.getStart().getPageNr());
-            String fullTextUrl = generateFullTextUrl(manifest.getEuropeanaId(), canvasId, fullTextApi);
-            if (Boolean.TRUE.equals(existsFullText(fullTextUrl))) {
-                // loop over canvases to add an extra annotation page
-                for (eu.europeana.iiif.model.v3.Canvas c : canvases) {
-                    String ftUrl = generateFullTextUrl(manifest.getEuropeanaId(), Integer.toString(c.getPageNr()), fullTextApi);
-                    c.setAnnotations(new AnnotationPage[]{ new AnnotationPage(ftUrl) });
+            // Get all the available AnnoPages incl translations from the summary endpoint of Fulltext
+            String                fullTextSummaryUrl = generateFullTextSummaryUrl(manifest.getEuropeanaId(),
+                                                                                  fullTextApi);
+            Map<String, String[]> fulltextSummaryMap = getFullTextSummary(fullTextSummaryUrl);
+            if (null != fulltextSummaryMap) {
+                // loop over canvases to add full-text link(s) to all
+                for (eu.europeana.iiif.model.v3.Canvas canvas : canvases) {
+                    List<AnnotationPage> summaryAnnoPages = new ArrayList<>();
+
+                    for (String annoPageId : fulltextSummaryMap.get(Integer.toString(canvas.getPageNr()))) {
+                        summaryAnnoPages.add(new AnnotationPage(annoPageId));
+                    }
+                    canvas.setAnnotations(summaryAnnoPages.toArray(new AnnotationPage[0]));
                 }
             }
         }
     }
 
-   /**
+    /**
      * Serialize manifest to JSON-LD
+     *
      * @param m manifest
      * @return JSON-LD string
      * @throws RecordParseException when there is a problem parsing
      */
     public String serializeManifest(Object m) throws RecordParseException {
         try {
-            return mapper.
-                    writerWithDefaultPrettyPrinter().
-                    writeValueAsString(m);
+            return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(m);
         } catch (IOException e) {
             throw new RecordParseException(String.format("Error serializing data: %s", e.getMessage()), e);
         }

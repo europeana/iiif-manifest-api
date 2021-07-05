@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import static eu.europeana.iiif.model.Definitions.getFulltextSummaryPath;
+
 /**
  * Container for all manifest settings that we load from the iiif.properties file. Note that we also have hard-coded
  * properties in the Definitions class
@@ -33,11 +35,9 @@ public class ManifestSettings {
 
     @Value("${fulltext-api.baseurl}")
     private String fullTextApiBaseUrl;
-    @Value("${fulltext-api.path}")
-    private String fullTextApiPath;
 
     @Value("${suppress-parse-exception}")
-    private Boolean suppressParseException = Boolean.FALSE; // default value if we run this outside of Spring (i.e. JUnit)
+    private final Boolean suppressParseException = Boolean.FALSE; // default value if we run this outside of Spring (i.e. JUnit)
 
     /**
      * @return base url from where we should retrieve record json data
@@ -47,7 +47,7 @@ public class ManifestSettings {
     }
 
     /**
-     * @return Record resource path (should be appended to the record API base url)
+     * @return FulltextSummary resource path (should be appended to the record API base url)
      */
     public String getRecordApiPath() {
         return recordApiPath;
@@ -58,13 +58,6 @@ public class ManifestSettings {
      */
     public String getFullTextApiBaseUrl() {
         return fullTextApiBaseUrl;
-    }
-
-    /**
-     * @return record resource path (note that <collectionId>, <itemId>, and <pageId> should be replaced with actual values
-     */
-    public String getFullTextApiPath() {
-        return fullTextApiPath;
     }
 
     /**
@@ -99,7 +92,7 @@ public class ManifestSettings {
     private void logImportantSettings() {
         LOG.info("Manifest settings:");
         LOG.info("  Record API Url = {}{} ", this.getRecordApiBaseUrl(), this.getRecordApiPath());
-        LOG.info("  Full-Text API Url = {}{} ", this.getFullTextApiBaseUrl(), this.getFullTextApiPath());
+        LOG.info("  Full-Text Summary Url = {}{} ", this.getFullTextApiBaseUrl(), getFulltextSummaryPath("<collectionId>/<itemId>"));
         LOG.info("  Suppress parse exceptions = {}", this.getSuppressParseException());
     }
 }
