@@ -35,14 +35,6 @@ public class FulltextSummaryAnnoPage extends JsonLdIdType {
         this.orig = orig;
     }
 
-    public boolean isOrig() {
-        return orig;
-    }
-
-    public void setOrig(boolean orig) {
-        this.orig = orig;
-    }
-
     public String getLanguage() {
         return language;
     }
