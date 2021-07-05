@@ -41,23 +41,6 @@ public class FulltextSummary implements Serializable {
         canvases = new ArrayList<>();
     }
 
-    public String getDataSetId() {
-        return dataSetId;
-    }
-
-    public void setDataSetId(String dataSetId) {
-        this.dataSetId = dataSetId;
-    }
-
-    public String getLocalId() {
-        return localId;
-    }
-
-    public void setLocalId(String localId) {
-        this.localId = localId;
-    }
-
-
     /**
      * Adds a *fake* FulltextSummaryCanvas containing original and translated versions of an AnnoPage (AnnotationLangPages)
      * @param fulltextSummaryCanvas FulltextSummaryCanvas object to be added to the canvases List
@@ -69,10 +52,6 @@ public class FulltextSummary implements Serializable {
     @JsonValue
     public List<FulltextSummaryCanvas> getCanvases() {
         return new ArrayList<>(canvases);
-    }
-
-    public void setCanvases(List<FulltextSummaryCanvas> canvases) {
-        this.canvases = new ArrayList<>(canvases);
     }
 
 }

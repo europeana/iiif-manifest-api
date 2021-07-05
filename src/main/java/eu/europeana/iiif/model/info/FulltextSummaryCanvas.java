@@ -17,7 +17,7 @@ public class FulltextSummaryCanvas extends JsonLdIdType {
 
     private static final long serialVersionUID = 7066577659030844718L;
 
-    private static final Pattern PAGENUMBERPATTERN = Pattern.compile("/annopage/(\\d+)$");
+    private static final Pattern PAGENUMBERPATTERN = Pattern.compile("/canvas/(\\d+)$");
 
     @JsonProperty("annotations")
     private List<FulltextSummaryAnnoPage> annotations;
@@ -45,10 +45,6 @@ public class FulltextSummaryCanvas extends JsonLdIdType {
 
     public List<FulltextSummaryAnnoPage> getAnnotations() {
         return new ArrayList<>(annotations);
-    }
-
-    public void setAnnotations(List<FulltextSummaryAnnoPage> annotations) {
-        this.annotations = new ArrayList<>(annotations);
     }
 
     public String getPageNumber(){
