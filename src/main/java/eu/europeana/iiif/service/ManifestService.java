@@ -25,6 +25,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.HttpHostConnectException;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -239,11 +240,11 @@ public class ManifestService {
                     summary = getJsonMapper().readValue(EntityUtils.toString(entity), FulltextSummary.class);
                     EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
                 } else {
-                    LOG.warn("Request entity = null");
+                    LOG.warn("No response from Fulltext API received");
                 }
             }
         } catch (IOException e) {
-            LOG.error("Error checking if full text exists", e);
+            LOG.error("Error connecting to Fulltext API at {}", fullTextUrl, e);
             result = false;
         }
         if (result && null != summary) {
