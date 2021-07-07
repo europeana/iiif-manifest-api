@@ -3,6 +3,7 @@ package eu.europeana.iiif.service;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 import eu.europeana.iiif.ExampleData;
+import eu.europeana.iiif.model.info.FulltextSummaryCanvas;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.config.ManifestSettings;
@@ -221,11 +222,11 @@ public class ManifestServiceTest {
      */
     @Test
     public void testFullTextSummaryExists() throws IIIFException {
-        String                url    = ms.generateFullTextSummaryUrl(EXAMPLE_FULLTEXT_ID, getFullTextApiUrl());
-        Map<String, String[]> result = ms.getFullTextSummary(url);
+        String                             url    = ms.generateFullTextSummaryUrl(EXAMPLE_FULLTEXT_ID, getFullTextApiUrl());
+        Map<String, FulltextSummaryCanvas> result = ms.getFullTextSummary(url);
         Assert.assertEquals(1, result.keySet().size());
-        Assert.assertEquals(2, result.get("1").length);
-        Assert.assertEquals(EXAMPLE_FULLTEXT_SUMMARY_FRAGMENT, Arrays.stream(result.get("1")).toArray()[0]);
+        Assert.assertEquals(2, result.get("1").getAnnoPageIDs().size());
+        Assert.assertEquals(EXAMPLE_FULLTEXT_SUMMARY_FRAGMENT, Arrays.stream(result.get("1").getAnnoPageIDs().toArray(new String[0])).toArray()[0]);
     }
 
     /**
@@ -234,7 +235,7 @@ public class ManifestServiceTest {
     @Test
     public void testFullTextSummaryNotExists() throws IIIFException {
         String                url    = ms.generateFullTextSummaryUrl(TEST_BLA, getFullTextApiUrl());
-        Map<String, String[]> result = ms.getFullTextSummary(url);
+        Map<String, FulltextSummaryCanvas> result = ms.getFullTextSummary(url);
         assertNull(result);
     }
 
@@ -244,7 +245,7 @@ public class ManifestServiceTest {
     @Test
     public void testFullTextServerError() throws IIIFException {
         String url = ms.generateFullTextSummaryUrl(EXAMPLE_ERROR_ID, getFullTextApiUrl());
-        Map<String, String[]> result = ms.getFullTextSummary(url);
+        Map<String, FulltextSummaryCanvas> result = ms.getFullTextSummary(url);
         assertNull(result);
     }
 
@@ -254,7 +255,7 @@ public class ManifestServiceTest {
     @Test
     public void testFullTextTimeout() throws IIIFException {
         String url = ms.generateFullTextSummaryUrl(EXAMPLE_TIMEOUT_ID, getFullTextApiUrl());
-        Map<String, String[]> result = ms.getFullTextSummary(url);
+        Map<String, FulltextSummaryCanvas> result = ms.getFullTextSummary(url);
         assertNull(result);
     }
 
