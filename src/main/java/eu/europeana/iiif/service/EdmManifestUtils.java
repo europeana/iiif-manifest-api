@@ -26,7 +26,7 @@ import java.util.Map;
  * @author Srishti Singh
  * Created on 25-03-2020
  */
-public class EdmManifestUtils {
+public final class EdmManifestUtils {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestUtils.class);
 
@@ -220,7 +220,8 @@ public class EdmManifestUtils {
     public static String getValueFromDataProviderAggregation(Object jsonDoc, String europeanaId, String fieldName) {
         String proxyIn = getDataProviderFromProxyWithOutLineage(jsonDoc, europeanaId);
         if (!StringUtils.isEmpty(proxyIn)) {
-            String[] dataProviderAggregation = JsonPath.parse(jsonDoc).read("$.object.aggregations[?(@.about == '" + proxyIn + "')]."+fieldName, String[].class);
+            String[] dataProviderAggregation = JsonPath.parse(jsonDoc)
+                    .read("$.object.aggregations[?(@.about == '" + proxyIn + "')]."+fieldName, String[].class);
             return (String) getFirstValueArray(fieldName, europeanaId, dataProviderAggregation);
         }
         return null;

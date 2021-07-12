@@ -31,7 +31,7 @@ public class EdmManifestUtilsTest {
     public void getThumbnailIdTest() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_THUMBNAIL);
         String thumbnailId = edmManifestUtils.getThumbnailId(null, document);
-        Assert.assertEquals(thumbnailId, EdmManifestData.TEST_THUMBNAIL_ID );
+        Assert.assertEquals(EdmManifestData.TEST_THUMBNAIL_ID, thumbnailId);
     }
 
     /**

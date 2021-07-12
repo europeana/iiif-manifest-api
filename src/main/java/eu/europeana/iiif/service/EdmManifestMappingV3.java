@@ -25,7 +25,7 @@ import static com.jayway.jsonpath.Filter.filter;
  */
 // ignore sonarqube rule: we return null on purpose in this class
 // ignore pmd rule:  we want to make a clear which objects are v2 and which v3
-public class EdmManifestMappingV3 {
+public final class EdmManifestMappingV3 {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestMappingV3.class);
 
@@ -303,9 +303,12 @@ public class EdmManifestMappingV3 {
      */
     static eu.europeana.iiif.model.v3.DataSet[] getDataSetsV3(String europeanaId) {
         eu.europeana.iiif.model.v3.DataSet[] result = new eu.europeana.iiif.model.v3.DataSet[3];
-        result[0] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json-ld"), Definitions.MEDIA_TYPE_JSONLD);
-        result[1] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json"), org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
-        result[2] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".rdf"), Definitions.MEDIA_TYPE_RDF);
+        result[0] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json-ld"),
+                Definitions.MEDIA_TYPE_JSONLD);
+        result[1] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json"),
+                org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
+        result[2] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".rdf"),
+                Definitions.MEDIA_TYPE_RDF);
         return result;
     }
 
