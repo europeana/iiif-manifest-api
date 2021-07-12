@@ -12,11 +12,9 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.info.FulltextSummary;
-import eu.europeana.iiif.model.info.FulltextSummaryAnnoPage;
 import eu.europeana.iiif.model.info.FulltextSummaryCanvas;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v2.Sequence;
-import eu.europeana.iiif.model.v3.Annotation;
 import eu.europeana.iiif.model.v3.AnnotationPage;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.exception.*;
@@ -230,7 +228,7 @@ public class ManifestService {
         try {
             try (CloseableHttpResponse response = gethttpClient.execute(new HttpGet(fullTextUrl))) {
                 int responseCode = response.getStatusLine().getStatusCode();
-                LOG.debug("Full-Text summary GET request: {}, status code = {}", fullTextUrl, responseCode);
+                LOG.error("Full-Text summary GET request: {}, status code = {}", fullTextUrl, responseCode);
                 if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
                     throw new InvalidApiKeyException(APIKEY_NOT_VALID);
                 } else if (responseCode == HttpStatus.SC_NOT_FOUND) {

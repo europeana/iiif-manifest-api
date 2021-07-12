@@ -1,7 +1,6 @@
 package eu.europeana.iiif.service;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.netflix.hystrix.exception.HystrixRuntimeException;
 import eu.europeana.iiif.ExampleData;
 import eu.europeana.iiif.model.info.FulltextSummaryCanvas;
 import eu.europeana.iiif.model.v2.ManifestV2;
@@ -17,7 +16,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.client.circuitbreaker.EnableCircuitBreaker;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -49,9 +47,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 @TestPropertySource(locations = "classpath:iiif-test.properties")
 @SpringBootTest(classes = {ManifestService.class, ManifestSettings.class, SpringContext.class})
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-// The following 2 annotations are needed to enable hystrix so we can test timeouts and fallbacks
-@EnableCircuitBreaker
-@EnableAspectJAutoProxy
 public class ManifestServiceTest {
 
     @Rule

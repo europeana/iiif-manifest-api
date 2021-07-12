@@ -62,6 +62,9 @@ public class FulltextSummaryCanvas extends JsonLdIdType {
         return originalLanguage;
     }
 
+    /*
+     * Used by Jackson deserializing data from Fulltext API
+     */
     public void setOriginalLanguage(String originalLanguage) {
         this.originalLanguage = originalLanguage;
     }
