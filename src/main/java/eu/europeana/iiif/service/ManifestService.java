@@ -12,7 +12,6 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.info.FulltextSummary;
-import eu.europeana.iiif.model.info.FulltextSummaryAnnoPage;
 import eu.europeana.iiif.model.info.FulltextSummaryCanvas;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v2.Sequence;
@@ -20,6 +19,7 @@ import eu.europeana.iiif.model.v3.AnnotationPage;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.exception.*;
 import ioinformarics.oss.jackson.module.jsonld.JsonldModule;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
@@ -222,13 +222,13 @@ public class ManifestService {
      * @return Map with key PageId and as value an array of AnnoPage ID strings
      * @throws IIIFException when there is an error retrieving the fulltext AnnoPage summary
      */
-    Map<String, String[]> getFullTextSummary(String fullTextUrl) throws IIIFException {
+    Map<String, FulltextSummaryCanvas> getFullTextSummary(String fullTextUrl) throws IIIFException {
         FulltextSummary summary = null;
         boolean         result;
         try {
             try (CloseableHttpResponse response = gethttpClient.execute(new HttpGet(fullTextUrl))) {
                 int responseCode = response.getStatusLine().getStatusCode();
-                LOG.debug("Full-Text summary GET request: {}, status code = {}", fullTextUrl, responseCode);
+                LOG.error("Full-Text summary GET request: {}, status code = {}", fullTextUrl, responseCode);
                 if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
                     throw new InvalidApiKeyException(APIKEY_NOT_VALID);
                 } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
@@ -241,31 +241,26 @@ public class ManifestService {
                     summary = getJsonMapper().readValue(EntityUtils.toString(entity), FulltextSummary.class);
                     EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
                 } else {
-                    LOG.warn("Request entity = null");
+                    LOG.warn("No response from Fulltext API received");
                 }
             }
         } catch (IOException e) {
-            LOG.error("Error checking if full text exists", e);
+            LOG.error("Error connecting to Fulltext API at {}", fullTextUrl, e);
             result = false;
         }
         if (result && null != summary) {
-            return createAnnoPageMap(summary);
+            return createSummaryCanvasMap(summary);
         } else {
             return null;
         }
     }
 
-    private Map<String, String[]> createAnnoPageMap(FulltextSummary summary) {
-        LinkedHashMap<String, String[]> annoPageMap = new LinkedHashMap<>();
+    private Map<String, FulltextSummaryCanvas> createSummaryCanvasMap(FulltextSummary summary) {
+        LinkedHashMap<String, FulltextSummaryCanvas> summaryCanvasMap = new LinkedHashMap<>();
         for (FulltextSummaryCanvas fulltextSummaryCanvas : summary.getCanvases()) {
-            List<String>                  annoPageIDs  = new ArrayList<>();
-            List<FulltextSummaryAnnoPage> annoPageList = fulltextSummaryCanvas.getAnnotations();
-            for (FulltextSummaryAnnoPage sap : annoPageList) {
-                annoPageIDs.add(sap.getId());
-            }
-            annoPageMap.put(fulltextSummaryCanvas.getPageNumber(), annoPageIDs.toArray(String[]::new));
+            summaryCanvasMap.put(fulltextSummaryCanvas.getPageNumber(), fulltextSummaryCanvas);
         }
-        return annoPageMap;
+        return summaryCanvasMap;
     }
 
     /**
@@ -331,20 +326,28 @@ public class ManifestService {
     /**
      * We generate all full text links in one place, so we can raise a timeout if retrieving the necessary
      * data for all full texts is too slow.
+     * From EA-2604 on, originalLanguage is available on the FulltextSummaryCanvas and copied to the AnnotationBody if
+     * motivation = 'sc:painting'
+     *
      */
     private void fillInFullTextLinksV2(ManifestV2 manifest, URL fullTextApi) throws IIIFException {
         if (manifest.getSequences() != null && manifest.getSequences().length > 0) {
             // there is always only 1 sequence
             Sequence sequence = manifest.getSequences()[0];
-
             // Get all the available AnnoPages incl translations from the summary endpoint of Fulltext
-            String                fullTextSummaryUrl = generateFullTextSummaryUrl(manifest.getEuropeanaId(),
-                                                                                  fullTextApi);
-            Map<String, String[]> fulltextSummaryMap = getFullTextSummary(fullTextSummaryUrl);
-            if (null != fulltextSummaryMap) {
+            String                fullTextSummaryUrl = generateFullTextSummaryUrl(manifest.getEuropeanaId(), fullTextApi);
+            Map<String, FulltextSummaryCanvas> summaryCanvasMap = getFullTextSummary(fullTextSummaryUrl);
+            if (null != summaryCanvasMap) {
                 // loop over canvases to add full-text link(s) to all
                 for (eu.europeana.iiif.model.v2.Canvas canvas : sequence.getCanvases()) {
-                    canvas.setOtherContent(fulltextSummaryMap.get(Integer.toString(canvas.getPageNr())));
+                    FulltextSummaryCanvas summaryCanvas = summaryCanvasMap.get(Integer.toString(canvas.getPageNr()));
+                    canvas.setOtherContent(summaryCanvas.getAnnoPageIDs().toArray(new String[0]));
+
+                    for (eu.europeana.iiif.model.v2.Annotation ann : canvas.getImages()){
+                        if (StringUtils.equalsAnyIgnoreCase(ann.getMotivation(), "sc:painting")){
+                            ann.getResource().setOriginalLanguage(summaryCanvas.getOriginalLanguage());
+                        }
+                    }
                 }
             }
         }
@@ -353,24 +356,31 @@ public class ManifestService {
     /**
      * We generate all full text links in one place, so we can raise a timeout if retrieving the necessary
      * data for all full texts is too slow.
+     * From EA-2604 on, originalLanguage is available on the FulltextSummaryCanvas and copied to the AnnotationBody if
+     * motivation = 'painting'
      */
     private void fillInFullTextLinksV3(ManifestV3 manifest, URL fullTextApi) throws IIIFException {
         eu.europeana.iiif.model.v3.Canvas[] canvases = manifest.getItems();
         if (canvases != null) {
-
             // Get all the available AnnoPages incl translations from the summary endpoint of Fulltext
-            String                fullTextSummaryUrl = generateFullTextSummaryUrl(manifest.getEuropeanaId(),
-                                                                                  fullTextApi);
-            Map<String, String[]> fulltextSummaryMap = getFullTextSummary(fullTextSummaryUrl);
-            if (null != fulltextSummaryMap) {
+            String                fullTextSummaryUrl = generateFullTextSummaryUrl(manifest.getEuropeanaId(), fullTextApi);
+            Map<String, FulltextSummaryCanvas> summaryCanvasMap = getFullTextSummary(fullTextSummaryUrl);
+            if (null != summaryCanvasMap) {
                 // loop over canvases to add full-text link(s) to all
                 for (eu.europeana.iiif.model.v3.Canvas canvas : canvases) {
                     List<AnnotationPage> summaryAnnoPages = new ArrayList<>();
-
-                    for (String annoPageId : fulltextSummaryMap.get(Integer.toString(canvas.getPageNr()))) {
+                    FulltextSummaryCanvas summaryCanvas = summaryCanvasMap.get(Integer.toString(canvas.getPageNr()));
+                    for (String annoPageId : summaryCanvas.getAnnoPageIDs().toArray(new String[0])) {
                         summaryAnnoPages.add(new AnnotationPage(annoPageId));
                     }
                     canvas.setAnnotations(summaryAnnoPages.toArray(new AnnotationPage[0]));
+                    for (eu.europeana.iiif.model.v3.AnnotationPage ap : canvas.getItems()){
+                        for (eu.europeana.iiif.model.v3.Annotation ann : ap.getItems()){
+                            if (StringUtils.equalsAnyIgnoreCase(ann.getMotivation(), "painting")){
+                                ann.getBody().setOriginalLanguage(summaryCanvas.getOriginalLanguage());
+                            }
+                        }
+                    }
                 }
             }
         }

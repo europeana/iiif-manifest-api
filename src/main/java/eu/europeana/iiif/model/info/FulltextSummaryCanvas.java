@@ -19,6 +19,8 @@ public class FulltextSummaryCanvas extends JsonLdIdType {
 
     private static final Pattern PAGENUMBERPATTERN = Pattern.compile("/canvas/(\\d+)$");
 
+    private String originalLanguage;
+
     @JsonProperty("annotations")
     private List<FulltextSummaryAnnoPage> annotations;
 
@@ -54,5 +56,24 @@ public class FulltextSummaryCanvas extends JsonLdIdType {
         } else {
             return "x";
         }
+    }
+
+    public String getOriginalLanguage() {
+        return originalLanguage;
+    }
+
+    /*
+     * Used by Jackson deserializing data from Fulltext API
+     */
+    public void setOriginalLanguage(String originalLanguage) {
+        this.originalLanguage = originalLanguage;
+    }
+
+    public List<String> getAnnoPageIDs(){
+        List<String> annoPageIDs  = new ArrayList<>();
+        for (FulltextSummaryAnnoPage sap : annotations) {
+            annoPageIDs.add(sap.getId());
+        }
+        return annoPageIDs;
     }
 }

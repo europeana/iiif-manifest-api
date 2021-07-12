@@ -25,7 +25,6 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
         <spring-boot.version>2.1.4.RELEASE</spring-boot.version>
-        <spring-hystrix.version>2.1.1.RELEASE</spring-hystrix.version>
         <jackson-core.version>2.9.4</jackson-core.version>
         <jsonpath.version>2.4.0</jsonpath.version>
         <mockito.version>2.15.0</mockito.version>
@@ -40,7 +39,6 @@
 
 <!--        tried updating, but too many $&%# dependency issues for now -->
         <!--		<spring-boot.version>2.4.4</spring-boot.version>-->
-        <!--		<spring-hystrix.version>2.2.7.RELEASE</spring-hystrix.version>-->
         <!--		<jackson.version>2.11.0</jackson.version>-->
         <!--		<jackson-core.version>2.12.3</jackson-core.version>-->
         <!--		<jsonpath.version>2.5.0</jsonpath.version>-->
@@ -89,16 +87,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
-            <version>${spring-hystrix.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-netflix-hystrix-dashboard</artifactId>
-            <version>${spring-hystrix.version}</version>
         </dependency>
 
         <!-- for retrieving record data -->

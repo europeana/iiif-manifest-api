@@ -1,5 +1,6 @@
 package eu.europeana.iiif.model.v2;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldType;
 
 /**
@@ -13,6 +14,9 @@ public class AnnotationBody extends JsonLdId {
 
     private String format;
     private Service service;
+
+    @JsonProperty("language")
+    private String originalLanguage;
 
     public AnnotationBody(String id) {
         super(id);
@@ -32,5 +36,13 @@ public class AnnotationBody extends JsonLdId {
 
     public void setService(Service service) {
         this.service = service;
+    }
+
+    public String getOriginalLanguage() {
+        return originalLanguage;
+    }
+
+    public void setOriginalLanguage(String originalLanguage) {
+        this.originalLanguage = originalLanguage;
     }
 }
