@@ -202,9 +202,12 @@ public final class EdmManifestMappingV2 {
      */
     static eu.europeana.iiif.model.v2.DataSet[] getDataSetsV2(String europeanaId) {
         eu.europeana.iiif.model.v2.DataSet[] result = new eu.europeana.iiif.model.v2.DataSet[3];
-        result[0] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".json-ld"), Definitions.MEDIA_TYPE_JSONLD);
-        result[1] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".json"), org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
-        result[2] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".rdf"), Definitions.MEDIA_TYPE_RDF);
+        result[0] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".json-ld"),
+                Definitions.MEDIA_TYPE_JSONLD);
+        result[1] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".json"),
+                org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
+        result[2] = new eu.europeana.iiif.model.v2.DataSet(Definitions.getDatasetId(europeanaId, ".rdf"),
+                Definitions.MEDIA_TYPE_RDF);
         return result;
     }
 
