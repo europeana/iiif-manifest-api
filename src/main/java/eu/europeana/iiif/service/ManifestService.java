@@ -175,8 +175,8 @@ public class ManifestService {
                 } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
                     throw new RecordNotFoundException("Record with id '" + recordId + "' not found");
                 } else if (responseCode != HttpStatus.SC_OK) {
-                    throw new RecordRetrieveException("Error retrieving record: " + response.getStatusLine()
-                                                                                            .getReasonPhrase());
+                    LOG.error("Error retrieving record {}, reason {}", recordId, response.getStatusLine().getReasonPhrase());
+                    throw new RecordRetrieveException("Error retrieving record: " + response.getStatusLine().getReasonPhrase());
                 }
 
                 HttpEntity entity = response.getEntity();
