@@ -22,7 +22,6 @@ import ioinformarics.oss.jackson.module.jsonld.JsonldModule;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -56,8 +55,7 @@ public class ManifestService {
     private static ObjectMapper mapper = new ObjectMapper();
 
     private final ManifestSettings    settings;
-    private final CloseableHttpClient gethttpClient;
-    private final CloseableHttpClient headhttpClient;
+    private final CloseableHttpClient httpClient;
 
 
     public ManifestService(ManifestSettings settings) {
@@ -68,15 +66,8 @@ public class ManifestService {
         cm.setMaxTotal(200);
         cm.setDefaultMaxPerRoute(100);
 
-        // configure for head requests to Fulltext API (with specific timeouts)
-        RequestConfig requestConfig = RequestConfig.custom()
-                                                   .setConnectTimeout(8 * 1000)
-                                                   .setSocketTimeout(5 * 1000)
-                                                   .build();
-        headhttpClient = HttpClients.custom().setConnectionManager(cm).setDefaultRequestConfig(requestConfig).build();
-
         //configure for get requests to Record API
-        gethttpClient = HttpClients.custom().setConnectionManager(cm).build();
+        httpClient = HttpClients.custom().setConnectionManager(cm).build();
 
         // configure jsonpath: we use jsonpath in combination with Jackson because that makes it easier to know what
         // type of objects are returned (see also https://stackoverflow.com/a/40963445)
@@ -167,7 +158,7 @@ public class ManifestService {
 
         try {
             String recordUrl = url.toString();
-            try (CloseableHttpResponse response = gethttpClient.execute(new HttpGet(recordUrl))) {
+            try (CloseableHttpResponse response = httpClient.execute(new HttpGet(recordUrl))) {
                 int responseCode = response.getStatusLine().getStatusCode();
                 LOG.debug("Record request: {}, status code = {}", recordId, responseCode);
                 if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
@@ -226,9 +217,9 @@ public class ManifestService {
         FulltextSummary summary = null;
         boolean         result;
         try {
-            try (CloseableHttpResponse response = gethttpClient.execute(new HttpGet(fullTextUrl))) {
+            try (CloseableHttpResponse response = httpClient.execute(new HttpGet(fullTextUrl))) {
                 int responseCode = response.getStatusLine().getStatusCode();
-                LOG.error("Full-Text summary GET request: {}, status code = {}", fullTextUrl, responseCode);
+                LOG.debug("Full-Text summary GET request: {}, status code = {}", fullTextUrl, responseCode);
                 if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
                     throw new InvalidApiKeyException(APIKEY_NOT_VALID);
                 } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
@@ -335,20 +326,28 @@ public class ManifestService {
             // there is always only 1 sequence
             Sequence sequence = manifest.getSequences()[0];
             // Get all the available AnnoPages incl translations from the summary endpoint of Fulltext
-            String                fullTextSummaryUrl = generateFullTextSummaryUrl(manifest.getEuropeanaId(), fullTextApi);
+            String fullTextSummaryUrl = generateFullTextSummaryUrl(manifest.getEuropeanaId(), fullTextApi);
             Map<String, FulltextSummaryCanvas> summaryCanvasMap = getFullTextSummary(fullTextSummaryUrl);
             if (null != summaryCanvasMap) {
                 // loop over canvases to add full-text link(s) to all
                 for (eu.europeana.iiif.model.v2.Canvas canvas : sequence.getCanvases()) {
-                    FulltextSummaryCanvas summaryCanvas = summaryCanvasMap.get(Integer.toString(canvas.getPageNr()));
-                    canvas.setOtherContent(summaryCanvas.getAnnoPageIDs().toArray(new String[0]));
-
-                    for (eu.europeana.iiif.model.v2.Annotation ann : canvas.getImages()){
-                        if (StringUtils.equalsAnyIgnoreCase(ann.getMotivation(), "sc:painting")){
-                            ann.getResource().setOriginalLanguage(summaryCanvas.getOriginalLanguage());
-                        }
-                    }
+                    addFulltextLinkToCanvasV2(manifest.getEuropeanaId(), canvas,
+                            summaryCanvasMap.get(Integer.toString(canvas.getPageNr())));
                 }
+            }
+        }
+    }
+
+    private void addFulltextLinkToCanvasV2(String recordId, eu.europeana.iiif.model.v2.Canvas canvas, FulltextSummaryCanvas summaryCanvas) {
+        if (summaryCanvas == null) {
+            LOG.warn("Inconsistent data! No Fulltext annotation page found for record {} page {}", recordId, canvas.getPageNr());
+            return;
+        }
+
+        canvas.setOtherContent(summaryCanvas.getAnnoPageIDs().toArray(new String[0]));
+        for (eu.europeana.iiif.model.v2.Annotation ann : canvas.getImages()){
+            if (StringUtils.equalsAnyIgnoreCase(ann.getMotivation(), "sc:painting")){
+                ann.getResource().setOriginalLanguage(summaryCanvas.getOriginalLanguage());
             }
         }
     }
@@ -363,24 +362,33 @@ public class ManifestService {
         eu.europeana.iiif.model.v3.Canvas[] canvases = manifest.getItems();
         if (canvases != null) {
             // Get all the available AnnoPages incl translations from the summary endpoint of Fulltext
-            String                fullTextSummaryUrl = generateFullTextSummaryUrl(manifest.getEuropeanaId(), fullTextApi);
+            String fullTextSummaryUrl = generateFullTextSummaryUrl(manifest.getEuropeanaId(), fullTextApi);
             Map<String, FulltextSummaryCanvas> summaryCanvasMap = getFullTextSummary(fullTextSummaryUrl);
             if (null != summaryCanvasMap) {
                 // loop over canvases to add full-text link(s) to all
                 for (eu.europeana.iiif.model.v3.Canvas canvas : canvases) {
-                    List<AnnotationPage> summaryAnnoPages = new ArrayList<>();
-                    FulltextSummaryCanvas summaryCanvas = summaryCanvasMap.get(Integer.toString(canvas.getPageNr()));
-                    for (String annoPageId : summaryCanvas.getAnnoPageIDs().toArray(new String[0])) {
-                        summaryAnnoPages.add(new AnnotationPage(annoPageId));
-                    }
-                    canvas.setAnnotations(summaryAnnoPages.toArray(new AnnotationPage[0]));
-                    for (eu.europeana.iiif.model.v3.AnnotationPage ap : canvas.getItems()){
-                        for (eu.europeana.iiif.model.v3.Annotation ann : ap.getItems()){
-                            if (StringUtils.equalsAnyIgnoreCase(ann.getMotivation(), "painting")){
-                                ann.getBody().setOriginalLanguage(summaryCanvas.getOriginalLanguage());
-                            }
-                        }
-                    }
+                    addFulltextLinkToCanvasV3(manifest.getEuropeanaId(), canvas,
+                            summaryCanvasMap.get(Integer.toString(canvas.getPageNr())));
+                }
+            }
+        }
+    }
+
+    private void addFulltextLinkToCanvasV3(String recordId, eu.europeana.iiif.model.v3.Canvas canvas, FulltextSummaryCanvas summaryCanvas) {
+        if (summaryCanvas == null) {
+            LOG.warn("Inconsistent data! No Fulltext annotation page found for record {} page {}", recordId, canvas.getPageNr());
+            return;
+        }
+
+        List<AnnotationPage> summaryAnnoPages = new ArrayList<>();
+        for (String annoPageId : summaryCanvas.getAnnoPageIDs()) {
+            summaryAnnoPages.add(new AnnotationPage(annoPageId));
+        }
+        canvas.setAnnotations(summaryAnnoPages.toArray(new AnnotationPage[0]));
+        for (eu.europeana.iiif.model.v3.AnnotationPage ap : canvas.getItems()){
+            for (eu.europeana.iiif.model.v3.Annotation ann : ap.getItems()){
+                if (StringUtils.equalsAnyIgnoreCase(ann.getMotivation(), "painting")){
+                    ann.getBody().setOriginalLanguage(summaryCanvas.getOriginalLanguage());
                 }
             }
         }
@@ -410,13 +418,9 @@ public class ManifestService {
 
     @PreDestroy
     public void close() throws IOException {
-        if (this.gethttpClient != null) {
+        if (this.httpClient != null) {
             LOG.info("Closing get request http-client...");
-            this.gethttpClient.close();
-        }
-        if (this.headhttpClient != null) {
-            LOG.info("Closing head request http-client...");
-            this.headhttpClient.close();
+            this.httpClient.close();
         }
     }
 
