@@ -7,7 +7,7 @@ import eu.europeana.iiif.model.WebResource;
 import eu.europeana.iiif.model.WebResourceSorter;
 import eu.europeana.iiif.model.v3.Collection;
 import eu.europeana.iiif.model.v3.*;
-import eu.europeana.metis.utils.MediaType;
+import eu.europeana.metis.schema.model.MediaType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.util.StringUtils;

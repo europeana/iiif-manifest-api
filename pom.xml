@@ -31,7 +31,7 @@
         <wiremock-standalone.version>2.18.0</wiremock-standalone.version>
         <jaxb-api.version>2.3.1</jaxb-api.version>
         <http-client.version>4.5.13</http-client.version>
-        <metis.version>1.9.0</metis.version>
+        <metis.version>4</metis.version>
         <swagger.version>2.9.2</swagger.version>
 
         <!--		not used?-->
@@ -111,10 +111,10 @@
 
         <dependency>
             <groupId>eu.europeana.metis</groupId>
-            <artifactId>metis-common</artifactId>
+            <artifactId>metis-schema</artifactId>
             <version>${metis.version}</version>
             <exclusions>
-                <!-- exclude all other dependencies coming in from metis-commons -->
+                <!-- exclude all other dependencies coming in from metis-schema -->
                 <exclusion>
                     <groupId>*</groupId>
                     <artifactId>*</artifactId>
