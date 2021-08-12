@@ -16,7 +16,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -73,55 +72,55 @@ public class ManifestServiceTest {
 
         // Record API, return 401 for all unknown wskeys
         stubFor(get(urlPathMatching(API_V2_RECORD + "/.*"))
-                .withQueryParam("wskey", matching(".*"))
-                .willReturn(aResponse()
-                        .withStatus(401)
-                        .withHeader(CONTENT_TYPE, APPLICATION_JSON)
-                        .withBody("{\"error\": \"Invalid API key\"}")));
+                        .withQueryParam("wskey", matching(".*"))
+                        .willReturn(aResponse()
+                                            .withStatus(401)
+                                            .withHeader(CONTENT_TYPE, APPLICATION_JSON)
+                                            .withBody("{\"error\": \"Invalid API key\"}")));
 
         // Record API, return 404 for all unknown record ids (that have a valid wskey)
         stubFor(get(urlPathMatching(API_V2_RECORD + "/.*"))
-                .withQueryParam("wskey", equalTo(EXAMPLE_WSKEY))
-                .willReturn(aResponse()
-                        .withStatus(404)
-                        .withHeader(CONTENT_TYPE, APPLICATION_JSON)
-                        .withBody("{\"error\": \"Invalid record identifier\"}")));
+                        .withQueryParam("wskey", equalTo(EXAMPLE_WSKEY))
+                        .willReturn(aResponse()
+                                            .withStatus(404)
+                                            .withHeader(CONTENT_TYPE, APPLICATION_JSON)
+                                            .withBody("{\"error\": \"Invalid record identifier\"}")));
 
         // Record API, parent record
         stubFor(get(urlEqualTo(API_V2_RECORD + ExampleData.EXAMPLE_RECORD_PARENT_ID + JSON_WSKEY+EXAMPLE_WSKEY))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader(CONTENT_TYPE, APPLICATION_JSON)
-                        .withBody(ExampleData.EXAMPLE_RECORD_PARENT_RESPONSE)));
+                        .willReturn(aResponse()
+                                            .withStatus(200)
+                                            .withHeader(CONTENT_TYPE, APPLICATION_JSON)
+                                            .withBody(ExampleData.EXAMPLE_RECORD_PARENT_RESPONSE)));
 
         // Record API, child record
         stubFor(get(urlEqualTo(API_V2_RECORD + ExampleData.EXAMPLE_RECORD_CHILD_ID + JSON_WSKEY+EXAMPLE_WSKEY))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader(CONTENT_TYPE, APPLICATION_JSON)
-                        .withBody(ExampleData.EXAMPLE_RECORD_CHILD_RESPONSE)));
+                        .willReturn(aResponse()
+                                            .withStatus(200)
+                                            .withHeader(CONTENT_TYPE, APPLICATION_JSON)
+                                            .withBody(ExampleData.EXAMPLE_RECORD_CHILD_RESPONSE)));
 
         //Record API, minimal data
         stubFor(get(urlEqualTo(API_V2_RECORD + ExampleData.EXAMPLE_RECORD_MINIMAL_ID + JSON_WSKEY+EXAMPLE_WSKEY))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader(CONTENT_TYPE, APPLICATION_JSON)
-                        .withBody(ExampleData.EXAMPLE_RECORD_MINIMAL_RESPONSE)));
+                        .willReturn(aResponse()
+                                            .withStatus(200)
+                                            .withHeader(CONTENT_TYPE, APPLICATION_JSON)
+                                            .withBody(ExampleData.EXAMPLE_RECORD_MINIMAL_RESPONSE)));
 
         // Record API, simulate timeout exception
         stubFor(get(urlEqualTo(API_V2_RECORD + EXAMPLE_ERROR_ID + JSON_WSKEY + EXAMPLE_WSKEY))
-                .willReturn(aResponse()
-                        .withStatus(500)
-                        .withHeader(CONTENT_TYPE, APPLICATION_JSON)
-                        .withBody("{\"error\": \"Server error\"}")));
+                        .willReturn(aResponse()
+                                            .withStatus(500)
+                                            .withHeader(CONTENT_TYPE, APPLICATION_JSON)
+                                            .withBody("{\"error\": \"Server error\"}")));
 
         // Record API, simulate timeout exception
         stubFor(get(urlEqualTo(API_V2_RECORD + EXAMPLE_TIMEOUT_ID + JSON_WSKEY + EXAMPLE_WSKEY))
-                .willReturn(aResponse()
-                        .withFixedDelay(10000) // value should be longer than configured timeout for getRecord
-                        .withStatus(200)
-                        .withHeader(CONTENT_TYPE, APPLICATION_JSON)
-                        .withBody(ExampleData.EXAMPLE_RECORD_CHILD_RESPONSE)));
+                        .willReturn(aResponse()
+                                            .withFixedDelay(10000) // value should be longer than configured timeout for getRecord
+                                            .withStatus(200)
+                                            .withHeader(CONTENT_TYPE, APPLICATION_JSON)
+                                            .withBody(ExampleData.EXAMPLE_RECORD_CHILD_RESPONSE)));
 
 
 
@@ -199,14 +198,14 @@ public class ManifestServiceTest {
     }
 
     private ManifestV2 getManifestV2(String recordId) throws IIIFException {
-        ManifestV2 m = ms.generateManifestV2(getRecord(recordId), true, getFullTextApiUrl());
+        ManifestV2 m = ms.generateManifestV2(getRecord(recordId), getFullTextApiUrl());
         assertNotNull(m);
         assertTrue(m.getId().contains(recordId));
         return m;
     }
 
     private ManifestV3 getManifestV3(String recordId) throws IIIFException {
-        ManifestV3 m = ms.generateManifestV3(getRecord(recordId), true, getFullTextApiUrl());
+        ManifestV3 m = ms.generateManifestV3(getRecord(recordId), getFullTextApiUrl());
         assertNotNull(m);
         assertTrue(m.getId().contains(recordId));
         return m;

@@ -22,10 +22,15 @@ import ioinformarics.oss.jackson.module.jsonld.JsonldModule;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.cache.CacheResponseStatus;
+import org.apache.http.client.cache.HttpCacheContext;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.cache.CacheConfig;
+import org.apache.http.impl.client.cache.CachingHttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
@@ -35,6 +40,8 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.net.URL;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 import static eu.europeana.iiif.model.Definitions.getFulltextSummaryPath;
@@ -51,23 +58,41 @@ public class ManifestService {
     private static final Logger LOG              = LogManager.getLogger(ManifestService.class);
     private static final String APIKEY_NOT_VALID = "API key is not valid";
 
+    private static final boolean USE_HTTP_CLIENT_CACHING = true;
+
+    private static final int MAX_TOTAL_CONNECTIONS    = 200;
+    private static final int DEFAULT_MAX_PER_ROUTE    = 100;
+    private static final int MAX_CACHED_ENTRIES       = 1000;
+    private static final int MAX_CACHED_OBJECT_SIZE   = 65536;
+    private static final int FULLTEXT_CONNECT_TIMEOUT = 30000;
+    private static final int FULLTEXT_SOCKET_TIMEOUT  = 30000;
+
     // create a single objectMapper for efficiency purposes (see https://github.com/FasterXML/jackson-docs/wiki/Presentation:-Jackson-Performance)
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     private final ManifestSettings    settings;
-    private final CloseableHttpClient httpClient;
+    private final CloseableHttpClient getHttpClient;
+    private final CloseableHttpClient cachingHttpClient;
+    private final HttpCacheContext    httpCacheContext;
 
-
+    /**
+     * Creates an instance of the ManifestService bean with provided settings
+     * @param settings read from properties file
+     */
     public ManifestService(ManifestSettings settings) {
         this.settings = settings;
 
         // configure http client
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
-        cm.setMaxTotal(200);
-        cm.setDefaultMaxPerRoute(100);
+        cm.setMaxTotal(MAX_TOTAL_CONNECTIONS);
+        cm.setDefaultMaxPerRoute(DEFAULT_MAX_PER_ROUTE);
 
         //configure for get requests to Record API
-        httpClient = HttpClients.custom().setConnectionManager(cm).build();
+        getHttpClient = HttpClients.custom().setConnectionManager(cm).build();
+
+        // initialise caching HttpClient for fulltext Summary
+        cachingHttpClient = getCachingClient(cm);
+        httpCacheContext  = HttpCacheContext.create();
 
         // configure jsonpath: we use jsonpath in combination with Jackson because that makes it easier to know what
         // type of objects are returned (see also https://stackoverflow.com/a/40963445)
@@ -107,6 +132,29 @@ public class ManifestService {
               .setSerializationInclusion(JsonInclude.Include.NON_ABSENT);
     }
 
+    /**
+     * Returns a CloseableHttpClient with the provided Connection manager configured to use caching.
+     *
+     * @param cm    PoolingHttpClientConnectionManager (configured in the ManifestService constructor above)
+     * @return      caching CloseableHttpClient
+     */
+    private CloseableHttpClient getCachingClient(PoolingHttpClientConnectionManager cm){
+        CacheConfig cacheConfig = CacheConfig.custom()
+                                             .setMaxCacheEntries(MAX_CACHED_ENTRIES)
+                                             .setMaxObjectSize(MAX_CACHED_OBJECT_SIZE)
+                                             .build();
+
+        RequestConfig requestConfig = RequestConfig.custom()
+                                                   .setConnectTimeout(FULLTEXT_CONNECT_TIMEOUT)
+                                                   .setSocketTimeout(FULLTEXT_SOCKET_TIMEOUT)
+                                                   .build();
+
+        return CachingHttpClients.custom().setCacheConfig(cacheConfig)
+                                 .setDefaultRequestConfig(requestConfig)
+                                 .setConnectionManager(cm)
+                                 .build();
+    }
+
     protected ObjectMapper getJsonMapper() {
         return mapper;
     }
@@ -117,8 +165,7 @@ public class ManifestService {
      * @param recordId Europeana record id in the form of "/datasetid/recordid" (so with leading slash and without trailing slash)
      * @param wsKey    api key to send to record API
      * @return record information in json format
-     * @throws IIIFException (
-     *                       IllegalArgumentException if a parameter has an illegal format,
+     * @throws IIIFException (IllegalArgumentException if a parameter has an illegal format,
      *                       InvalidApiKeyException if the provide key is not valid,
      *                       RecordNotFoundException if there was a 404,
      *                       RecordRetrieveException on all other problems)
@@ -134,8 +181,7 @@ public class ManifestService {
      * @param wsKey        api key to send to record API
      * @param recordApiUrl if not null we will use the provided URL as the address of the Record API instead of the default configured address
      * @return record information in json format     *
-     * @throws IIIFException (
-     *                       IllegalArgumentException if a parameter has an illegal format,
+     * @throws IIIFException (IllegalArgumentException if a parameter has an illegal format,
      *                       InvalidApiKeyException if the provide key is not valid,
      *                       RecordNotFoundException if there was a 404,
      *                       RecordRetrieveException on all other problems)
@@ -158,7 +204,7 @@ public class ManifestService {
 
         try {
             String recordUrl = url.toString();
-            try (CloseableHttpResponse response = httpClient.execute(new HttpGet(recordUrl))) {
+            try (CloseableHttpResponse response = getHttpClient.execute(new HttpGet(recordUrl))) {
                 int responseCode = response.getStatusLine().getStatusCode();
                 LOG.debug("Record request: {}, status code = {}", recordId, responseCode);
                 if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
@@ -203,6 +249,8 @@ public class ManifestService {
         }
     }
 
+
+
     /**
      * Performs a GET request for a particular EuropeanaID that:
      * - replaces the 'exists' check;
@@ -217,16 +265,14 @@ public class ManifestService {
         FulltextSummary summary = null;
         boolean         result;
         try {
-            try (CloseableHttpResponse response = httpClient.execute(new HttpGet(fullTextUrl))) {
+            try (CloseableHttpResponse response = getHttpClient.execute(new HttpGet(fullTextUrl))) {
                 int responseCode = response.getStatusLine().getStatusCode();
                 LOG.debug("Full-Text summary GET request: {}, status code = {}", fullTextUrl, responseCode);
                 if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
                     throw new InvalidApiKeyException(APIKEY_NOT_VALID);
                 } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
                     result = false;
-                } else {
-                    result = responseCode == HttpStatus.SC_OK;
-                }
+                } else { result = responseCode == HttpStatus.SC_OK; }
                 HttpEntity entity = response.getEntity();
                 if (result && entity != null) {
                     summary = getJsonMapper().readValue(EntityUtils.toString(entity), FulltextSummary.class);
@@ -246,6 +292,84 @@ public class ManifestService {
         }
     }
 
+    /**
+     * Performs a GET request for a particular EuropeanaID that:
+     * - replaces the 'exists' check;
+     * - lists all canvases found for that EuropeanaID;
+     * - lists all original and all translated AnnoPages for every canvas
+     *
+     * This method uses a caching HttpClient.
+     *
+     * @param fullTextUrl url to FullText Summary endpoint
+     * @return Map with key PageId and as value an array of AnnoPage ID strings
+     * @throws IIIFException when there is an error retrieving the fulltext AnnoPage summary
+     */
+    Map<String, FulltextSummaryCanvas> cachedFullTextSummary(String fullTextUrl) throws IIIFException {
+
+        FulltextSummary summary = null;
+        boolean         result;
+
+        Instant start = Instant.now();
+        String responseType = "";
+
+        try {
+            try (CloseableHttpResponse response = cachingHttpClient.execute(new HttpGet(fullTextUrl), httpCacheContext)) {
+
+                CacheResponseStatus responseStatus = httpCacheContext.getCacheResponseStatus();
+                switch (responseStatus) {
+                    case CACHE_HIT:
+                        responseType = "from manifest cache";
+                        LOG.debug("Returning Fulltext summary from manifest cache");
+                        break;
+                    case CACHE_MODULE_RESPONSE:
+                        responseType = "generated by cache";
+                        LOG.debug("Fulltext summary generated by the manifest caching module");
+                        break;
+                    case CACHE_MISS:
+                        responseType = "fresh from Fulltext API";
+                        LOG.debug("Fetched Fulltext summary from Fulltext API");
+                        break;
+                    case VALIDATED:
+                        responseType = "from cache, after ETag check w. Fulltext API";
+                        LOG.debug("Retrieved summary from manifest cache after validating ETag / Date_Modified with Fulltext API");
+                        break;
+                }
+
+                int responseCode = response.getStatusLine().getStatusCode();
+                LOG.debug("Full-Text summary GET request: {}, status code = {}", fullTextUrl, responseCode);
+
+                if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
+                    throw new InvalidApiKeyException(APIKEY_NOT_VALID);
+                } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
+                    result = false;
+                } else {
+                    result = responseCode == HttpStatus.SC_OK;
+                }
+
+                HttpEntity entity = response.getEntity();
+
+                if (result && entity != null) {
+                    summary = getJsonMapper().readValue(EntityUtils.toString(entity), FulltextSummary.class);
+                    EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
+                } else {
+                    LOG.warn("No response from Fulltext API received");
+                }
+            }
+        } catch (IOException e) {
+            LOG.error("Error connecting to Fulltext API at {}", fullTextUrl, e);
+            result = false;
+        }
+
+        Instant finish = Instant.now();
+        LOG.info("Summary fetched in {} ms {}",  Duration.between(start, finish).toMillis(), responseType);
+
+        if (result && null != summary) {
+            return createSummaryCanvasMap(summary);
+        } else {
+            return null;
+        }
+    }
+
     private Map<String, FulltextSummaryCanvas> createSummaryCanvasMap(FulltextSummary summary) {
         LinkedHashMap<String, FulltextSummaryCanvas> summaryCanvasMap = new LinkedHashMap<>();
         for (FulltextSummaryCanvas fulltextSummaryCanvas : summary.getCanvases()) {
@@ -258,24 +382,36 @@ public class ManifestService {
      * Generates a manifest object for IIIF v2 filled with data that is extracted from the provided JSON
      *
      * @param json        record data in JSON format
-     * @param addFullText if true then for each canvas we will check if a full text exists and add the link to it's
-     *                    annotation page
-     * @param fullTextApi optional, if provided this url will be used to check if a full text is available or not
      * @return Manifest v2 object
      */
-    public ManifestV2 generateManifestV2(String json, boolean addFullText, URL fullTextApi) {
+    public ManifestV2 generateManifestV2(String json) {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
         ManifestV2 result = EdmManifestMappingV2.getManifestV2(document);
 
-        if (addFullText) {
-            try {
-                fillInFullTextLinksV2(result, fullTextApi);
-            } catch (IIIFException ie) {
-                LOG.error("Error adding full text links", ie);
-            }
-        } else {
-            LOG.debug("Skipping full text link generation");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Generated in {} ms", System.currentTimeMillis() - start);
+        }
+        return result;
+    }
+
+    /**
+     * Generates a manifest object for IIIF v2 filled with data that is extracted from the provided JSON.
+     * It checks for each canvas if a full text exists; and if so, adds the link to its annotation page
+     *
+     * @param json        record data in JSON format
+     * @param fullTextApi optional, if provided this url will be used to check if a full text is available or not
+     * @return Manifest v2 object
+     */
+    public ManifestV2 generateManifestV2(String json, URL fullTextApi) {
+        long start = System.currentTimeMillis();
+        Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
+        ManifestV2 result = EdmManifestMappingV2.getManifestV2(document);
+
+        try {
+            fillInFullTextLinksV2(result, fullTextApi);
+        } catch (IIIFException ie) {
+            LOG.error("Error adding full text links", ie);
         }
 
         if (LOG.isDebugEnabled()) {
@@ -288,24 +424,35 @@ public class ManifestService {
      * Generates a manifest object for IIIF v3 filled with data that is extracted from the provided JSON
      *
      * @param json        record data in JSON format
-     * @param addFullText if true then for each canvas we will check if a full text exists and add the link to it's
-     *                    annotation page
+     * @return Manifest v3 object
+     */
+    public ManifestV3 generateManifestV3(String json) {
+        long start = System.currentTimeMillis();
+        Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
+        ManifestV3 result = EdmManifestMappingV3.getManifestV3(document);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Generated in {} ms ", System.currentTimeMillis() - start);
+        }
+        return result;
+    }
+
+    /**
+     * Generates a manifest object for IIIF v3 filled with data that is extracted from the provided JSON
+     * It checks for each canvas if a full text exists; and if so, adds the link to its annotation page
+     *
+     * @param json        record data in JSON format
      * @param fullTextApi optional, if provided this url will be used to check if a full text is available or not
      * @return Manifest v3 object
      */
-    public ManifestV3 generateManifestV3(String json, boolean addFullText, URL fullTextApi) {
+    public ManifestV3 generateManifestV3(String json, URL fullTextApi) {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
         ManifestV3 result = EdmManifestMappingV3.getManifestV3(document);
 
-        if (addFullText) {
-            try {
-                fillInFullTextLinksV3(result, fullTextApi);
-            } catch (IIIFException ie) {
-                LOG.error("Error adding full text links", ie);
-            }
-        } else {
-            LOG.debug("Skipping full text link generation");
+        try {
+            fillInFullTextLinksV3(result, fullTextApi);
+        } catch (IIIFException ie) {
+            LOG.error("Error adding full text links", ie);
         }
 
         if (LOG.isDebugEnabled()) {
@@ -322,17 +469,22 @@ public class ManifestService {
      *
      */
     private void fillInFullTextLinksV2(ManifestV2 manifest, URL fullTextApi) throws IIIFException {
+        Map<String, FulltextSummaryCanvas> summaryCanvasMap;
         if (manifest.getSequences() != null && manifest.getSequences().length > 0) {
             // there is always only 1 sequence
             Sequence sequence = manifest.getSequences()[0];
             // Get all the available AnnoPages incl translations from the summary endpoint of Fulltext
             String fullTextSummaryUrl = generateFullTextSummaryUrl(manifest.getEuropeanaId(), fullTextApi);
-            Map<String, FulltextSummaryCanvas> summaryCanvasMap = getFullTextSummary(fullTextSummaryUrl);
+            if (USE_HTTP_CLIENT_CACHING){
+                summaryCanvasMap = cachedFullTextSummary(fullTextSummaryUrl);
+            } else {
+                summaryCanvasMap = getFullTextSummary(fullTextSummaryUrl);
+            }
             if (null != summaryCanvasMap) {
                 // loop over canvases to add full-text link(s) to all
                 for (eu.europeana.iiif.model.v2.Canvas canvas : sequence.getCanvases()) {
                     addFulltextLinkToCanvasV2(manifest.getEuropeanaId(), canvas,
-                            summaryCanvasMap.get(Integer.toString(canvas.getPageNr())));
+                                              summaryCanvasMap.get(Integer.toString(canvas.getPageNr())));
                 }
             }
         }
@@ -359,16 +511,21 @@ public class ManifestService {
      * motivation = 'painting'
      */
     private void fillInFullTextLinksV3(ManifestV3 manifest, URL fullTextApi) throws IIIFException {
+        Map<String, FulltextSummaryCanvas> summaryCanvasMap;
         eu.europeana.iiif.model.v3.Canvas[] canvases = manifest.getItems();
         if (canvases != null) {
             // Get all the available AnnoPages incl translations from the summary endpoint of Fulltext
             String fullTextSummaryUrl = generateFullTextSummaryUrl(manifest.getEuropeanaId(), fullTextApi);
-            Map<String, FulltextSummaryCanvas> summaryCanvasMap = getFullTextSummary(fullTextSummaryUrl);
+            if (USE_HTTP_CLIENT_CACHING){
+                summaryCanvasMap = cachedFullTextSummary(fullTextSummaryUrl);
+            } else {
+                summaryCanvasMap = getFullTextSummary(fullTextSummaryUrl);
+            }
             if (null != summaryCanvasMap) {
                 // loop over canvases to add full-text link(s) to all
                 for (eu.europeana.iiif.model.v3.Canvas canvas : canvases) {
                     addFulltextLinkToCanvasV3(manifest.getEuropeanaId(), canvas,
-                            summaryCanvasMap.get(Integer.toString(canvas.getPageNr())));
+                                              summaryCanvasMap.get(Integer.toString(canvas.getPageNr())));
                 }
             }
         }
@@ -418,9 +575,9 @@ public class ManifestService {
 
     @PreDestroy
     public void close() throws IOException {
-        if (this.httpClient != null) {
+        if (this.getHttpClient != null) {
             LOG.info("Closing get request http-client...");
-            this.httpClient.close();
+            this.getHttpClient.close();
         }
     }
 
