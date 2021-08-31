@@ -381,8 +381,9 @@ public class ManifestService {
         }
 
         List<AnnotationPage> summaryAnnoPages = new ArrayList<>();
-        for (String annoPageId : summaryCanvas.getAnnoPageIDs()) {
-            summaryAnnoPages.add(new AnnotationPage(annoPageId));
+        Map<String, String> annoPageIDLang = summaryCanvas.getAnnoPageIDLang();
+        for (Map.Entry<String, String> entry : annoPageIDLang.entrySet()) {
+            summaryAnnoPages.add(new AnnotationPage(entry.getKey(), entry.getValue()));
         }
         canvas.setAnnotations(summaryAnnoPages.toArray(new AnnotationPage[0]));
         for (eu.europeana.iiif.model.v3.AnnotationPage ap : canvas.getItems()){
