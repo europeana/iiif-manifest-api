@@ -55,9 +55,13 @@ import static eu.europeana.iiif.model.Definitions.getFulltextSummaryPath;
 @Service
 public class ManifestService {
 
-    private static final Logger LOG              = LogManager.getLogger(ManifestService.class);
-    private static final String APIKEY_NOT_VALID = "API key is not valid";
+    private static final Logger LOG               = LogManager.getLogger(ManifestService.class);
+    private static final String APIKEY_NOT_VALID  = "API key is not valid";
+    private static final String SUMMARY_FETCHED   = "Summary fetched in {} ms {}";
+    private static final String RECORD_FETCHED    = "Record fetched in {} ms {}";
+    private static final String NOT_USING_CACHING = "not using caching";
 
+    // set this to FALSE to disable http caching for fulltext summary and record json
     private static final boolean USE_HTTP_CLIENT_CACHING = true;
 
     private static final int MAX_TOTAL_CONNECTIONS    = 200;
@@ -171,7 +175,32 @@ public class ManifestService {
      *                       RecordRetrieveException on all other problems)
      */
     public String getRecordJson(String recordId, String wsKey) throws IIIFException {
-        return getRecordJson(recordId, wsKey, null);
+        if (USE_HTTP_CLIENT_CACHING){
+            return cachedRecordJson(recordId, wsKey, null);
+        } else {
+            return nonCachedRecordJson(recordId, wsKey, null);
+        }
+    }
+
+
+    /**
+     * Return record information in Json format from the default configured Record API
+     *
+     * @param recordId     Europeana record id in the form of "/datasetid/recordid" (so with leading slash and without trailing slash)
+     * @param wsKey        api key to send to record API
+     * @param recordApiUrl if not null we will use the provided URL as the address of the Record API instead of the default configured address
+     * @return record information in json format     *
+     * @throws IIIFException (IllegalArgumentException if a parameter has an illegal format,
+     *                       InvalidApiKeyException if the provide key is not valid,
+     *                       RecordNotFoundException if there was a 404,
+     *                       RecordRetrieveException on all other problems)
+     */
+    public String getRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
+        if (USE_HTTP_CLIENT_CACHING){
+            return cachedRecordJson(recordId, wsKey, recordApiUrl);
+        } else {
+            return nonCachedRecordJson(recordId, wsKey, recordApiUrl);
+        }
     }
 
     /**
@@ -186,7 +215,7 @@ public class ManifestService {
      *                       RecordNotFoundException if there was a 404,
      *                       RecordRetrieveException on all other problems)
      */
-    public String getRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
+    public String nonCachedRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
         String result = null;
 
         StringBuilder url;
@@ -201,30 +230,122 @@ public class ManifestService {
         url.append(recordId);
         url.append(".json?wskey=");
         url.append(wsKey);
+        String recordUrl = url.toString();
+        Instant start = Instant.now();
 
-        try {
-            String recordUrl = url.toString();
-            try (CloseableHttpResponse response = getHttpClient.execute(new HttpGet(recordUrl))) {
-                int responseCode = response.getStatusLine().getStatusCode();
-                LOG.debug("Record request: {}, status code = {}", recordId, responseCode);
-                if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
-                    throw new InvalidApiKeyException(APIKEY_NOT_VALID);
-                } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
-                    throw new RecordNotFoundException("Record with id '" + recordId + "' not found");
-                } else if (responseCode != HttpStatus.SC_OK) {
-                    LOG.error("Error retrieving record {}, reason {}", recordId, response.getStatusLine().getReasonPhrase());
-                    throw new RecordRetrieveException("Error retrieving record: " + response.getStatusLine().getReasonPhrase());
-                }
+        try (CloseableHttpResponse response = getHttpClient.execute(new HttpGet(recordUrl))) {
+            Instant finish = Instant.now();
+            LOG.info(RECORD_FETCHED,  Duration.between(start, finish).toMillis(), NOT_USING_CACHING);
 
-                HttpEntity entity = response.getEntity();
-                if (entity != null) {
-                    result = EntityUtils.toString(entity);
-                    LOG.debug("Record request: {}, response = {}", recordId, result);
-                    EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
-                } else {
-                    LOG.warn("Request entity = null");
-                }
+            int responseCode = response.getStatusLine().getStatusCode();
+
+            LOG.debug("Record request: {}, status code = {}", recordId, responseCode);
+            if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
+                throw new InvalidApiKeyException(APIKEY_NOT_VALID);
+            } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
+                throw new RecordNotFoundException("Record with id '" + recordId + "' not found");
+            } else if (responseCode != HttpStatus.SC_OK) {
+                LOG.error("Error retrieving record {}, reason {}", recordId, response.getStatusLine().getReasonPhrase());
+                throw new RecordRetrieveException("Error retrieving record: " + response.getStatusLine().getReasonPhrase());
             }
+
+            HttpEntity entity = response.getEntity();
+            if (entity != null) {
+                result = EntityUtils.toString(entity);
+                LOG.debug("Record request: {}, response = {}", recordId, result);
+                EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
+            } else {
+                LOG.warn("Request entity = null");
+            }
+
+        } catch (IOException e) {
+            throw new RecordRetrieveException("Error retrieving record", e);
+        }
+
+        return result;
+    }
+
+    /**
+     * Return record information in Json format from an instance of the Record API
+     * This method uses a caching HttpClient.
+     *
+     * @param recordId     Europeana record id in the form of "/datasetid/recordid" (so with leading slash and without trailing slash)
+     * @param wsKey        api key to send to record API
+     * @param recordApiUrl if not null we will use the provided URL as the address of the Record API instead of the default configured address
+     * @return record information in json format
+     * @throws IIIFException (IllegalArgumentException if a parameter has an illegal format,
+     *                       InvalidApiKeyException if the provide key is not valid,
+     *                       RecordNotFoundException if there was a 404,
+     *                       RecordRetrieveException on all other problems)
+     */
+    private String cachedRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
+        String result = null;
+        StringBuilder url;
+
+        if (recordApiUrl == null) {
+            url = new StringBuilder(settings.getRecordApiBaseUrl());
+        } else {
+            url = new StringBuilder(recordApiUrl.toString());
+        }
+
+        if (settings.getRecordApiPath() != null) {
+            url.append(settings.getRecordApiPath());
+        }
+
+        url.append(recordId);
+        url.append(".json?wskey=");
+        url.append(wsKey);
+
+        String recordUrl = url.toString();
+        String responseType = "";
+        Instant start = Instant.now();
+
+        try (CloseableHttpResponse response = cachingHttpClient.execute(new HttpGet(recordUrl), httpCacheContext)) {
+
+            CacheResponseStatus responseStatus = httpCacheContext.getCacheResponseStatus();
+            switch (responseStatus) {
+                case CACHE_HIT:
+                    responseType = "from manifest cache";
+                    LOG.debug("Returning Fulltext summary from manifest cache");
+                    break;
+                case CACHE_MODULE_RESPONSE:
+                    responseType = "generated by cache";
+                    LOG.debug("Fulltext summary generated by the manifest caching module");
+                    break;
+                case CACHE_MISS:
+                    responseType = "fresh from Record API";
+                    LOG.debug("Fetched record from Record API");
+                    break;
+                case VALIDATED:
+                    responseType = "from cache, after ETag check w. Record API";
+                    LOG.debug("Retrieved summary from manifest cache after validating ETag / Date_Modified with Record API");
+                    break;
+            }
+
+            Instant finish = Instant.now();
+            LOG.info(RECORD_FETCHED,  Duration.between(start, finish).toMillis(), responseType);
+
+            int responseCode = response.getStatusLine().getStatusCode();
+            LOG.debug("Record request: {}, status code = {}", recordId, responseCode);
+
+            if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
+                throw new InvalidApiKeyException(APIKEY_NOT_VALID);
+            } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
+                throw new RecordNotFoundException("Record with id '" + recordId + "' not found");
+            } else if (responseCode != HttpStatus.SC_OK) {
+                LOG.error("Error retrieving record {}, reason {}", recordId, response.getStatusLine().getReasonPhrase());
+                throw new RecordRetrieveException("Error retrieving record: " + response.getStatusLine().getReasonPhrase());
+            }
+
+            HttpEntity entity = response.getEntity();
+            if (entity != null) {
+                result = EntityUtils.toString(entity);
+                LOG.debug("Record request: {}, response = {}", recordId, result);
+                EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
+            } else {
+                LOG.warn("Request entity = null");
+            }
+
         } catch (IOException e) {
             throw new RecordRetrieveException("Error retrieving record", e);
         }
@@ -249,8 +370,6 @@ public class ManifestService {
         }
     }
 
-
-
     /**
      * Performs a GET request for a particular EuropeanaID that:
      * - replaces the 'exists' check;
@@ -262,111 +381,111 @@ public class ManifestService {
      * @throws IIIFException when there is an error retrieving the fulltext AnnoPage summary
      */
     Map<String, FulltextSummaryCanvas> getFullTextSummary(String fullTextUrl) throws IIIFException {
+        if (USE_HTTP_CLIENT_CACHING){
+            return cachedFullTextSummary(fullTextUrl);
+        } else {
+            return nonCachedFullTextSummary(fullTextUrl);
+        }
+    }
+
+    Map<String, FulltextSummaryCanvas> nonCachedFullTextSummary(String fullTextUrl) throws IIIFException {
         FulltextSummary summary = null;
-        boolean         result;
-        try {
-            try (CloseableHttpResponse response = getHttpClient.execute(new HttpGet(fullTextUrl))) {
-                int responseCode = response.getStatusLine().getStatusCode();
-                LOG.debug("Full-Text summary GET request: {}, status code = {}", fullTextUrl, responseCode);
-                if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
-                    throw new InvalidApiKeyException(APIKEY_NOT_VALID);
-                } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
-                    result = false;
-                } else { result = responseCode == HttpStatus.SC_OK; }
-                HttpEntity entity = response.getEntity();
-                if (result && entity != null) {
-                    summary = getJsonMapper().readValue(EntityUtils.toString(entity), FulltextSummary.class);
-                    EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
-                } else {
-                    LOG.warn("No response from Fulltext API received");
-                }
+        boolean         hasResult;
+        Instant start = Instant.now();
+
+        try (CloseableHttpResponse response = getHttpClient.execute(new HttpGet(fullTextUrl))) {
+            Instant finish = Instant.now();
+            LOG.info(SUMMARY_FETCHED,  Duration.between(start, finish).toMillis(), NOT_USING_CACHING);
+
+            int responseCode = response.getStatusLine().getStatusCode();
+            LOG.debug("Full-Text summary GET request: {}, status code = {}", fullTextUrl, responseCode);
+            hasResult = checkResponseCode(responseCode);
+
+            HttpEntity entity = response.getEntity();
+            if (hasResult && entity != null) {
+                summary = getJsonMapper().readValue(EntityUtils.toString(entity), FulltextSummary.class);
+                EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
+            } else {
+                LOG.warn("No response from Fulltext API received");
             }
+
         } catch (IOException e) {
             LOG.error("Error connecting to Fulltext API at {}", fullTextUrl, e);
-            result = false;
+            hasResult = false;
         }
-        if (result && null != summary) {
+
+        if (hasResult && null != summary) {
             return createSummaryCanvasMap(summary);
         } else {
             return null;
         }
     }
 
-    /**
-     * Performs a GET request for a particular EuropeanaID that:
-     * - replaces the 'exists' check;
-     * - lists all canvases found for that EuropeanaID;
-     * - lists all original and all translated AnnoPages for every canvas
-     *
-     * This method uses a caching HttpClient.
-     *
-     * @param fullTextUrl url to FullText Summary endpoint
-     * @return Map with key PageId and as value an array of AnnoPage ID strings
-     * @throws IIIFException when there is an error retrieving the fulltext AnnoPage summary
-     */
-    Map<String, FulltextSummaryCanvas> cachedFullTextSummary(String fullTextUrl) throws IIIFException {
+    private Map<String, FulltextSummaryCanvas> cachedFullTextSummary(String fullTextUrl) throws IIIFException {
 
         FulltextSummary summary = null;
-        boolean         result;
+        boolean         hasResult;
 
         Instant start = Instant.now();
         String responseType = "";
 
-        try {
-            try (CloseableHttpResponse response = cachingHttpClient.execute(new HttpGet(fullTextUrl), httpCacheContext)) {
+        try (CloseableHttpResponse response = cachingHttpClient.execute(new HttpGet(fullTextUrl), httpCacheContext)) {
 
-                CacheResponseStatus responseStatus = httpCacheContext.getCacheResponseStatus();
-                switch (responseStatus) {
-                    case CACHE_HIT:
-                        responseType = "from manifest cache";
-                        LOG.debug("Returning Fulltext summary from manifest cache");
-                        break;
-                    case CACHE_MODULE_RESPONSE:
-                        responseType = "generated by cache";
-                        LOG.debug("Fulltext summary generated by the manifest caching module");
-                        break;
-                    case CACHE_MISS:
-                        responseType = "fresh from Fulltext API";
-                        LOG.debug("Fetched Fulltext summary from Fulltext API");
-                        break;
-                    case VALIDATED:
-                        responseType = "from cache, after ETag check w. Fulltext API";
-                        LOG.debug("Retrieved summary from manifest cache after validating ETag / Date_Modified with Fulltext API");
-                        break;
-                }
-
-                int responseCode = response.getStatusLine().getStatusCode();
-                LOG.debug("Full-Text summary GET request: {}, status code = {}", fullTextUrl, responseCode);
-
-                if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
-                    throw new InvalidApiKeyException(APIKEY_NOT_VALID);
-                } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
-                    result = false;
-                } else {
-                    result = responseCode == HttpStatus.SC_OK;
-                }
-
-                HttpEntity entity = response.getEntity();
-
-                if (result && entity != null) {
-                    summary = getJsonMapper().readValue(EntityUtils.toString(entity), FulltextSummary.class);
-                    EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
-                } else {
-                    LOG.warn("No response from Fulltext API received");
-                }
+            CacheResponseStatus responseStatus = httpCacheContext.getCacheResponseStatus();
+            switch (responseStatus) {
+                case CACHE_HIT:
+                    responseType = "from manifest cache";
+                    LOG.debug("Returning Fulltext summary from manifest cache");
+                    break;
+                case CACHE_MODULE_RESPONSE:
+                    responseType = "generated by cache";
+                    LOG.debug("Fulltext summary generated by the manifest caching module");
+                    break;
+                case CACHE_MISS:
+                    responseType = "fresh from Fulltext API";
+                    LOG.debug("Fetched Fulltext summary from Fulltext API");
+                    break;
+                case VALIDATED:
+                    responseType = "from cache, after ETag check w. Fulltext API";
+                    LOG.debug("Retrieved summary from manifest cache after validating ETag / Date_Modified with Fulltext API");
+                    break;
             }
+
+            Instant finish = Instant.now();
+            LOG.info(SUMMARY_FETCHED,  Duration.between(start, finish).toMillis(), responseType);
+
+            int responseCode = response.getStatusLine().getStatusCode();
+            LOG.debug("Full-Text summary GET request: {}, status code = {}", fullTextUrl, responseCode);
+            hasResult = checkResponseCode(responseCode);
+
+            HttpEntity entity = response.getEntity();
+
+            if (hasResult && entity != null) {
+                summary = getJsonMapper().readValue(EntityUtils.toString(entity), FulltextSummary.class);
+                EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
+            } else {
+                LOG.warn("No response from Fulltext API received");
+            }
+
         } catch (IOException e) {
             LOG.error("Error connecting to Fulltext API at {}", fullTextUrl, e);
-            result = false;
+            hasResult = false;
         }
 
-        Instant finish = Instant.now();
-        LOG.info("Summary fetched in {} ms {}",  Duration.between(start, finish).toMillis(), responseType);
-
-        if (result && null != summary) {
+        if (hasResult && null != summary) {
             return createSummaryCanvasMap(summary);
         } else {
             return null;
+        }
+    }
+
+    private boolean checkResponseCode(int responseCode) throws InvalidApiKeyException {
+        if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
+            throw new InvalidApiKeyException(APIKEY_NOT_VALID);
+        } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
+            return false;
+        } else {
+            return responseCode == HttpStatus.SC_OK;
         }
     }
 
@@ -475,11 +594,7 @@ public class ManifestService {
             Sequence sequence = manifest.getSequences()[0];
             // Get all the available AnnoPages incl translations from the summary endpoint of Fulltext
             String fullTextSummaryUrl = generateFullTextSummaryUrl(manifest.getEuropeanaId(), fullTextApi);
-            if (USE_HTTP_CLIENT_CACHING){
-                summaryCanvasMap = cachedFullTextSummary(fullTextSummaryUrl);
-            } else {
-                summaryCanvasMap = getFullTextSummary(fullTextSummaryUrl);
-            }
+            summaryCanvasMap = getFullTextSummary(fullTextSummaryUrl);
             if (null != summaryCanvasMap) {
                 // loop over canvases to add full-text link(s) to all
                 for (eu.europeana.iiif.model.v2.Canvas canvas : sequence.getCanvases()) {
@@ -516,11 +631,7 @@ public class ManifestService {
         if (canvases != null) {
             // Get all the available AnnoPages incl translations from the summary endpoint of Fulltext
             String fullTextSummaryUrl = generateFullTextSummaryUrl(manifest.getEuropeanaId(), fullTextApi);
-            if (USE_HTTP_CLIENT_CACHING){
-                summaryCanvasMap = cachedFullTextSummary(fullTextSummaryUrl);
-            } else {
-                summaryCanvasMap = getFullTextSummary(fullTextSummaryUrl);
-            }
+            summaryCanvasMap = getFullTextSummary(fullTextSummaryUrl);
             if (null != summaryCanvasMap) {
                 // loop over canvases to add full-text link(s) to all
                 for (eu.europeana.iiif.model.v3.Canvas canvas : canvases) {
@@ -578,6 +689,10 @@ public class ManifestService {
         if (this.getHttpClient != null) {
             LOG.info("Closing get request http-client...");
             this.getHttpClient.close();
+        }
+        if (this.cachingHttpClient != null) {
+            LOG.info("Closing caching http-client...");
+            this.cachingHttpClient.close();
         }
     }
 
