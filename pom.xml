@@ -33,6 +33,7 @@
         <http-client.version>4.5.13</http-client.version>
         <metis.version>4</metis.version>
         <swagger.version>2.9.2</swagger.version>
+        <redis.version>2.5.5</redis.version>
 
         <!--		not used?-->
         <jackson-jsonld.version>0.1.1</jackson-jsonld.version>
@@ -152,6 +153,18 @@
             <version>${swagger.version}</version>
         </dependency>
 
+        <!-- for redis-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+            <version>${redis.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <version>${redis.version}</version>
+        </dependency>
+
         <!-- test dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -174,6 +187,11 @@
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
             <version>${jaxb-api.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+            <version>2.5.4</version>
         </dependency>
     </dependencies>
 

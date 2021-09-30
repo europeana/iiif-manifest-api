@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.cors.CorsConfiguration;
@@ -19,6 +20,7 @@ import java.util.Collections;
  * Created on 6-12-2017
  */
 @SpringBootApplication
+@EnableCaching
 @PropertySource(value = "classpath:build.properties", ignoreResourceNotFound = true)
 public class ManifestApplication extends SpringBootServletInitializer {
 
