@@ -217,7 +217,7 @@ public class ManifestServiceTest {
     @Test
     public void testFullTextSummaryExists() throws IIIFException {
         String                             url    = ms.generateFullTextSummaryUrl(EXAMPLE_FULLTEXT_ID, getFullTextApiUrl());
-        Map<String, FulltextSummaryCanvas> result = ms.nonCachedFullTextSummary(url);
+        Map<String, FulltextSummaryCanvas> result = ms.getFullTextSummary(url);
         Assert.assertEquals(1, result.keySet().size());
         Assert.assertEquals(2, result.get("1").getAnnoPageIDs().size());
         Assert.assertEquals(EXAMPLE_FULLTEXT_SUMMARY_FRAGMENT, Arrays.stream(result.get("1").getAnnoPageIDs().toArray(new String[0])).toArray()[0]);
@@ -229,7 +229,7 @@ public class ManifestServiceTest {
     @Test
     public void testFullTextSummaryNotExists() throws IIIFException {
         String                url    = ms.generateFullTextSummaryUrl(TEST_BLA, getFullTextApiUrl());
-        Map<String, FulltextSummaryCanvas> result = ms.nonCachedFullTextSummary(url);
+        Map<String, FulltextSummaryCanvas> result = ms.getFullTextSummary(url);
         assertNull(result);
     }
 
@@ -239,7 +239,7 @@ public class ManifestServiceTest {
     @Test
     public void testFullTextServerError() throws IIIFException {
         String url = ms.generateFullTextSummaryUrl(EXAMPLE_ERROR_ID, getFullTextApiUrl());
-        Map<String, FulltextSummaryCanvas> result = ms.nonCachedFullTextSummary(url);
+        Map<String, FulltextSummaryCanvas> result = ms.getFullTextSummary(url);
         assertNull(result);
     }
 
@@ -249,7 +249,7 @@ public class ManifestServiceTest {
     @Test
     public void testFullTextTimeout() throws IIIFException {
         String url = ms.generateFullTextSummaryUrl(EXAMPLE_TIMEOUT_ID, getFullTextApiUrl());
-        Map<String, FulltextSummaryCanvas> result = ms.nonCachedFullTextSummary(url);
+        Map<String, FulltextSummaryCanvas> result = ms.getFullTextSummary(url);
         assertNull(result);
     }
 
