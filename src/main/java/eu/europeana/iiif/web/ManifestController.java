@@ -49,9 +49,11 @@ public class ManifestController {
     private static final String  ACCEPT_JSONLD          = "Accept=" + MEDIA_TYPE_JSONLD;
 
     private ManifestService manifestService;
+    private CachingDemo cachingDemo;
 
-    public ManifestController(ManifestService manifestService) {
+    public ManifestController(ManifestService manifestService, CachingDemo cachingDemo) {
         this.manifestService = manifestService;
+        this.cachingDemo = cachingDemo;
     }
 
     /**
@@ -206,5 +208,26 @@ public class ManifestController {
                 headers.add(CONTENT_TYPE, MEDIA_TYPE_IIIF_JSONLD_V2);
             }
         }
+    }
+
+    @GetMapping(value = "/redis")
+    public String redisDemo(
+            @RequestParam(value = "demo") String demo) {
+        String result;
+        switch (demo) {
+            case "1":
+                result = cachingDemo.redisTest1();
+                break;
+            case "2":
+                result = cachingDemo.redisTest2();
+                break;
+            case "3":
+                result = cachingDemo.redisTest3();
+                break;
+            default:
+                result = cachingDemo.redisTest4();
+        }
+
+        return result;
     }
 }

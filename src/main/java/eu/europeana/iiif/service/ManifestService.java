@@ -216,52 +216,50 @@ public class ManifestService {
      *                       RecordRetrieveException on all other problems)
      */
     public String nonCachedRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
-        String result = null;
 
-        StringBuilder url;
-        if (recordApiUrl == null) {
-            url = new StringBuilder(settings.getRecordApiBaseUrl());
-        } else {
-            url = new StringBuilder(recordApiUrl.toString());
-        }
-        if (settings.getRecordApiPath() != null) {
-            url.append(settings.getRecordApiPath());
-        }
-        url.append(recordId);
-        url.append(".json?wskey=");
-        url.append(wsKey);
-        String recordUrl = url.toString();
+        String result = null;
+        String recordUrl = buildRequestUrl(recordId, wsKey, recordApiUrl);
         Instant start = Instant.now();
 
         try (CloseableHttpResponse response = getHttpClient.execute(new HttpGet(recordUrl))) {
-            Instant finish = Instant.now();
-            LOG.info(RECORD_FETCHED,  Duration.between(start, finish).toMillis(), NOT_USING_CACHING);
-
-            int responseCode = response.getStatusLine().getStatusCode();
-
-            LOG.debug("Record request: {}, status code = {}", recordId, responseCode);
-            if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
-                throw new InvalidApiKeyException(APIKEY_NOT_VALID);
-            } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
-                throw new RecordNotFoundException("Record with id '" + recordId + "' not found");
-            } else if (responseCode != HttpStatus.SC_OK) {
-                LOG.error("Error retrieving record {}, reason {}", recordId, response.getStatusLine().getReasonPhrase());
-                throw new RecordRetrieveException("Error retrieving record: " + response.getStatusLine().getReasonPhrase());
-            }
-
-            HttpEntity entity = response.getEntity();
-            if (entity != null) {
-                result = EntityUtils.toString(entity);
-                LOG.debug("Record request: {}, response = {}", recordId, result);
-                EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
-            } else {
-                LOG.warn("Request entity = null");
-            }
+            result = checkRecordResponseCode(recordId, result, start, response, NOT_USING_CACHING);
 
         } catch (IOException e) {
             throw new RecordRetrieveException("Error retrieving record", e);
         }
+        return result;
+    }
 
+    private String checkRecordResponseCode(
+            String recordId,
+            String result,
+            Instant start,
+            CloseableHttpResponse response,
+            String notUsingCaching) throws InvalidApiKeyException, RecordNotFoundException, RecordRetrieveException,
+                                           IOException {
+        Instant finish = Instant.now();
+        LOG.info(RECORD_FETCHED, Duration.between(start, finish).toMillis(), notUsingCaching);
+
+        int responseCode = response.getStatusLine().getStatusCode();
+
+        LOG.debug("Record request: {}, status code = {}", recordId, responseCode);
+        if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
+            throw new InvalidApiKeyException(APIKEY_NOT_VALID);
+        } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
+            throw new RecordNotFoundException("Record with id '" + recordId + "' not found");
+        } else if (responseCode != HttpStatus.SC_OK) {
+            LOG.error("Error retrieving record {}, reason {}", recordId, response.getStatusLine().getReasonPhrase());
+            throw new RecordRetrieveException("Error retrieving record: " + response.getStatusLine().getReasonPhrase());
+        }
+
+        HttpEntity entity = response.getEntity();
+        if (entity != null) {
+            result = EntityUtils.toString(entity);
+            LOG.debug("Record request: {}, response = {}", recordId, result);
+            EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
+        } else {
+            LOG.warn("Request entity = null");
+        }
         return result;
     }
 
@@ -279,24 +277,9 @@ public class ManifestService {
      *                       RecordRetrieveException on all other problems)
      */
     private String cachedRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
+
         String result = null;
-        StringBuilder url;
-
-        if (recordApiUrl == null) {
-            url = new StringBuilder(settings.getRecordApiBaseUrl());
-        } else {
-            url = new StringBuilder(recordApiUrl.toString());
-        }
-
-        if (settings.getRecordApiPath() != null) {
-            url.append(settings.getRecordApiPath());
-        }
-
-        url.append(recordId);
-        url.append(".json?wskey=");
-        url.append(wsKey);
-
-        String recordUrl = url.toString();
+        String recordUrl = buildRequestUrl(recordId, wsKey, recordApiUrl);
         String responseType = "";
         Instant start = Instant.now();
 
@@ -322,35 +305,29 @@ public class ManifestService {
                     break;
             }
 
-            Instant finish = Instant.now();
-            LOG.info(RECORD_FETCHED,  Duration.between(start, finish).toMillis(), responseType);
-
-            int responseCode = response.getStatusLine().getStatusCode();
-            LOG.debug("Record request: {}, status code = {}", recordId, responseCode);
-
-            if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
-                throw new InvalidApiKeyException(APIKEY_NOT_VALID);
-            } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
-                throw new RecordNotFoundException("Record with id '" + recordId + "' not found");
-            } else if (responseCode != HttpStatus.SC_OK) {
-                LOG.error("Error retrieving record {}, reason {}", recordId, response.getStatusLine().getReasonPhrase());
-                throw new RecordRetrieveException("Error retrieving record: " + response.getStatusLine().getReasonPhrase());
-            }
-
-            HttpEntity entity = response.getEntity();
-            if (entity != null) {
-                result = EntityUtils.toString(entity);
-                LOG.debug("Record request: {}, response = {}", recordId, result);
-                EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
-            } else {
-                LOG.warn("Request entity = null");
-            }
+            result = checkRecordResponseCode(recordId, result, start, response, responseType);
 
         } catch (IOException e) {
             throw new RecordRetrieveException("Error retrieving record", e);
         }
 
         return result;
+    }
+
+    private String buildRequestUrl(String recordId, String wsKey, URL recordApiUrl){
+        StringBuilder url;
+        if (recordApiUrl == null) {
+            url = new StringBuilder(settings.getRecordApiBaseUrl());
+        } else {
+            url = new StringBuilder(recordApiUrl.toString());
+        }
+        if (settings.getRecordApiPath() != null) {
+            url.append(settings.getRecordApiPath());
+        }
+        url.append(recordId);
+        url.append(".json?wskey=");
+        url.append(wsKey);
+        return url.toString();
     }
 
     /**

@@ -1,6 +1,10 @@
 package eu.europeana.iiif;
 
+import eu.europeana.iiif.service.CacheService;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
@@ -23,7 +27,6 @@ import java.util.Collections;
 @EnableCaching
 @PropertySource(value = "classpath:build.properties", ignoreResourceNotFound = true)
 public class ManifestApplication extends SpringBootServletInitializer {
-
 
     /**
      * Setup CORS for all requests
