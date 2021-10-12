@@ -175,11 +175,7 @@ public class ManifestService {
      *                       RecordRetrieveException on all other problems)
      */
     public String getRecordJson(String recordId, String wsKey) throws IIIFException {
-        if (USE_HTTP_CLIENT_CACHING){
-            return cachedRecordJson(recordId, wsKey, null);
-        } else {
-            return nonCachedRecordJson(recordId, wsKey, null);
-        }
+        return getRecordJson(recordId, wsKey, null);
     }
 
 
@@ -196,10 +192,11 @@ public class ManifestService {
      *                       RecordRetrieveException on all other problems)
      */
     public String getRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
+        String recordUrl = buildRecordUrl(recordId, wsKey, recordApiUrl.toString());
         if (USE_HTTP_CLIENT_CACHING){
-            return cachedRecordJson(recordId, wsKey, recordApiUrl);
+            return cachedRecordJson(recordId, recordUrl);
         } else {
-            return nonCachedRecordJson(recordId, wsKey, recordApiUrl);
+            return nonCachedRecordJson(recordId, recordUrl);
         }
     }
 
@@ -207,30 +204,15 @@ public class ManifestService {
      * Return record information in Json format from an instance of the Record API
      *
      * @param recordId     Europeana record id in the form of "/datasetid/recordid" (so with leading slash and without trailing slash)
-     * @param wsKey        api key to send to record API
-     * @param recordApiUrl if not null we will use the provided URL as the address of the Record API instead of the default configured address
+     * @param recordUrl    address of the Record API
      * @return record information in json format     *
      * @throws IIIFException (IllegalArgumentException if a parameter has an illegal format,
      *                       InvalidApiKeyException if the provide key is not valid,
      *                       RecordNotFoundException if there was a 404,
      *                       RecordRetrieveException on all other problems)
      */
-    public String nonCachedRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
+    public String nonCachedRecordJson(String recordId, String recordUrl) throws IIIFException {
         String result = null;
-
-        StringBuilder url;
-        if (recordApiUrl == null) {
-            url = new StringBuilder(settings.getRecordApiBaseUrl());
-        } else {
-            url = new StringBuilder(recordApiUrl.toString());
-        }
-        if (settings.getRecordApiPath() != null) {
-            url.append(settings.getRecordApiPath());
-        }
-        url.append(recordId);
-        url.append(".json?wskey=");
-        url.append(wsKey);
-        String recordUrl = url.toString();
         Instant start = Instant.now();
 
         try (CloseableHttpResponse response = getHttpClient.execute(new HttpGet(recordUrl))) {
@@ -270,33 +252,15 @@ public class ManifestService {
      * This method uses a caching HttpClient.
      *
      * @param recordId     Europeana record id in the form of "/datasetid/recordid" (so with leading slash and without trailing slash)
-     * @param wsKey        api key to send to record API
-     * @param recordApiUrl if not null we will use the provided URL as the address of the Record API instead of the default configured address
+     * @param recordUrl    address of the Record API
      * @return record information in json format
      * @throws IIIFException (IllegalArgumentException if a parameter has an illegal format,
      *                       InvalidApiKeyException if the provide key is not valid,
      *                       RecordNotFoundException if there was a 404,
      *                       RecordRetrieveException on all other problems)
      */
-    private String cachedRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
+    private String cachedRecordJson(String recordId, String recordUrl) throws IIIFException {
         String result = null;
-        StringBuilder url;
-
-        if (recordApiUrl == null) {
-            url = new StringBuilder(settings.getRecordApiBaseUrl());
-        } else {
-            url = new StringBuilder(recordApiUrl.toString());
-        }
-
-        if (settings.getRecordApiPath() != null) {
-            url.append(settings.getRecordApiPath());
-        }
-
-        url.append(recordId);
-        url.append(".json?wskey=");
-        url.append(wsKey);
-
-        String recordUrl = url.toString();
         String responseType = "";
         Instant start = Instant.now();
 
@@ -351,6 +315,22 @@ public class ManifestService {
         }
 
         return result;
+    }
+
+    private String buildRecordUrl(String recordId, String wsKey, String recordApiUrl){
+        StringBuilder url;
+        if (StringUtils.isBlank(recordApiUrl)) {
+            url = new StringBuilder(settings.getRecordApiBaseUrl());
+        } else {
+            url = new StringBuilder(recordApiUrl.toString());
+        }
+        if (settings.getRecordApiPath() != null) {
+            url.append(settings.getRecordApiPath());
+        }
+        url.append(recordId);
+        url.append(".json?wskey=");
+        url.append(wsKey);
+        return url.toString();
     }
 
     /**
@@ -425,7 +405,6 @@ public class ManifestService {
 
         FulltextSummary summary = null;
         boolean         hasResult;
-
         Instant start = Instant.now();
         String responseType = "";
 
