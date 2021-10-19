@@ -75,8 +75,7 @@ public class ManifestService {
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private final ManifestSettings    settings;
-    private final CloseableHttpClient getHttpClient;
-    private final CloseableHttpClient cachingHttpClient;
+    private final CloseableHttpClient httpClient;
     private final HttpCacheContext    httpCacheContext;
 
     /**
@@ -91,12 +90,12 @@ public class ManifestService {
         cm.setMaxTotal(MAX_TOTAL_CONNECTIONS);
         cm.setDefaultMaxPerRoute(DEFAULT_MAX_PER_ROUTE);
 
-        //configure for get requests to Record API
-        getHttpClient = HttpClients.custom().setConnectionManager(cm).build();
-
-        // initialise caching HttpClient for fulltext Summary
-        cachingHttpClient = getCachingClient(cm);
-        httpCacheContext  = HttpCacheContext.create();
+        if (USE_HTTP_CLIENT_CACHING) {
+            httpClient = initCachingHttpClient(cm);
+            httpCacheContext  = HttpCacheContext.create();
+        } else {
+            httpClient = initNormalHttpClient(cm);
+        }
 
         // configure jsonpath: we use jsonpath in combination with Jackson because that makes it easier to know what
         // type of objects are returned (see also https://stackoverflow.com/a/40963445)
@@ -136,13 +135,11 @@ public class ManifestService {
               .setSerializationInclusion(JsonInclude.Include.NON_ABSENT);
     }
 
-    /**
-     * Returns a CloseableHttpClient with the provided Connection manager configured to use caching.
-     *
-     * @param cm    PoolingHttpClientConnectionManager (configured in the ManifestService constructor above)
-     * @return      caching CloseableHttpClient
-     */
-    private CloseableHttpClient getCachingClient(PoolingHttpClientConnectionManager cm){
+    private CloseableHttpClient initNormalHttpClient(PoolingHttpClientConnectionManager cm){
+        return HttpClients.custom().setConnectionManager(cm).build();
+    }
+
+    private CloseableHttpClient initCachingHttpClient(PoolingHttpClientConnectionManager cm){
         CacheConfig cacheConfig = CacheConfig.custom()
                                              .setMaxCacheEntries(MAX_CACHED_ENTRIES)
                                              .setMaxObjectSize(MAX_CACHED_OBJECT_SIZE)
@@ -164,8 +161,7 @@ public class ManifestService {
     }
 
     /**
-     * Return record information in Json format from the default configured Record API
-     * This method uses a caching HttpClient when USE_HTTP_CLIENT_CACHING is TRUE, and a regular HttpClient when FALSE
+     * Return record information in Json format using the Record API base URL defined in the iiif.properties
      *
      * @param recordId Europeana record id in the form of "/datasetid/recordid" (so with leading slash and without trailing slash)
      * @param wsKey    api key to send to record API
@@ -176,17 +172,17 @@ public class ManifestService {
      *                       RecordRetrieveException on all other problems)
      */
     public String getRecordJson(String recordId, String wsKey) throws IIIFException {
-        return getRecordJson(recordId, wsKey, null);
+        String recordUrl = buildRecordUrl(recordId, wsKey, settings.getRecordApiBaseUrl());
+        return fetchRecordJson(recordId, recordUrl);
     }
 
-
     /**
-     * Return record information in Json format from the default configured Record API
-     * This method uses a caching HttpClient when USE_HTTP_CLIENT_CACHING is TRUE, and a regular HttpClient when FALSE
+     * Return record information in Json format using the provided Record API url if not null; from iiif.properties
+     * if it is null
      *
-     * @param recordId     Europeana record id in the form of "/datasetid/recordid" (so with leading slash and without trailing slash)
+     * @param recordId     Europeana record id in the form of "/datasetid/recordid" (with leading slash and without trailing slash)
      * @param wsKey        api key to send to record API
-     * @param recordApiUrl if not null we will use the provided URL as the address of the Record API instead of the default configured address
+     * @param recordApiUrl base URL of the Record API to use
      * @return record information in json format     *
      * @throws IIIFException (IllegalArgumentException if a parameter has an illegal format,
      *                       InvalidApiKeyException if the provide key is not valid,
@@ -194,8 +190,28 @@ public class ManifestService {
      *                       RecordRetrieveException on all other problems)
      */
     public String getRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
-        String recordUrl = buildRecordUrl(recordId, wsKey, recordApiUrl.toString());
+        String recordUrl;
+        if (null != recordApiUrl) {
+            recordUrl = buildRecordUrl(recordId, wsKey, recordApiUrl.toString());
+        } else {
+
+            recordUrl = buildRecordUrl(recordId, wsKey, settings.getRecordApiBaseUrl());
+        }
         return fetchRecordJson(recordId, recordUrl);
+    }
+
+    private String buildRecordUrl(String recordId, String wsKey, String recordApiUrl) throws IIIFException {
+        if (StringUtils.isBlank(recordApiUrl)){
+            throw new IIIFException("Record API base url should not be empty");
+        }
+        StringBuilder url = new StringBuilder(recordApiUrl);
+        if (settings.getRecordApiPath() != null) {
+            url.append(settings.getRecordApiPath());
+        }
+        url.append(recordId);
+        url.append(".json?wskey=");
+        url.append(wsKey);
+        return url.toString();
     }
 
     private String fetchRecordJson(String recordId, String recordUrl) throws IIIFException {
@@ -205,7 +221,7 @@ public class ManifestService {
         Instant start       = Instant.now();
 
         if (USE_HTTP_CLIENT_CACHING){
-            try (CloseableHttpResponse response = cachingHttpClient.execute(new HttpGet(recordUrl), httpCacheContext)) {
+            try (CloseableHttpResponse response = httpClient.execute(new HttpGet(recordUrl), httpCacheContext)) {
                 Instant finish = Instant.now();
 
                 CacheResponseStatus responseStatus = httpCacheContext.getCacheResponseStatus();
@@ -237,7 +253,7 @@ public class ManifestService {
             }
 
         } else {
-            try (CloseableHttpResponse response = getHttpClient.execute(new HttpGet(recordUrl))) {
+            try (CloseableHttpResponse response = httpClient.execute(new HttpGet(recordUrl))) {
                 Instant finish = Instant.now();
                 LOG.info(RECORD_FETCHED,  Duration.between(start, finish).toMillis(), NOT_USING_CACHING);
                 handleResponseCode(recordId,
@@ -276,22 +292,6 @@ public class ManifestService {
         return result;
     }
 
-    private String buildRecordUrl(String recordId, String wsKey, String recordApiUrl){
-        StringBuilder url;
-        if (StringUtils.isBlank(recordApiUrl)) {
-            url = new StringBuilder(settings.getRecordApiBaseUrl());
-        } else {
-            url = new StringBuilder(recordApiUrl.toString());
-        }
-        if (settings.getRecordApiPath() != null) {
-            url.append(settings.getRecordApiPath());
-        }
-        url.append(recordId);
-        url.append(".json?wskey=");
-        url.append(wsKey);
-        return url.toString();
-    }
-
     /**
      * Generates a url to a full text resource
      *
@@ -323,7 +323,7 @@ public class ManifestService {
         String responseType = "";
 
         if (USE_HTTP_CLIENT_CACHING){
-            try (CloseableHttpResponse response = cachingHttpClient.execute(new HttpGet(fullTextUrl), httpCacheContext)) {
+            try (CloseableHttpResponse response = httpClient.execute(new HttpGet(fullTextUrl), httpCacheContext)) {
                 CacheResponseStatus responseStatus = httpCacheContext.getCacheResponseStatus();
                 switch (responseStatus) {
                     case CACHE_HIT:
@@ -352,7 +352,7 @@ public class ManifestService {
             }
 
         } else {
-            try (CloseableHttpResponse response = getHttpClient.execute(new HttpGet(fullTextUrl))) {
+            try (CloseableHttpResponse response = httpClient.execute(new HttpGet(fullTextUrl))) {
                 Instant finish = Instant.now();
                 LOG.info(SUMMARY_FETCHED,  Duration.between(start, finish).toMillis(), NOT_USING_CACHING);
                 summary = handleSummaryResponse(response, fullTextUrl);
@@ -594,13 +594,9 @@ public class ManifestService {
 
     @PreDestroy
     public void close() throws IOException {
-        if (this.getHttpClient != null) {
+        if (this.httpClient != null) {
             LOG.info("Closing get request http-client...");
-            this.getHttpClient.close();
-        }
-        if (this.cachingHttpClient != null) {
-            LOG.info("Closing caching http-client...");
-            this.cachingHttpClient.close();
+            this.httpClient.close();
         }
     }
 
