@@ -62,7 +62,7 @@ public class ManifestService {
     private static final String NOT_USING_CACHING = "not using caching";
 
     // set this to FALSE to disable http caching for fulltext summary and record json
-    private static final boolean USE_HTTP_CLIENT_CACHING = true;
+    private static final boolean USE_HTTP_CLIENT_CACHING = false;
 
     private static final int MAX_TOTAL_CONNECTIONS    = 200;
     private static final int DEFAULT_MAX_PER_ROUTE    = 100;
@@ -76,7 +76,7 @@ public class ManifestService {
 
     private final ManifestSettings    settings;
     private final CloseableHttpClient httpClient;
-    private final HttpCacheContext    httpCacheContext;
+    private HttpCacheContext    httpCacheContext = null;
 
     /**
      * Creates an instance of the ManifestService bean with provided settings
