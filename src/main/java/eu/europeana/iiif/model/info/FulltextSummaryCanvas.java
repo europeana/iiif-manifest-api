@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.europeana.iiif.model.v3.JsonLdIdType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -75,5 +77,13 @@ public class FulltextSummaryCanvas extends JsonLdIdType {
             annoPageIDs.add(sap.getId());
         }
         return annoPageIDs;
+    }
+
+    public Map<String, String> getAnnoPageIDLang(){
+        Map<String, String> annoPageLangs  = new HashMap<>();
+        for (FulltextSummaryAnnoPage sap : annotations) {
+            annoPageLangs.put(sap.getId(), sap.getLanguage());
+        }
+        return annoPageLangs;
     }
 }
