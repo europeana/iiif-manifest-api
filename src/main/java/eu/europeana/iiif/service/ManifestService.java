@@ -22,10 +22,15 @@ import ioinformarics.oss.jackson.module.jsonld.JsonldModule;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.cache.CacheResponseStatus;
+import org.apache.http.client.cache.HttpCacheContext;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.cache.CacheConfig;
+import org.apache.http.impl.client.cache.CachingHttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
@@ -35,6 +40,8 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.net.URL;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 
 import static eu.europeana.iiif.model.Definitions.getFulltextSummaryPath;
@@ -48,26 +55,45 @@ import static eu.europeana.iiif.model.Definitions.getFulltextSummaryPath;
 @Service
 public class ManifestService {
 
-    private static final Logger LOG              = LogManager.getLogger(ManifestService.class);
-    private static final String APIKEY_NOT_VALID = "API key is not valid";
+    private static final Logger LOG               = LogManager.getLogger(ManifestService.class);
+    private static final String APIKEY_NOT_VALID  = "API key is not valid";
+    private static final String ITEM_FETCHED = "{} fetched in {} ms {}";
+
+    // set this to FALSE to disable http caching for fulltext summary and record json
+    private static final boolean USE_HTTP_CLIENT_CACHING = false;
+
+    private static final int MAX_TOTAL_CONNECTIONS    = 200;
+    private static final int DEFAULT_MAX_PER_ROUTE    = 100;
+    private static final int MAX_CACHED_ENTRIES       = 1000;
+    private static final int MAX_CACHED_OBJECT_SIZE   = 65536;
+    private static final int FULLTEXT_CONNECT_TIMEOUT = 30000;
+    private static final int FULLTEXT_SOCKET_TIMEOUT  = 30000;
 
     // create a single objectMapper for efficiency purposes (see https://github.com/FasterXML/jackson-docs/wiki/Presentation:-Jackson-Performance)
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     private final ManifestSettings    settings;
     private final CloseableHttpClient httpClient;
+    private HttpCacheContext    httpCacheContext = null;
 
-
+    /**
+     * Creates an instance of the ManifestService bean with provided settings
+     * @param settings read from properties file
+     */
     public ManifestService(ManifestSettings settings) {
         this.settings = settings;
 
         // configure http client
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
-        cm.setMaxTotal(200);
-        cm.setDefaultMaxPerRoute(100);
+        cm.setMaxTotal(MAX_TOTAL_CONNECTIONS);
+        cm.setDefaultMaxPerRoute(DEFAULT_MAX_PER_ROUTE);
 
-        //configure for get requests to Record API
-        httpClient = HttpClients.custom().setConnectionManager(cm).build();
+        if (USE_HTTP_CLIENT_CACHING) {
+            httpClient = initCachingHttpClient(cm);
+            httpCacheContext  = HttpCacheContext.create();
+        } else {
+            httpClient = initNormalHttpClient(cm);
+        }
 
         // configure jsonpath: we use jsonpath in combination with Jackson because that makes it easier to know what
         // type of objects are returned (see also https://stackoverflow.com/a/40963445)
@@ -107,82 +133,148 @@ public class ManifestService {
               .setSerializationInclusion(JsonInclude.Include.NON_ABSENT);
     }
 
+    private CloseableHttpClient initNormalHttpClient(PoolingHttpClientConnectionManager cm){
+        return HttpClients.custom().setConnectionManager(cm).build();
+    }
+
+    private CloseableHttpClient initCachingHttpClient(PoolingHttpClientConnectionManager cm){
+        CacheConfig cacheConfig = CacheConfig.custom()
+                                             .setMaxCacheEntries(MAX_CACHED_ENTRIES)
+                                             .setMaxObjectSize(MAX_CACHED_OBJECT_SIZE)
+                                             .build();
+
+        RequestConfig requestConfig = RequestConfig.custom()
+                                                   .setConnectTimeout(FULLTEXT_CONNECT_TIMEOUT)
+                                                   .setSocketTimeout(FULLTEXT_SOCKET_TIMEOUT)
+                                                   .build();
+
+        return CachingHttpClients.custom().setCacheConfig(cacheConfig)
+                                 .setDefaultRequestConfig(requestConfig)
+                                 .setConnectionManager(cm)
+                                 .build();
+    }
+
     protected ObjectMapper getJsonMapper() {
         return mapper;
     }
 
     /**
-     * Return record information in Json format from the default configured Record API
+     * Return record information in Json format using the Record API base URL defined in the iiif.properties
      *
      * @param recordId Europeana record id in the form of "/datasetid/recordid" (so with leading slash and without trailing slash)
      * @param wsKey    api key to send to record API
      * @return record information in json format
-     * @throws IIIFException (
-     *                       IllegalArgumentException if a parameter has an illegal format,
+     * @throws IIIFException (IllegalArgumentException if a parameter has an illegal format,
      *                       InvalidApiKeyException if the provide key is not valid,
      *                       RecordNotFoundException if there was a 404,
      *                       RecordRetrieveException on all other problems)
      */
     public String getRecordJson(String recordId, String wsKey) throws IIIFException {
-        return getRecordJson(recordId, wsKey, null);
+        String recordUrl = buildRecordUrl(recordId, wsKey, settings.getRecordApiBaseUrl());
+        return fetchRecordJson(recordId, recordUrl);
     }
 
     /**
-     * Return record information in Json format from an instance of the Record API
+     * Return record information in Json format using the provided Record API url if not null; from iiif.properties
+     * if it is null
      *
-     * @param recordId     Europeana record id in the form of "/datasetid/recordid" (so with leading slash and without trailing slash)
+     * @param recordId     Europeana record id in the form of "/datasetid/recordid" (with leading slash and without trailing slash)
      * @param wsKey        api key to send to record API
-     * @param recordApiUrl if not null we will use the provided URL as the address of the Record API instead of the default configured address
+     * @param recordApiUrl base URL of the Record API to use
      * @return record information in json format     *
-     * @throws IIIFException (
-     *                       IllegalArgumentException if a parameter has an illegal format,
+     * @throws IIIFException (IllegalArgumentException if a parameter has an illegal format,
      *                       InvalidApiKeyException if the provide key is not valid,
      *                       RecordNotFoundException if there was a 404,
      *                       RecordRetrieveException on all other problems)
      */
     public String getRecordJson(String recordId, String wsKey, URL recordApiUrl) throws IIIFException {
-        String result = null;
-
-        StringBuilder url;
-        if (recordApiUrl == null) {
-            url = new StringBuilder(settings.getRecordApiBaseUrl());
+        String recordUrl;
+        if (null != recordApiUrl) {
+            recordUrl = buildRecordUrl(recordId, wsKey, recordApiUrl.toString());
         } else {
-            url = new StringBuilder(recordApiUrl.toString());
+
+            recordUrl = buildRecordUrl(recordId, wsKey, settings.getRecordApiBaseUrl());
         }
+        return fetchRecordJson(recordId, recordUrl);
+    }
+
+    private String buildRecordUrl(String recordId, String wsKey, String recordApiUrl) throws IIIFException {
+        if (StringUtils.isBlank(recordApiUrl)){
+            throw new IIIFException("Record API base url should not be empty");
+        }
+        StringBuilder url = new StringBuilder(recordApiUrl);
         if (settings.getRecordApiPath() != null) {
             url.append(settings.getRecordApiPath());
         }
         url.append(recordId);
         url.append(".json?wskey=");
         url.append(wsKey);
+        return url.toString();
+    }
 
-        try {
-            String recordUrl = url.toString();
-            try (CloseableHttpResponse response = httpClient.execute(new HttpGet(recordUrl))) {
-                int responseCode = response.getStatusLine().getStatusCode();
-                LOG.debug("Record request: {}, status code = {}", recordId, responseCode);
-                if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
-                    throw new InvalidApiKeyException(APIKEY_NOT_VALID);
-                } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
-                    throw new RecordNotFoundException("Record with id '" + recordId + "' not found");
-                } else if (responseCode != HttpStatus.SC_OK) {
-                    LOG.error("Error retrieving record {}, reason {}", recordId, response.getStatusLine().getReasonPhrase());
-                    throw new RecordRetrieveException("Error retrieving record: " + response.getStatusLine().getReasonPhrase());
-                }
+    private String fetchRecordJson(String recordId, String recordUrl) throws IIIFException {
+        String result;
+        Instant start = Instant.now();
+        try (CloseableHttpResponse response = httpClient.execute(new HttpGet(recordUrl), httpCacheContext)) {
+            Instant finish = Instant.now();
 
-                HttpEntity entity = response.getEntity();
-                if (entity != null) {
-                    result = EntityUtils.toString(entity);
-                    LOG.debug("Record request: {}, response = {}", recordId, result);
-                    EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
-                } else {
-                    LOG.warn("Request entity = null");
-                }
-            }
+            logCaching("Record", start, finish, (httpCacheContext == null ? null : httpCacheContext.getCacheResponseStatus()));
+            handleResponseCode(recordId,
+                               response.getStatusLine().getStatusCode(),
+                               response.getStatusLine().getReasonPhrase());
+            result = consumeEntity(response.getEntity(), recordId);
         } catch (IOException e) {
             throw new RecordRetrieveException("Error retrieving record", e);
         }
+        return result;
+    }
 
+    private void logCaching(String type, Instant start, Instant finish, CacheResponseStatus responseStatus) {
+        String responseType = "";
+        if (USE_HTTP_CLIENT_CACHING) {
+            switch (responseStatus) {
+                case CACHE_HIT:
+                    responseType = "cache hit (no request sent)";
+                    break;
+                case CACHE_MODULE_RESPONSE:
+                    responseType = "cache module response (response generated directly by caching module)";
+                    break;
+                case CACHE_MISS:
+                    responseType = "cache miss (response from upstream server)";
+                    break;
+                case VALIDATED:
+                    responseType = "validated (response generated after validating with origin server)";
+                    break;
+            }
+        } else {
+            responseType = "not using caching (disabled)";
+        }
+        LOG.debug(ITEM_FETCHED, type, Duration.between(start, finish).toMillis(), responseType);
+
+    }
+
+    private void handleResponseCode(String recordId, int responseCode, String reasonPhrase) throws IIIFException {
+        LOG.debug("Record request {}, status code = {}", recordId, responseCode);
+
+        if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
+            throw new InvalidApiKeyException(APIKEY_NOT_VALID);
+        } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
+            throw new RecordNotFoundException("Record with id '" + recordId + "' not found");
+        } else if (responseCode != HttpStatus.SC_OK) {
+            LOG.error("Error retrieving record {}, reason {}", recordId, reasonPhrase);
+            throw new RecordRetrieveException("Error retrieving record: " + reasonPhrase);
+        }
+    }
+
+    private String consumeEntity(HttpEntity entity, String recordId) throws IOException {
+        String result = null;
+        if (entity != null) {
+            result = EntityUtils.toString(entity);
+            LOG.trace("Record request {}, response = {}", recordId, result);
+            EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
+        } else {
+            LOG.warn("Request entity = null");
+        }
         return result;
     }
 
@@ -192,14 +284,10 @@ public class ManifestService {
      * @param fullTextApiUrl optional, if not specified then the default Full-Text API specified in .properties is used
      */
     String generateFullTextSummaryUrl(String europeanaId, URL fullTextApiUrl) {
-        return fullTextBaseUrl(fullTextApiUrl) + getFulltextSummaryPath(europeanaId);
-    }
-
-    private String fullTextBaseUrl(URL fullTextApiUrl) {
         if (fullTextApiUrl == null) {
-            return settings.getFullTextApiBaseUrl();
+            return settings.getFullTextApiBaseUrl() + getFulltextSummaryPath(europeanaId);
         } else {
-            return fullTextApiUrl.toString();
+            return fullTextApiUrl + getFulltextSummaryPath(europeanaId);
         }
     }
 
@@ -208,41 +296,59 @@ public class ManifestService {
      * - replaces the 'exists' check;
      * - lists all canvases found for that EuropeanaID;
      * - lists all original and all translated AnnoPages for every canvas
+     * It uses a CachingHTTPClient if USE_HTTP_CLIENT_CACHING = TRUE; a non-caching client when FALSE
      *
      * @param fullTextUrl url to FullText Summary endpoint
      * @return Map with key PageId and as value an array of AnnoPage ID strings
      * @throws IIIFException when there is an error retrieving the fulltext AnnoPage summary
      */
     Map<String, FulltextSummaryCanvas> getFullTextSummary(String fullTextUrl) throws IIIFException {
+
         FulltextSummary summary = null;
-        boolean         result;
-        try {
-            try (CloseableHttpResponse response = httpClient.execute(new HttpGet(fullTextUrl))) {
-                int responseCode = response.getStatusLine().getStatusCode();
-                LOG.debug("Full-Text summary GET request: {}, status code = {}", fullTextUrl, responseCode);
-                if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
-                    throw new InvalidApiKeyException(APIKEY_NOT_VALID);
-                } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
-                    result = false;
-                } else {
-                    result = responseCode == HttpStatus.SC_OK;
-                }
-                HttpEntity entity = response.getEntity();
-                if (result && entity != null) {
-                    summary = getJsonMapper().readValue(EntityUtils.toString(entity), FulltextSummary.class);
-                    EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
-                } else {
-                    LOG.warn("No response from Fulltext API received");
-                }
-            }
+        Instant start = Instant.now();
+
+        try (CloseableHttpResponse response = httpClient.execute(new HttpGet(fullTextUrl), httpCacheContext)) {
+            Instant finish = Instant.now();
+            logCaching("Fulltext", start, finish, httpCacheContext.getCacheResponseStatus());
+            summary = handleSummaryResponse(response, fullTextUrl);
         } catch (IOException e) {
             LOG.error("Error connecting to Fulltext API at {}", fullTextUrl, e);
-            result = false;
         }
-        if (result && null != summary) {
+
+        if (null != summary) {
             return createSummaryCanvasMap(summary);
         } else {
             return null;
+        }
+    }
+
+    private FulltextSummary handleSummaryResponse(CloseableHttpResponse response, String fullTextUrl) throws IIIFException, IOException {
+        boolean hasResult;
+        FulltextSummary summary = null;
+        int responseCode        = response.getStatusLine().getStatusCode();
+        LOG.debug("Fulltext request {}, status code = {}", fullTextUrl, responseCode);
+
+        hasResult = checkResponseCode(responseCode);
+
+        HttpEntity entity = response.getEntity();
+
+        if (hasResult && entity != null) {
+            summary = getJsonMapper().readValue(EntityUtils.toString(entity), FulltextSummary.class);
+            EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
+            LOG.trace("Fulltext request {}, response = {}", fullTextUrl, summary);
+        } else {
+            LOG.warn("No response from Fulltext API received");
+        }
+        return summary;
+    }
+
+    private boolean checkResponseCode(int responseCode) throws InvalidApiKeyException {
+        if (responseCode == HttpStatus.SC_UNAUTHORIZED) {
+            throw new InvalidApiKeyException(APIKEY_NOT_VALID);
+        } else if (responseCode == HttpStatus.SC_NOT_FOUND) {
+            return false;
+        } else {
+            return responseCode == HttpStatus.SC_OK;
         }
     }
 
@@ -258,24 +364,36 @@ public class ManifestService {
      * Generates a manifest object for IIIF v2 filled with data that is extracted from the provided JSON
      *
      * @param json        record data in JSON format
-     * @param addFullText if true then for each canvas we will check if a full text exists and add the link to it's
-     *                    annotation page
-     * @param fullTextApi optional, if provided this url will be used to check if a full text is available or not
      * @return Manifest v2 object
      */
-    public ManifestV2 generateManifestV2(String json, boolean addFullText, URL fullTextApi) {
+    public ManifestV2 generateManifestV2(String json) {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
         ManifestV2 result = EdmManifestMappingV2.getManifestV2(document);
 
-        if (addFullText) {
-            try {
-                fillInFullTextLinksV2(result, fullTextApi);
-            } catch (IIIFException ie) {
-                LOG.error("Error adding full text links", ie);
-            }
-        } else {
-            LOG.debug("Skipping full text link generation");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Generated in {} ms", System.currentTimeMillis() - start);
+        }
+        return result;
+    }
+
+    /**
+     * Generates a manifest object for IIIF v2 filled with data that is extracted from the provided JSON.
+     * It checks for each canvas if a full text exists; and if so, adds the link to its annotation page
+     *
+     * @param json        record data in JSON format
+     * @param fullTextApi optional, if provided this url will be used to check if a full text is available or not
+     * @return Manifest v2 object
+     */
+    public ManifestV2 generateManifestV2(String json, URL fullTextApi) {
+        long start = System.currentTimeMillis();
+        Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
+        ManifestV2 result = EdmManifestMappingV2.getManifestV2(document);
+
+        try {
+            fillInFullTextLinksV2(result, fullTextApi);
+        } catch (IIIFException ie) {
+            LOG.error("Error adding full text links", ie);
         }
 
         if (LOG.isDebugEnabled()) {
@@ -288,24 +406,35 @@ public class ManifestService {
      * Generates a manifest object for IIIF v3 filled with data that is extracted from the provided JSON
      *
      * @param json        record data in JSON format
-     * @param addFullText if true then for each canvas we will check if a full text exists and add the link to it's
-     *                    annotation page
+     * @return Manifest v3 object
+     */
+    public ManifestV3 generateManifestV3(String json) {
+        long start = System.currentTimeMillis();
+        Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
+        ManifestV3 result = EdmManifestMappingV3.getManifestV3(document);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Generated in {} ms ", System.currentTimeMillis() - start);
+        }
+        return result;
+    }
+
+    /**
+     * Generates a manifest object for IIIF v3 filled with data that is extracted from the provided JSON
+     * It checks for each canvas if a full text exists; and if so, adds the link to its annotation page
+     *
+     * @param json        record data in JSON format
      * @param fullTextApi optional, if provided this url will be used to check if a full text is available or not
      * @return Manifest v3 object
      */
-    public ManifestV3 generateManifestV3(String json, boolean addFullText, URL fullTextApi) {
+    public ManifestV3 generateManifestV3(String json, URL fullTextApi) {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
         ManifestV3 result = EdmManifestMappingV3.getManifestV3(document);
 
-        if (addFullText) {
-            try {
-                fillInFullTextLinksV3(result, fullTextApi);
-            } catch (IIIFException ie) {
-                LOG.error("Error adding full text links", ie);
-            }
-        } else {
-            LOG.debug("Skipping full text link generation");
+        try {
+            fillInFullTextLinksV3(result, fullTextApi);
+        } catch (IIIFException ie) {
+            LOG.error("Error adding full text links", ie);
         }
 
         if (LOG.isDebugEnabled()) {
@@ -322,19 +451,22 @@ public class ManifestService {
      *
      */
     private void fillInFullTextLinksV2(ManifestV2 manifest, URL fullTextApi) throws IIIFException {
+        Map<String, FulltextSummaryCanvas> summaryCanvasMap;
         if (manifest.getSequences() != null && manifest.getSequences().length > 0) {
             // there is always only 1 sequence
             Sequence sequence = manifest.getSequences()[0];
             // Get all the available AnnoPages incl translations from the summary endpoint of Fulltext
             String fullTextSummaryUrl = generateFullTextSummaryUrl(manifest.getEuropeanaId(), fullTextApi);
-            Map<String, FulltextSummaryCanvas> summaryCanvasMap = getFullTextSummary(fullTextSummaryUrl);
+            summaryCanvasMap = getFullTextSummary(fullTextSummaryUrl);
             if (null != summaryCanvasMap) {
                 // loop over canvases to add full-text link(s) to all
                 for (eu.europeana.iiif.model.v2.Canvas canvas : sequence.getCanvases()) {
                     addFulltextLinkToCanvasV2(manifest.getEuropeanaId(), canvas,
-                            summaryCanvasMap.get(Integer.toString(canvas.getPageNr())));
+                                              summaryCanvasMap.get(Integer.toString(canvas.getPageNr())));
                 }
             }
+        } else {
+            LOG.debug("Not checking for fulltext because record doesn't have any sequences");
         }
     }
 
@@ -359,18 +491,21 @@ public class ManifestService {
      * motivation = 'painting'
      */
     private void fillInFullTextLinksV3(ManifestV3 manifest, URL fullTextApi) throws IIIFException {
+        Map<String, FulltextSummaryCanvas> summaryCanvasMap;
         eu.europeana.iiif.model.v3.Canvas[] canvases = manifest.getItems();
         if (canvases != null) {
             // Get all the available AnnoPages incl translations from the summary endpoint of Fulltext
             String fullTextSummaryUrl = generateFullTextSummaryUrl(manifest.getEuropeanaId(), fullTextApi);
-            Map<String, FulltextSummaryCanvas> summaryCanvasMap = getFullTextSummary(fullTextSummaryUrl);
+            summaryCanvasMap = getFullTextSummary(fullTextSummaryUrl);
             if (null != summaryCanvasMap) {
                 // loop over canvases to add full-text link(s) to all
                 for (eu.europeana.iiif.model.v3.Canvas canvas : canvases) {
                     addFulltextLinkToCanvasV3(manifest.getEuropeanaId(), canvas,
-                            summaryCanvasMap.get(Integer.toString(canvas.getPageNr())));
+                                              summaryCanvasMap.get(Integer.toString(canvas.getPageNr())));
                 }
             }
+        } else {
+            LOG.debug("Not checking for fulltext because record doesn't have any canvases");
         }
     }
 

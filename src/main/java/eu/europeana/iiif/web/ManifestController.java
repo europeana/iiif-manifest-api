@@ -106,7 +106,7 @@ public class ManifestController {
             URL fullTextApi,
             boolean isJson,
             HttpServletRequest request
-    ) throws IIIFException {
+                                                ) throws IIIFException {
         String id = "/" + collectionId + "/" + recordId;
         ValidateUtils.validateWskeyFormat(wskey);
         ValidateUtils.validateRecordIdFormat(id);
@@ -139,9 +139,17 @@ public class ManifestController {
 
         Object manifest;
         if ("3".equalsIgnoreCase(iiifVersion)) {
-            manifest = manifestService.generateManifestV3(json, addFullText, fullTextApi);
+            if (addFullText){
+                manifest = manifestService.generateManifestV3(json, fullTextApi);
+            } else {
+                manifest = manifestService.generateManifestV3(json);
+            }
         } else {
-            manifest = manifestService.generateManifestV2(json, addFullText, fullTextApi); // fallback option
+            if (addFullText){
+                manifest = manifestService.generateManifestV2(json, fullTextApi); // fallback option
+            } else {
+                manifest = manifestService.generateManifestV2(json); // fallback option
+            }
         }
         addContentTypeToResponseHeader(headers, iiifVersion, isJson);
         return new ResponseEntity<>(manifestService.serializeManifest(manifest), headers, HttpStatus.OK);
@@ -167,9 +175,9 @@ public class ManifestController {
     private boolean isAcceptHeaderOK(HttpServletRequest request) {
         String accept = request.getHeader(ACCEPT_HEADER);
         return (StringUtils.isBlank(accept)) ||
-                (StringUtils.containsIgnoreCase(accept, "*/*")) ||
-                (StringUtils.containsIgnoreCase(accept, "application/json")) ||
-                (StringUtils.containsIgnoreCase(accept, "application/ld+json"));
+               (StringUtils.containsIgnoreCase(accept, "*/*")) ||
+               (StringUtils.containsIgnoreCase(accept, "application/json")) ||
+               (StringUtils.containsIgnoreCase(accept, "application/ld+json"));
     }
 
     private String generateETag(String recordId, ZonedDateTime recordUpdated, String iiifVersion) {
