@@ -309,7 +309,7 @@ public class ManifestService {
 
         try (CloseableHttpResponse response = httpClient.execute(new HttpGet(fullTextUrl), httpCacheContext)) {
             Instant finish = Instant.now();
-            logCaching("Fulltext", start, finish, httpCacheContext.getCacheResponseStatus());
+            logCaching("Fulltext", start, finish, (httpCacheContext == null ? null : httpCacheContext.getCacheResponseStatus()));
             summary = handleSummaryResponse(response, fullTextUrl);
         } catch (IOException e) {
             LOG.error("Error connecting to Fulltext API at {}", fullTextUrl, e);
