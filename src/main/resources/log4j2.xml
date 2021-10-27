@@ -17,7 +17,7 @@
         <Logger name="eu.europeana.iiif" level="INFO"/>
 
         <!-- To see caching at work, set below loggers to DEBUG -->
-        <Logger name="eu.europeana.iiif.service.ManifestService" level="INFO"/>
-        <Logger name="eu.europeana.iiif.web.ManifestController" level="INFO"/>
+        <Logger name="eu.europeana.iiif.service.ManifestService" level="DEBUG"/>
+        <Logger name="eu.europeana.iiif.web.ManifestController" level="DEBUG"/>
     </Loggers>
 </Configuration>

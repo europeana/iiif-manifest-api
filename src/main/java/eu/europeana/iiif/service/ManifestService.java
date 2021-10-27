@@ -60,7 +60,7 @@ public class ManifestService {
     private static final String ITEM_FETCHED = "{} fetched in {} ms {}";
 
     // set this to FALSE to disable http caching for fulltext summary and record json
-    private static final boolean USE_HTTP_CLIENT_CACHING = false;
+    private static final boolean USE_HTTP_CLIENT_CACHING = true;
 
     private static final int MAX_TOTAL_CONNECTIONS    = 200;
     private static final int DEFAULT_MAX_PER_ROUTE    = 100;
