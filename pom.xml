@@ -24,28 +24,20 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
+        <metis.version>4</metis.version>
+
         <spring-boot.version>2.1.4.RELEASE</spring-boot.version>
-        <jackson-core.version>2.9.4</jackson-core.version>
+        <jackson-core.version>2.13.1</jackson-core.version>
         <jsonpath.version>2.4.0</jsonpath.version>
-        <mockito.version>2.15.0</mockito.version>
-        <wiremock-standalone.version>2.18.0</wiremock-standalone.version>
         <jaxb-api.version>2.3.1</jaxb-api.version>
         <http-client.version>4.5.13</http-client.version>
-        <metis.version>4</metis.version>
+        <log4j2.version>2.17.0</log4j2.version>
+        <commons.lang3.version>3.12.0</commons.lang3.version>
         <swagger.version>2.9.2</swagger.version>
 
-        <!--		not used?-->
-        <jackson-jsonld.version>0.1.1</jackson-jsonld.version>
+        <mockito.version>2.15.0</mockito.version>
+        <wiremock-standalone.version>2.18.0</wiremock-standalone.version>
 
-<!--        tried updating, but too many $&%# dependency issues for now -->
-        <!--		<spring-boot.version>2.4.4</spring-boot.version>-->
-        <!--		<jackson.version>2.11.0</jackson.version>-->
-        <!--		<jackson-core.version>2.12.3</jackson-core.version>-->
-        <!--		<jsonpath.version>2.5.0</jsonpath.version>-->
-        <!--		<http-client.version>4.5.4</http-client.version>-->
-        <!--		<mockito.version>3.9.0</mockito.version>-->
-        <!--		<wiremock-standalone.version>2.27.2</wiremock-standalone.version>-->
-<!--        <swagger.version>3.0.0</swagger.version>-->
     </properties>
 
     <dependencyManagement>
@@ -82,12 +74,34 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-log4j2</artifactId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
+            <artifactId>spring-boot-starter-log4j2</artifactId>
         </dependency>
+        <!-- All log4j components specifically added to override spring-boot-starter-log4j2 -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-jul</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+
 
         <!-- for retrieving record data -->
         <dependency>
@@ -128,11 +142,33 @@
             <artifactId>jackson-core</artifactId>
             <version>${jackson-core.version}</version>
         </dependency>
-        <!-- see https://github.com/io-informatics/jackson-jsonld -->
+        <!-- https://mvnrepository.com/artifact/com.io-informatics.oss/jackson-jsonld -->
         <dependency>
             <groupId>com.io-informatics.oss</groupId>
             <artifactId>jackson-jsonld</artifactId>
-            <version>${jackson-jsonld.version}</version>
+            <version>0.1.1</version>
+            <exclusions>
+                <!-- force jackson-jsonld to use newer Jackson version-->
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-annotations</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- StringUtils -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons.lang3.version}</version>
         </dependency>
 
         <dependency>
@@ -181,7 +217,26 @@
         <!-- set fixed name for easy deployment -->
         <finalName>${project.artifactId}</finalName>
 
+
         <plugins>
+            <plugin>
+                <!-- This will be active when running the verify or install goal
+                     To skip (e.g. during debugging) use 'mvn clean package')-->
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>6.5.0</version>
+                <configuration>
+                    <failBuildOnCVSS>8</failBuildOnCVSS>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
