@@ -31,7 +31,7 @@
         <jsonpath.version>2.4.0</jsonpath.version>
         <jaxb-api.version>2.3.1</jaxb-api.version>
         <http-client.version>4.5.13</http-client.version>
-        <log4j2.version>2.17.0</log4j2.version>
+        <log4j2.version>2.17.1</log4j2.version>
         <commons.lang3.version>3.12.0</commons.lang3.version>
         <swagger.version>2.9.2</swagger.version>
 
