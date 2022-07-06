@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.TestPropertySource;
@@ -21,6 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * JUnit test to check if Swagger is setup fine
  */
 @RunWith(SpringJUnit4ClassRunner.class)
+//@SpringBootTest(classes = SwaggerConfigTest.class)
 @TestPropertySource("classpath:iiif-test.properties")
 @WebMvcTest(SwaggerConfig.class)
 public class SwaggerConfigTest {

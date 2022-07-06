@@ -45,6 +45,7 @@ import java.time.Instant;
 import java.util.*;
 
 import static eu.europeana.iiif.model.Definitions.getFulltextSummaryPath;
+import static eu.europeana.iiif.model.Definitions.getFulltextSearchPath;
 
 /**
  * Service that loads record data, uses that to generate a Manifest object and serializes the manifest in JSON-LD
@@ -282,6 +283,7 @@ public class ManifestService {
      * Generates a url to a full text resource
      *
      * @param fullTextApiUrl optional, if not specified then the default Full-Text API specified in .properties is used
+     * @param europeanaId identifier to include in the path
      */
     String generateFullTextSummaryUrl(String europeanaId, URL fullTextApiUrl) {
         if (fullTextApiUrl == null) {
@@ -289,6 +291,15 @@ public class ManifestService {
         } else {
             return fullTextApiUrl + getFulltextSummaryPath(europeanaId);
         }
+    }
+
+    /**
+     * Generates a url for a fulltext search
+     *
+     * @param europeanaId identifier to include in the path
+     */
+    public String generateFullTextSearchUrl(String europeanaId) {
+        return settings.getFullTextApiBaseUrl() + getFulltextSearchPath(europeanaId);
     }
 
     /**

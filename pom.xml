@@ -24,19 +24,29 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
-        <metis.version>4</metis.version>
+        <metis.version>7</metis.version>
+<!--        <metis.version>4</metis.version>-->
 
-        <spring-boot.version>2.1.4.RELEASE</spring-boot.version>
-        <jackson-core.version>2.13.1</jackson-core.version>
-        <jsonpath.version>2.4.0</jsonpath.version>
-        <jaxb-api.version>2.3.1</jaxb-api.version>
+        <spring-boot.version>2.7.1</spring-boot.version>
+<!--        <spring-boot.version>2.1.4.RELEASE</spring-boot.version>-->
+        <jackson-core.version>2.13.3</jackson-core.version>
+<!--        <jackson-core.version>2.13.1</jackson-core.version>-->
+        <jsonpath.version>2.7.0</jsonpath.version>
+<!--        <jsonpath.version>2.4.0</jsonpath.version>-->
+        <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
+<!--        <jaxb-api.version>2.3.1</jaxb-api.version>-->
+
         <http-client.version>4.5.13</http-client.version>
-        <log4j2.version>2.17.1</log4j2.version>
+<!--        <log4j2.version>2.17.1</log4j2.version>-->
+        <log4j2.version>2.18.0</log4j2.version>
         <commons.lang3.version>3.12.0</commons.lang3.version>
+<!--        <swagger.version>3.0.0</swagger.version>-->
         <swagger.version>2.9.2</swagger.version>
 
-        <mockito.version>2.15.0</mockito.version>
-        <wiremock-standalone.version>2.18.0</wiremock-standalone.version>
+        <mockito.version>4.6.1</mockito.version>
+<!--        <mockito.version>2.15.0</mockito.version>-->
+        <wiremock-standalone.version>2.27.2</wiremock-standalone.version>
+<!--        <wiremock-standalone.version>2.18.0</wiremock-standalone.version>-->
 
     </properties>
 
@@ -193,6 +203,24 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+            <!-- this is to keep JUni4 4 working for now -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.junit.jupiter</groupId>
+                    <artifactId>junit-jupiter-engine</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/junit/junit -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -227,6 +255,9 @@
                 <version>6.5.0</version>
                 <configuration>
                     <failBuildOnCVSS>8</failBuildOnCVSS>
+                    <suppressionFiles>
+                        <suppressionFile>owasp-suppress.xml</suppressionFile>
+                    </suppressionFiles>
                 </configuration>
                 <executions>
                     <execution>
@@ -251,5 +282,6 @@
             </plugin>
         </plugins>
     </build>
+
 
 </project>
