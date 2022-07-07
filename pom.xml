@@ -25,28 +25,32 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
         <metis.version>7</metis.version>
-<!--        <metis.version>4</metis.version>-->
-
-        <spring-boot.version>2.7.1</spring-boot.version>
-<!--        <spring-boot.version>2.1.4.RELEASE</spring-boot.version>-->
+        <spring-boot.version>2.5.9</spring-boot.version>
+<!--        <spring-boot.version>2.7.1</spring-boot.version>-->
         <jackson-core.version>2.13.3</jackson-core.version>
-<!--        <jackson-core.version>2.13.1</jackson-core.version>-->
         <jsonpath.version>2.7.0</jsonpath.version>
-<!--        <jsonpath.version>2.4.0</jsonpath.version>-->
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
-<!--        <jaxb-api.version>2.3.1</jaxb-api.version>-->
 
         <http-client.version>4.5.13</http-client.version>
-<!--        <log4j2.version>2.17.1</log4j2.version>-->
         <log4j2.version>2.18.0</log4j2.version>
         <commons.lang3.version>3.12.0</commons.lang3.version>
-<!--        <swagger.version>3.0.0</swagger.version>-->
-        <swagger.version>2.9.2</swagger.version>
+        <swagger.version>3.0.0</swagger.version>
 
-        <mockito.version>4.6.1</mockito.version>
-<!--        <mockito.version>2.15.0</mockito.version>-->
+        <junit-jupiter.version>5.6.0</junit-jupiter.version>
+<!--        <junit-jupiter.version>5.8.2</junit-jupiter.version>-->
+        <unitils.version>3.4.6</unitils.version>
+        <mockito.version>3.7.0</mockito.version>
+<!--        <mockito.version>4.6.1</mockito.version>-->
         <wiremock-standalone.version>2.27.2</wiremock-standalone.version>
-<!--        <wiremock-standalone.version>2.18.0</wiremock-standalone.version>-->
+        <!--        <metis.version>4</metis.version>-->
+        <!--        <spring-boot.version>2.1.4.RELEASE</spring-boot.version>-->
+        <!--        <jackson-core.version>2.13.1</jackson-core.version>-->
+        <!--        <jsonpath.version>2.4.0</jsonpath.version>-->
+        <!--        <jaxb-api.version>2.3.1</jaxb-api.version>-->
+        <!--        <log4j2.version>2.17.1</log4j2.version>-->
+        <!--        <swagger.version>3.0.0</swagger.version>-->
+        <!--        <mockito.version>2.15.0</mockito.version>-->
+        <!--        <wiremock-standalone.version>2.18.0</wiremock-standalone.version>-->
 
     </properties>
 
@@ -174,6 +178,12 @@
             </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>${jaxb-api.version}</version>
+        </dependency>
+
         <!-- StringUtils -->
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -183,48 +193,51 @@
 
         <dependency>
             <groupId>io.springfox</groupId>
-            <artifactId>springfox-swagger2</artifactId>
+            <artifactId>springfox-boot-starter</artifactId>
             <version>${swagger.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>slf4j-api</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
+
+<!--        <dependency>-->
+<!--            <groupId>io.springfox</groupId>-->
+<!--            <artifactId>springfox-swagger2</artifactId>-->
+<!--            <version>${swagger.version}</version>-->
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <artifactId>slf4j-api</artifactId>-->
+<!--                    <groupId>org.slf4j</groupId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-swagger-ui</artifactId>
             <version>${swagger.version}</version>
         </dependency>
 
-        <!-- test dependencies -->
+
+        <!-- Test stuff -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
-            <!-- this is to keep JUni4 4 working for now -->
             <exclusions>
+                <!-- exclude junit 4 -->
                 <exclusion>
-                    <groupId>org.junit.jupiter</groupId>
-                    <artifactId>junit-jupiter-engine</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.junit.vintage</groupId>
-                    <artifactId>junit-vintage-engine</artifactId>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/junit/junit -->
+        <!-- junit 5 -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.2</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit-jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
+            <artifactId>mockito-junit-jupiter</artifactId>
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
@@ -235,9 +248,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>${jaxb-api.version}</version>
+            <groupId>org.unitils</groupId>
+            <artifactId>unitils-core</artifactId>
+            <version>${unitils.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
