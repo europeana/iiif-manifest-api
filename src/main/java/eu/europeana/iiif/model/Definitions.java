@@ -1,8 +1,5 @@
 package eu.europeana.iiif.model;
 
-import eu.europeana.iiif.config.ManifestSettings;
-import eu.europeana.iiif.service.SpringContext;
-
 /**
  * @author Patrick Ehlert
  * Created on 26-01-2018
@@ -52,6 +49,11 @@ public final class Definitions {
      */
     public static final String FULLTEXT_SUMMARY_PATH = "/presentation/%s/annopage/";
 
+
+    /**
+     * Fulltext Search path
+     */
+    public static final String FULLTEXT_SEARCH_PATH =  "/presentation/%s/search";
 
     /**
      * Media type for json-ld
@@ -158,6 +160,10 @@ public final class Definitions {
         return String.format(FULLTEXT_SUMMARY_PATH, europeanaId);
     }
 
+    public static String getFulltextSearchPath(String europeanaId) {
+        return String.format(FULLTEXT_SEARCH_PATH, europeanaId);
+    }
+
     /**
      * Create the IIIF manifest ID
      *
@@ -189,20 +195,20 @@ public final class Definitions {
         return Definitions.DATASET_ID_BASE_URL + europeanaId + postFix;
     }
 
-    /**
-     * Creates a search ID for the manifest service description.
-     *
-     * @param europeanaId * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
-     * @return string containing the search ID
-     */
-    public static String getSearchId(String europeanaId) {
-        return getFullTextUrl() + "/presentation" + europeanaId + "/search";
-    }
-
-    private static String getFullTextUrl() {
-        if (fullTextUrl == null) {
-            fullTextUrl = SpringContext.getBean(ManifestSettings.class).getFullTextApiBaseUrl();
-        }
-        return fullTextUrl;
-    }
+//    /**
+//     * Creates a search ID for the manifest service description.
+//     *
+//     * @param europeanaId * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
+//     * @return string containing the search ID
+//     */
+//    public static String getSearchId(String europeanaId) {
+//        return getFullTextUrl() + "/presentation" + europeanaId + "/search";
+//    }
+//
+//    private static String getFullTextUrl() {
+//        if (fullTextUrl == null) {
+//            fullTextUrl = SpringContext.getBean(ManifestSettings.class).getFullTextApiBaseUrl();
+//        }
+//        return fullTextUrl;
+//    }
 }

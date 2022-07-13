@@ -13,18 +13,26 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 import java.util.Collections;
 
 /**
- * Configures swagger on all requests. Swagger Json file is availabe at <hostname>/v2/api-docs and if you add
- * Swagger UI package the <hostname>/swagger-ui.html
- * @author Patrick Ehlert
- * Created on 26-01-2018
+ * Configures Swagger on all requests. Swagger Json file is availabe at <hostname>/v2/api-docs and at
+ * <hostname/v3/api-docs. Swagger UI is available at <hostname>/swagger-ui/
  */
 @Configuration
-@EnableSwagger2
 public class SwaggerConfig {
+    private final BuildInfo buildInfo;
+
+    /**
+     * Initialize Swagger with API build information
+     *
+     * @param buildInfo object for retrieving build information
+     */
+    public SwaggerConfig(BuildInfo buildInfo) {
+        this.buildInfo = buildInfo;
+    }
 
     @Bean
     public Docket api() {
         return new Docket(DocumentationType.SWAGGER_2)
+                .apiInfo(apiInfo())
                 .select()
                 .apis(RequestHandlerSelectors.basePackage("eu.europeana.iiif"))
                 .paths(PathSelectors.any())
@@ -34,11 +42,11 @@ public class SwaggerConfig {
     @SuppressWarnings("squid:UnusedPrivateMethod")
     private ApiInfo apiInfo() {
         return new ApiInfo(
-                "IIIF Manifest API",
-                "Generate an IIIF v2 or v3 manifest for Europeana CHOs",
+                buildInfo.getAppName(),
+                buildInfo.getAppDescription(),
+                buildInfo.getAppVersion() + "(build " + buildInfo.getBuildNumber() + ")",
                 null,
-                null,
-                new Contact("APIs team", "www.europeana.eu", "api@europeana.eu"),
-                "EUPL 1.2", "API license URL", Collections.emptyList());
+                new Contact("API team", "https://api.europeana.eu", "api@europeana.eu"),
+                "EUPL 1.2", "https://www.eupl.eu", Collections.emptyList());
     }
 }

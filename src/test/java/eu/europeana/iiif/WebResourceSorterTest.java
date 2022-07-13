@@ -8,9 +8,10 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Patrick Ehlert
@@ -91,7 +92,7 @@ public class WebResourceSorterTest {
     public void sortOnlyIsolated() throws DataInconsistentException {
         WebResource[] isolated = new WebResource[]{ ISOLATED1, ISOLATED2, ISOLATED3, ISOLATED4};
         List<WebResource> wrs = WebResourceSorter.sort(Arrays.asList(isolated), orderViews1);
-        assertNotNull(wrs);
+        Assertions.assertNotNull(wrs);
         assertTrue(isAfter(wrs, "iso1", "iso2"));
         assertTrue(isAfter(wrs, "iso4", "iso3"));
         assertTrue(isAfter(wrs, "iso3", "iso1"));

@@ -2,6 +2,7 @@ package eu.europeana.iiif.service;
 
 import com.jayway.jsonpath.Filter;
 import com.jayway.jsonpath.JsonPath;
+import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.Definitions;
 import eu.europeana.iiif.model.WebResource;
 import eu.europeana.iiif.model.v2.LanguageObject;
@@ -33,6 +34,7 @@ public final class EdmManifestMappingV2 {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestMappingV2.class);
 
+    private static final ManifestService ms = new ManifestService(new ManifestSettings());
     private EdmManifestMappingV2() {
         // private constructor to prevent initialization
     }
@@ -67,7 +69,9 @@ public final class EdmManifestMappingV2 {
      * Generates a serviceV2 description for the manifest
      */
     private static eu.europeana.iiif.model.v2.Service getServiceDescriptionV2(String europeanaId) {
-        return new eu.europeana.iiif.model.v2.Service(Definitions.getSearchId(europeanaId), Definitions.SEARCH_CONTEXT_VALUE, Definitions.SEARCH_PROFILE_VALUE);
+        return new eu.europeana.iiif.model.v2.Service(ms.generateFullTextSearchUrl(europeanaId),
+                                                      Definitions.SEARCH_CONTEXT_VALUE,
+                                                      Definitions.SEARCH_PROFILE_VALUE);
     }
 
     /**

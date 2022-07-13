@@ -22,7 +22,7 @@ import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @TestPropertySource("classpath:iiif-test.properties")
-@SpringBootTest
+@SpringBootTest(classes = {EdmManifestMappingV3.class})
 public class EdmManifestV3MappingTest {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestV3MappingTest.class);

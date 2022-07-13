@@ -9,6 +9,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import java.util.Collections;
 
@@ -18,6 +19,7 @@ import java.util.Collections;
  * @author Patrick Ehlert
  * Created on 6-12-2017
  */
+@EnableWebMvc
 @SpringBootApplication
 @PropertySource(value = "classpath:build.properties", ignoreResourceNotFound = true)
 public class ManifestApplication extends SpringBootServletInitializer {

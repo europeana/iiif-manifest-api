@@ -8,7 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Tests if the ManifestSettings getAppVersion method works properly
@@ -28,7 +28,7 @@ public class ManifestSettingsTest {
      */
     @Test
     public void testManifest() {
-        assertEquals("${project.version}", ms.getAppVersion());
+        Assertions.assertEquals("${project.version}", ms.getAppVersion());
     }
 
 }

@@ -23,7 +23,7 @@ import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @TestPropertySource("classpath:iiif-test.properties")
-@SpringBootTest
+@SpringBootTest(classes = {EdmManifestMappingV2.class})
 public class EdmManifestV2MappingTest {
 
     // Initialize the manifest service, because that will setup our default Jackson mapper configuration used in the tests

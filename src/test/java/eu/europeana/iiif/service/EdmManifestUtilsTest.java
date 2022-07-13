@@ -12,7 +12,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringBootTest
+@SpringBootTest(classes = {EdmManifestUtils.class})
 public class EdmManifestUtilsTest {
 
     private static EdmManifestUtils edmManifestUtils;

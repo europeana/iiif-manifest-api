@@ -44,7 +44,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @TestPropertySource(locations = "classpath:iiif-test.properties")
-@SpringBootTest(classes = {ManifestService.class, ManifestSettings.class, SpringContext.class})
+@SpringBootTest(classes = {ManifestService.class, ManifestSettings.class})
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ManifestServiceTest {
 
