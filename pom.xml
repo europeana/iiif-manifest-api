@@ -243,7 +243,7 @@
                      To skip (e.g. during debugging) use 'mvn clean package')-->
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>6.5.0</version>
+                <version>7.1.1</version>
                 <configuration>
                     <failBuildOnCVSS>8</failBuildOnCVSS>
                     <suppressionFiles>
