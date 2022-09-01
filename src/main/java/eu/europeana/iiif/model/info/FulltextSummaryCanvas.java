@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static eu.europeana.iiif.model.Definitions.INFO_CANVAS_TYPE;
 
@@ -19,7 +17,7 @@ public class FulltextSummaryCanvas extends JsonLdIdType {
 
     private static final long serialVersionUID = 7066577659030844718L;
 
-    private static final Pattern PAGENUMBERPATTERN = Pattern.compile("/canvas/(\\d+)$");
+    private static final String PAGE_ID_START = "/canvas/";
 
     private String originalLanguage;
 
@@ -51,13 +49,21 @@ public class FulltextSummaryCanvas extends JsonLdIdType {
         return new ArrayList<>(annotations);
     }
 
+    /**
+     * Return the page id of this fulltext annopage
+     * @return fulltext id or null if it cannot be found
+     */
     public String getPageNumber(){
-        Matcher m = PAGENUMBERPATTERN.matcher(getId());
-        if (m.find( )) {
-            return m.group(1);
-        } else {
-            return "x";
+        int start = getId().indexOf(PAGE_ID_START);
+        if (start == -1) {
+            return null;
         }
+        String result = getId().substring(start + PAGE_ID_START.length());
+        int end = result.indexOf('?');
+        if (end != -1) {
+            result = result.substring(0, end);
+        }
+        return result;
     }
 
     public String getOriginalLanguage() {
