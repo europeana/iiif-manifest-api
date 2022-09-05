@@ -475,7 +475,9 @@ public class ManifestService {
                     String apHash = GenerateUtils.derivePageId(canvas.getStartImageAnnotation().getResource().getId());
                     FulltextSummaryCanvas ftCanvas = summaryCanvasMap.get(apHash);
                     if (ftCanvas == null) {
-                        LOG.error("Inconsistent data! No fulltext annopage found for record {} page {}. Generated hash = {}",
+                        // This warning can be logged for empty pages that do not have a fulltext, but if we get a lot
+                        // then Record API and Fulltext API are not in sync (or the hashing algorithm changed)
+                        LOG.warn("Possible inconsistent data. No fulltext annopage found for record {} page {}. Generated hash = {}",
                                manifest.getEuropeanaId(), canvas.getPageNr(), apHash);
                     } else {
                         addFulltextLinkToCanvasV2(canvas, ftCanvas);
@@ -516,7 +518,9 @@ public class ManifestService {
                     String apHash = GenerateUtils.derivePageId(canvas.getStartCanvasAnnotation().getBody().getId());
                     FulltextSummaryCanvas ftCanvas = summaryCanvasMap.get(apHash);
                     if (ftCanvas == null) {
-                        LOG.error("Inconsistent data! No fulltext annopage found for record {} page {}. Generated hash = {}",
+                        // This warning can be logged for empty pages that do not have a fulltext, but if we get a lot
+                        // then Record API and Fulltext API are not in sync (or the hashing algorithm changed).
+                        LOG.warn("Inconsistent data! No fulltext annopage found for record {} page {}. Generated hash = {}",
                                 manifest.getEuropeanaId(), canvas.getPageNr(), apHash);
                     } else {
                         addFulltextLinkToCanvasV3(canvas, ftCanvas);
