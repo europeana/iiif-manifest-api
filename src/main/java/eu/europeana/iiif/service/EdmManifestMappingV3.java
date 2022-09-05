@@ -88,7 +88,7 @@ public final class EdmManifestMappingV3 {
         manifest.setWithin(getWithinV3(jsonDoc));
         manifest.setLabel(getLabelsV3(jsonDoc));
         manifest.setSummary(getDescriptionV3(jsonDoc));
-        manifest.setMetaData(getMetaDataV3(jsonDoc));
+        manifest.setMetadata(getMetaDataV3(jsonDoc));
         manifest.setThumbnail(getThumbnailImageV3(europeanaId, jsonDoc));
         manifest.setNavDate(EdmManifestUtils.getNavDate(europeanaId, jsonDoc));
         manifest.setHomePage(EdmManifestUtils.getHomePage(europeanaId, jsonDoc));

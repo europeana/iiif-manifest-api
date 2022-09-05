@@ -22,7 +22,7 @@ public class ManifestV3 extends JsonLdIdType {
     private Collection[] within;
     private LanguageMap label; // edm:title
     private LanguageMap summary; // edm:description
-    private MetaData[] metaData;
+    private MetaData[] metadata;
     private Image[] thumbnail;
     private Text[] homepage;
     private String navDate;
@@ -92,12 +92,12 @@ public class ManifestV3 extends JsonLdIdType {
         this.summary = summary;
     }
 
-    public MetaData[] getMetaData() {
-        return metaData;
+    public MetaData[] getMetadata() {
+        return metadata;
     }
 
-    public void setMetaData(MetaData[] metaData) {
-        this.metaData = metaData;
+    public void setMetadata(MetaData[] metadata) {
+        this.metadata = metadata;
     }
 
     public Image[] getThumbnail() {
