@@ -304,7 +304,6 @@ public class ManifestService {
 
     /**
      * Performs a GET request for a particular EuropeanaID that:
-     * - replaces the 'exists' check;
      * - lists all canvases found for that EuropeanaID;
      * - lists all original and all translated AnnoPages for every canvas
      * It uses a CachingHTTPClient if USE_HTTP_CLIENT_CACHING = TRUE; a non-caching client when FALSE
@@ -472,8 +471,17 @@ public class ManifestService {
             if (null != summaryCanvasMap) {
                 // loop over canvases to add full-text link(s) to all
                 for (eu.europeana.iiif.model.v2.Canvas canvas : sequence.getCanvases()) {
-                    addFulltextLinkToCanvasV2(manifest.getEuropeanaId(), canvas,
-                                              summaryCanvasMap.get(Integer.toString(canvas.getPageNr())));
+                    // we need to generate the same annopageId hash based on imageId
+                    String apHash = GenerateUtils.derivePageId(canvas.getStartImageAnnotation().getResource().getId());
+                    FulltextSummaryCanvas ftCanvas = summaryCanvasMap.get(apHash);
+                    if (ftCanvas == null) {
+                        // This warning can be logged for empty pages that do not have a fulltext, but if we get a lot
+                        // then Record API and Fulltext API are not in sync (or the hashing algorithm changed)
+                        LOG.warn("Possible inconsistent data. No fulltext annopage found for record {} page {}. Generated hash = {}",
+                               manifest.getEuropeanaId(), canvas.getPageNr(), apHash);
+                    } else {
+                        addFulltextLinkToCanvasV2(canvas, ftCanvas);
+                    }
                 }
             }
         } else {
@@ -481,12 +489,7 @@ public class ManifestService {
         }
     }
 
-    private void addFulltextLinkToCanvasV2(String recordId, eu.europeana.iiif.model.v2.Canvas canvas, FulltextSummaryCanvas summaryCanvas) {
-        if (summaryCanvas == null) {
-            LOG.warn("Inconsistent data! No Fulltext annotation page found for record {} page {}", recordId, canvas.getPageNr());
-            return;
-        }
-
+    private void addFulltextLinkToCanvasV2(eu.europeana.iiif.model.v2.Canvas canvas, FulltextSummaryCanvas summaryCanvas) {
         canvas.setOtherContent(summaryCanvas.getAnnoPageIDs().toArray(new String[0]));
         for (eu.europeana.iiif.model.v2.Annotation ann : canvas.getImages()){
             if (StringUtils.equalsAnyIgnoreCase(ann.getMotivation(), "sc:painting")){
@@ -511,8 +514,17 @@ public class ManifestService {
             if (null != summaryCanvasMap) {
                 // loop over canvases to add full-text link(s) to all
                 for (eu.europeana.iiif.model.v3.Canvas canvas : canvases) {
-                    addFulltextLinkToCanvasV3(manifest.getEuropeanaId(), canvas,
-                                              summaryCanvasMap.get(Integer.toString(canvas.getPageNr())));
+                    // we need to generate the same annopageId hash based on imageId
+                    String apHash = GenerateUtils.derivePageId(canvas.getStartCanvasAnnotation().getBody().getId());
+                    FulltextSummaryCanvas ftCanvas = summaryCanvasMap.get(apHash);
+                    if (ftCanvas == null) {
+                        // This warning can be logged for empty pages that do not have a fulltext, but if we get a lot
+                        // then Record API and Fulltext API are not in sync (or the hashing algorithm changed).
+                        LOG.warn("Inconsistent data! No fulltext annopage found for record {} page {}. Generated hash = {}",
+                                manifest.getEuropeanaId(), canvas.getPageNr(), apHash);
+                    } else {
+                        addFulltextLinkToCanvasV3(canvas, ftCanvas);
+                    }
                 }
             }
         } else {
@@ -520,12 +532,7 @@ public class ManifestService {
         }
     }
 
-    private void addFulltextLinkToCanvasV3(String recordId, eu.europeana.iiif.model.v3.Canvas canvas, FulltextSummaryCanvas summaryCanvas) {
-        if (summaryCanvas == null) {
-            LOG.warn("Inconsistent data! No Fulltext annotation page found for record {} page {}", recordId, canvas.getPageNr());
-            return;
-        }
-
+    private void addFulltextLinkToCanvasV3(eu.europeana.iiif.model.v3.Canvas canvas, FulltextSummaryCanvas summaryCanvas) {
         List<AnnotationPage> summaryAnnoPages = new ArrayList<>();
         Map<String, String> annoPageIDLang = summaryCanvas.getAnnoPageIDLang();
         for (Map.Entry<String, String> entry : annoPageIDLang.entrySet()) {
