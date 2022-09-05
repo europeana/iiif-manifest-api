@@ -293,14 +293,7 @@ public class ManifestService {
         }
     }
 
-    /**
-     * Generates a url for a fulltext search
-     *
-     * @param europeanaId identifier to include in the path
-     */
-    public String generateFullTextSearchUrl(String europeanaId) {
-        return settings.getFullTextApiBaseUrl() + getFulltextSearchPath(europeanaId);
-    }
+
 
     /**
      * Performs a GET request for a particular EuropeanaID that:
@@ -379,7 +372,7 @@ public class ManifestService {
     public ManifestV2 generateManifestV2(String json) {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        ManifestV2 result = EdmManifestMappingV2.getManifestV2(document);
+        ManifestV2 result = EdmManifestMappingV2.getManifestV2(settings, document);
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Generated in {} ms", System.currentTimeMillis() - start);
@@ -398,7 +391,7 @@ public class ManifestService {
     public ManifestV2 generateManifestV2(String json, URL fullTextApi) {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        ManifestV2 result = EdmManifestMappingV2.getManifestV2(document);
+        ManifestV2 result = EdmManifestMappingV2.getManifestV2(settings, document);
 
         try {
             fillInFullTextLinksV2(result, fullTextApi);
@@ -421,7 +414,7 @@ public class ManifestService {
     public ManifestV3 generateManifestV3(String json) {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        ManifestV3 result = EdmManifestMappingV3.getManifestV3(document);
+        ManifestV3 result = EdmManifestMappingV3.getManifestV3(settings, document);
         if (LOG.isDebugEnabled()) {
             LOG.debug("Generated in {} ms ", System.currentTimeMillis() - start);
         }
@@ -439,7 +432,7 @@ public class ManifestService {
     public ManifestV3 generateManifestV3(String json, URL fullTextApi) {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        ManifestV3 result = EdmManifestMappingV3.getManifestV3(document);
+        ManifestV3 result = EdmManifestMappingV3.getManifestV3(settings, document);
 
         try {
             fillInFullTextLinksV3(result, fullTextApi);

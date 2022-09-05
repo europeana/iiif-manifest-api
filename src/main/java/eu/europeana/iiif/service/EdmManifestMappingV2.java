@@ -34,7 +34,6 @@ public final class EdmManifestMappingV2 {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestMappingV2.class);
 
-    private static final ManifestService ms = new ManifestService(new ManifestSettings());
     private EdmManifestMappingV2() {
         // private constructor to prevent initialization
     }
@@ -44,11 +43,11 @@ public final class EdmManifestMappingV2 {
      * @param jsonDoc parsed json document
      * @return IIIF Manifest v2 object
      */
-    static ManifestV2 getManifestV2(Object jsonDoc) {
+    static ManifestV2 getManifestV2(ManifestSettings ms, Object jsonDoc) {
         String europeanaId = EdmManifestUtils.getEuropeanaId(jsonDoc);
         String isShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(jsonDoc, europeanaId, "edmIsShownBy");
         ManifestV2 manifest = new ManifestV2(europeanaId, Definitions.getManifestId(europeanaId), isShownBy);
-        manifest.setService(getServiceDescriptionV2(europeanaId));
+        manifest.setService(getServiceDescriptionV2(ms.getFullTextApiBaseUrl(), europeanaId));
         manifest.setWithin(getWithinV2(jsonDoc));
         manifest.setLabel(getLabelsV2(jsonDoc));
         manifest.setDescription(getDescriptionV2(jsonDoc));
@@ -68,8 +67,8 @@ public final class EdmManifestMappingV2 {
     /**
      * Generates a serviceV2 description for the manifest
      */
-    private static eu.europeana.iiif.model.v2.Service getServiceDescriptionV2(String europeanaId) {
-        return new eu.europeana.iiif.model.v2.Service(ms.generateFullTextSearchUrl(europeanaId),
+    private static eu.europeana.iiif.model.v2.Service getServiceDescriptionV2(String fulltextBaseUrl, String europeanaId) {
+        return new eu.europeana.iiif.model.v2.Service(EdmManifestUtils.getFullTextSearchUrl(fulltextBaseUrl, europeanaId),
                                                       Definitions.SEARCH_CONTEXT_VALUE,
                                                       Definitions.SEARCH_PROFILE_VALUE);
     }

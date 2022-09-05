@@ -30,20 +30,8 @@ public final class EdmManifestMappingV3 {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestMappingV3.class);
 
-    private static final ManifestService ms = new ManifestService(new ManifestSettings());
-
     private EdmManifestMappingV3() {
         // private constructor to prevent initialization
-    }
-
-    /**
-     * Generates Service descriptions for the manifest
-     */
-    private static Service[] getServiceDescriptionV3(String europeanaId) {
-        return new Service[]{new Service(ms.generateFullTextSearchUrl(europeanaId),
-                                         null,
-                                         Definitions.SEARCH_CONTEXT_VALUE,
-                                         Definitions.SEARCH_PROFILE_VALUE)};
     }
 
     /**
@@ -51,7 +39,7 @@ public final class EdmManifestMappingV3 {
      * @param jsonDoc parsed json document
      * @return IIIF Manifest v3 object
      */
-    static ManifestV3 getManifestV3(Object jsonDoc) {
+    static ManifestV3 getManifestV3(ManifestSettings ms, Object jsonDoc) {
         String europeanaId = EdmManifestUtils.getEuropeanaId(jsonDoc);
         String isShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(jsonDoc, europeanaId, "edmIsShownBy");
         // EA-1973 + EA-2002 temporary(?) workaround for EUScreen; use isShownAt and use edmType instead of ebucoreMimetype
@@ -84,7 +72,7 @@ public final class EdmManifestMappingV3 {
         }
 
         ManifestV3 manifest = new ManifestV3(europeanaId, Definitions.getManifestId(europeanaId), isShownBy);
-        manifest.setService(getServiceDescriptionV3(europeanaId));
+        manifest.setService(getServiceDescriptionV3(ms.getFullTextApiBaseUrl(), europeanaId));
         manifest.setWithin(getWithinV3(jsonDoc));
         manifest.setLabel(getLabelsV3(jsonDoc));
         manifest.setSummary(getDescriptionV3(jsonDoc));
@@ -98,6 +86,16 @@ public final class EdmManifestMappingV3 {
         manifest.setItems(getItems(europeanaId, isShownBy, jsonDoc, euScreenTypeHack));
         manifest.setStart(getStartCanvasV3(manifest.getItems(), isShownBy));
         return manifest;
+    }
+
+    /**
+     * Generates Service descriptions for the manifest
+     */
+    private static Service[] getServiceDescriptionV3(String fulltextBaseUrl, String europeanaId) {
+        return new Service[]{new Service(EdmManifestUtils.getFullTextSearchUrl(fulltextBaseUrl, europeanaId),
+                null,
+                Definitions.SEARCH_CONTEXT_VALUE,
+                Definitions.SEARCH_PROFILE_VALUE)};
     }
 
     /**
