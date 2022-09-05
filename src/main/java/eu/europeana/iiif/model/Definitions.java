@@ -12,9 +12,14 @@ public final class Definitions {
     public static final String ID_PLACEHOLDER = "{DATASET_ID}/{RECORD_ID}";
 
     /**
+     * IIIF presentation path
+     */
+    public static final String IIIF_PRESENTATION_PATH = "/presentation";
+
+    /**
      * Base URL used for generation the various types of IDs
      */
-    public static final String IIIF_PRESENTATION_BASE_URL = "https://iiif.europeana.eu/presentation" + ID_PLACEHOLDER;
+    public static final String IIIF_PRESENTATION_BASE_URL = "https://iiif.europeana.eu" + IIIF_PRESENTATION_PATH + ID_PLACEHOLDER;
 
     /**
      * Url of all manifest IDs but with placeholder for the actual dataset and record ID
@@ -47,13 +52,13 @@ public final class Definitions {
     /**
      * Path to Fulltext Summary
      */
-    public static final String FULLTEXT_SUMMARY_PATH = "/presentation/%s/annopage/";
+    public static final String FULLTEXT_SUMMARY_PATH = "/annopage/";
 
 
     /**
      * Fulltext Search path
      */
-    public static final String FULLTEXT_SEARCH_PATH =  "/presentation/%s/search";
+    public static final String FULLTEXT_SEARCH_PATH =  "/search";
 
     /**
      * Media type for json-ld
@@ -143,25 +148,22 @@ public final class Definitions {
 
     public static final String IMAGE_SERVICE_TYPE_3 = "ImageService3";
 
-
     /**
      * Titles of Fulltext summary types
      */
     public static final  String INFO_CANVAS_TYPE          = "FulltextSummaryCanvas";
     public static final  String INFO_ANNOPAGE_TYPE        = "AnnotationPage";
 
-    private static String fullTextUrl;
-
     private Definitions() {
         // empty constructor to avoid initializationRE
     }
 
     public static String getFulltextSummaryPath(String europeanaId) {
-        return String.format(FULLTEXT_SUMMARY_PATH, europeanaId);
+        return IIIF_PRESENTATION_PATH + europeanaId + FULLTEXT_SUMMARY_PATH;
     }
 
     public static String getFulltextSearchPath(String europeanaId) {
-        return String.format(FULLTEXT_SEARCH_PATH, europeanaId);
+        return IIIF_PRESENTATION_PATH + europeanaId + FULLTEXT_SEARCH_PATH;
     }
 
     /**
@@ -195,20 +197,4 @@ public final class Definitions {
         return Definitions.DATASET_ID_BASE_URL + europeanaId + postFix;
     }
 
-//    /**
-//     * Creates a search ID for the manifest service description.
-//     *
-//     * @param europeanaId * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
-//     * @return string containing the search ID
-//     */
-//    public static String getSearchId(String europeanaId) {
-//        return getFullTextUrl() + "/presentation" + europeanaId + "/search";
-//    }
-//
-//    private static String getFullTextUrl() {
-//        if (fullTextUrl == null) {
-//            fullTextUrl = SpringContext.getBean(ManifestSettings.class).getFullTextApiBaseUrl();
-//        }
-//        return fullTextUrl;
-//    }
 }

@@ -92,7 +92,7 @@ public class ManifestSettings {
     private void logImportantSettings() {
         LOG.info("Manifest settings:");
         LOG.info("  Record API Url = {}{} ", this.getRecordApiBaseUrl(), this.getRecordApiPath());
-        LOG.info("  Full-Text Summary Url = {}{} ", this.getFullTextApiBaseUrl(), getFulltextSummaryPath("<collectionId>/<itemId>"));
+        LOG.info("  Full-Text Summary Url = {}{} ", this.getFullTextApiBaseUrl(), getFulltextSummaryPath("/<collectionId>/<itemId>"));
         LOG.info("  Suppress parse exceptions = {}", this.getSuppressParseException());
     }
 }
