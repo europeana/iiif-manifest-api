@@ -332,15 +332,16 @@ public class ManifestService {
         LOG.debug("Fulltext request {}, status code = {}", fullTextUrl, responseCode);
 
         hasResult = checkResponseCode(responseCode);
-
         HttpEntity entity = response.getEntity();
 
-        if (hasResult && entity != null) {
+        if (!hasResult ) {
+            LOG.debug("Fulltext API returned 404 for {}", fullTextUrl);
+        } else if (entity != null) {
             summary = getJsonMapper().readValue(EntityUtils.toString(entity), FulltextSummary.class);
             EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
             LOG.trace("Fulltext request {}, response = {}", fullTextUrl, summary);
         } else {
-            LOG.warn("No response from Fulltext API received");
+            LOG.warn("Fulltext API returned empty response!");
         }
         return summary;
     }
