@@ -2,13 +2,13 @@ package eu.europeana.iiif;
 
 import eu.europeana.iiif.model.WebResource;
 import eu.europeana.iiif.model.WebResourceSorter;
-import eu.europeana.iiif.service.exception.DataInconsistentException;
-import org.junit.Test;
+import eu.europeana.iiif.exception.DataInconsistentException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -112,52 +112,52 @@ public class WebResourceSorterTest {
 
     /**
      * Test if an error is thrown for data that has infinite loops
-     * @throws DataInconsistentException when the data is inconsistent
      */
-    @Test(expected = DataInconsistentException.class)
-    public void sortInfiniteLoopTest() throws DataInconsistentException {
+    @Test
+    public void sortInfiniteLoopTest() {
         WebResource[] infiniteLoop = new WebResource[]{
                 new WebResource("1", "2"),
                 new WebResource("2", "3"),
                 new WebResource("3", "1")};
-        WebResourceSorter.sort(Arrays.asList(infiniteLoop),orderViews1);
+        Assertions.assertThrows(DataInconsistentException.class, () ->
+                WebResourceSorter.sort(Arrays.asList(infiniteLoop),orderViews1));
     }
 
     /**
      * Test if an error is thrown if a nextInSequence webresource doesn't exist
-     * @throws DataInconsistentException when the data is inconsistent
      */
-    @Test(expected = DataInconsistentException.class)
-    public void sortIncompleteSequence() throws DataInconsistentException {
+    @Test
+    public void sortIncompleteSequence() {
         WebResource[] incomplete = new WebResource[]{
                 new WebResource("1", "2"),
                 new WebResource("2", "3"),
                 new WebResource("3", "4")};
-        WebResourceSorter.sort(Arrays.asList(incomplete),orderViews1);
+        Assertions.assertThrows(DataInconsistentException.class, () ->
+                WebResourceSorter.sort(Arrays.asList(incomplete),orderViews1));
     }
 
     /**
      * Test if an error is thrown if there are two intertwined sequences
-     * @throws DataInconsistentException when the data is inconsistent
      */
-    @Test(expected = DataInconsistentException.class)
-    public void sortIntertwinedSequence() throws DataInconsistentException {
+    @Test
+    public void sortIntertwinedSequence() {
         WebResource[] intertwined = new WebResource[]{
                 new WebResource("1", "2"),
                 new WebResource("2", "3"),
                 new WebResource("5", "4"),
                 new WebResource("4", "3")};
-        WebResourceSorter.sort(Arrays.asList(intertwined),orderViews1);
+        Assertions.assertThrows(DataInconsistentException.class, () ->
+                WebResourceSorter.sort(Arrays.asList(intertwined),orderViews1));
     }
 
     /**
      * Test if an error is thrown if there isolated sequence contains nextSequenceID
-     * @throws DataInconsistentException when the data is inconsistent
      */
-    @Test(expected = DataInconsistentException.class)
-    public void sortIsolatedSequence() throws DataInconsistentException {
+    @Test
+    public void sortIsolatedSequence() {
         WebResource[] isolated = new WebResource[]{ ISOLATED1,ISOLATED5};
-        WebResourceSorter.sort(Arrays.asList(isolated), orderViews1);
+        Assertions.assertThrows(DataInconsistentException.class, () ->
+                WebResourceSorter.sort(Arrays.asList(isolated), orderViews1));
     }
 
     /**

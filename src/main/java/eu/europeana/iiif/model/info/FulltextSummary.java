@@ -2,13 +2,11 @@ package eu.europeana.iiif.model.info;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import eu.europeana.iiif.IIIFDefinitions;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-
-import static eu.europeana.iiif.model.Definitions.MEDIA_TYPE_IIIF_V3;
-import static eu.europeana.iiif.model.Definitions.MEDIA_TYPE_W3ORG_JSONLD;
 
 /**
  * Created by luthien on 07/04/2021.
@@ -16,9 +14,8 @@ import static eu.europeana.iiif.model.Definitions.MEDIA_TYPE_W3ORG_JSONLD;
 public class FulltextSummary implements Serializable {
     private static final long serialVersionUID = -8052995235828716772L;
 
-
     @JsonProperty("@context")
-    private final String[] context = new String[]{MEDIA_TYPE_W3ORG_JSONLD, MEDIA_TYPE_IIIF_V3};
+    private final String[] context = new String[]{IIIFDefinitions.MEDIA_TYPE_W3ORG_JSONLD, IIIFDefinitions.MEDIA_TYPE_IIIF_V3};
 
     private String              dataSetId;
     private String              localId;

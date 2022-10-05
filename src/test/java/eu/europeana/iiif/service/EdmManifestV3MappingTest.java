@@ -5,14 +5,10 @@ import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.v3.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import static org.junit.Assert.*;
 
 /**
  * Tests the EDM-IIIF Manifest v3 mapping
@@ -20,7 +16,6 @@ import static org.junit.Assert.*;
  * Created on 19-06-2019
  */
 
-@RunWith(SpringJUnit4ClassRunner.class)
 @TestPropertySource("classpath:iiif-test.properties")
 @SpringBootTest(classes = {EdmManifestMappingV3.class})
 public class EdmManifestV3MappingTest {
@@ -36,16 +31,16 @@ public class EdmManifestV3MappingTest {
     public void testWithinV3() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_WITHIN);
         Collection[] col = EdmManifestMappingV3.getWithinV3(document);
-        assertNotNull(col);
-        assertTrue(col.length > 0);
-        assertEquals("https://data.theeuropeanlibrary.org/someurl", col[0].getId());
-        assertEquals("Collection", col[0].getType().get());
+        Assertions.assertNotNull(col);
+        Assertions.assertTrue(col.length > 0);
+        Assertions.assertEquals("https://data.theeuropeanlibrary.org/someurl", col[0].getId());
+        Assertions.assertEquals("Collection", col[0].getType().get());
     }
 
     @Test
     public void testWithinV3Empty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMappingV3.getWithinV3(document));
+        Assertions.assertNull(EdmManifestMappingV3.getWithinV3(document));
     }
 
     /**
@@ -74,7 +69,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testLabelEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMappingV3.getLabelsV3(document));
+        Assertions.assertNull(EdmManifestMappingV3.getLabelsV3(document));
     }
 
     /**
@@ -94,10 +89,10 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testDescriptionEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_DESCRIPTION);
-        assertNull(EdmManifestMappingV3.getDescriptionV3(document));
+        Assertions.assertNull(EdmManifestMappingV3.getDescriptionV3(document));
 
         document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_TITLE); // no description
-        assertNull(EdmManifestMappingV3.getDescriptionV3(document));
+        Assertions.assertNull(EdmManifestMappingV3.getDescriptionV3(document));
     }
 
     /**
@@ -107,22 +102,22 @@ public class EdmManifestV3MappingTest {
     public void testMetaDataSimple() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_METADATA_SIMPLE);
         MetaData[] metaData = EdmManifestMappingV3.getMetaDataV3(document);
-        assertNotNull(metaData);
-        assertEquals(3, metaData.length);
+        Assertions.assertNotNull(metaData);
+        Assertions.assertEquals(3, metaData.length);
 
-        assertNotNull(metaData[0]);
+        Assertions.assertNotNull(metaData[0]);
         LanguageMap label1 = metaData[0].getLabel();
         LanguageMap value1 = metaData[0].getValue();
         testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"format"}, label1);
         testLanguageMap(LanguageMap.NO_LANGUAGE_KEY, new String[]{"SomeFormat"}, value1);
 
-        assertNotNull(metaData[1]);
+        Assertions.assertNotNull(metaData[1]);
         LanguageMap label2 = metaData[1].getLabel();
         LanguageMap value2 = metaData[1].getValue();
         testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"type"}, label2);
         testLanguageMap("nl", new String[]{"Precies mijn type"}, value2);
 
-        assertNotNull(metaData[2]);
+        Assertions.assertNotNull(metaData[2]);
         LanguageMap label3 = metaData[2].getLabel();
         LanguageMap value3 = metaData[2].getValue();
         testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"type"}, label3);
@@ -133,19 +128,19 @@ public class EdmManifestV3MappingTest {
     public void testMetaDataComplicated() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_METADATA_COMPLICATED);
         MetaData[] metaData = EdmManifestMappingV3.getMetaDataV3(document);
-        assertNotNull(metaData);
-        assertEquals(3, metaData.length);
+        Assertions.assertNotNull(metaData);
+        Assertions.assertEquals(3, metaData.length);
 
         LOG.info("metaData1 = "+metaData[0]);
-        assertNotNull(metaData[0]);
+        Assertions.assertNotNull(metaData[0]);
         LanguageMap label1 = metaData[0].getLabel();
         LanguageMap value1 = metaData[0].getValue();
         testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"format"}, label1);
         testLanguageMap("en", new String[]{"SomeFormat"}, value1);
-        assertEquals("label: ({en=[format]}) value: ({en=[SomeFormat]})", metaData[0].toString());
+        Assertions.assertEquals("label: ({en=[format]}) value: ({en=[SomeFormat]})", metaData[0].toString());
 
         LOG.info("metaData2 = "+metaData[1]);
-        assertNotNull(metaData[1]);
+        Assertions.assertNotNull(metaData[1]);
         LanguageMap label2 = metaData[1].getLabel();
         LanguageMap value2 = metaData[1].getValue();
         testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"source"}, label2);
@@ -153,16 +148,16 @@ public class EdmManifestV3MappingTest {
         testLanguageMap("be", new String[]{"Bierbeek"}, value2);
         testLanguageMap("bg", new String[]{"Бийрбек"}, value2);
         testLanguageMap("zh", new String[]{"比尔贝克"}, value2);
-        assertEquals("label: ({en=[source]}) value: ({@none=[<a href='http://data.europeana.eu/place/base/203206'>http://data.europeana.eu/place/base/203206</a>]}, {be=[Bierbeek]}, {bg=[Бийрбек]}, {zh=[比尔贝克]})", metaData[1].toString());
+        Assertions.assertEquals("label: ({en=[source]}) value: ({@none=[<a href='http://data.europeana.eu/place/base/203206'>http://data.europeana.eu/place/base/203206</a>]}, {be=[Bierbeek]}, {bg=[Бийрбек]}, {zh=[比尔贝克]})", metaData[1].toString());
 
         LOG.info("metaData3 = "+metaData[2]);
-        assertNotNull(metaData[2]);
+        Assertions.assertNotNull(metaData[2]);
         LanguageMap label3 = metaData[2].getLabel();
         LanguageMap value3 = metaData[2].getValue();
         testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{"source"}, label3);
         testLanguageMap(LanguageMap.NO_LANGUAGE_KEY, new String[]{"May the source be with you", "<a href='https://some.url'>https://some.url</a>"}, value3);
         testLanguageMap("en", new String[]{"Just a test"}, value3);
-        assertEquals("label: ({en=[source]}) value: ({@none=[May the source be with you, <a href='https://some.url'>https://some.url</a>]}, {en=[Just a test]})", metaData[2].toString());
+        Assertions.assertEquals("label: ({en=[source]}) value: ({@none=[May the source be with you, <a href='https://some.url'>https://some.url</a>]}, {en=[Just a test]})", metaData[2].toString());
     }
 
     /**
@@ -171,7 +166,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testMetaDataV3Empty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMappingV3.getMetaDataV3(document));
+        Assertions.assertNull(EdmManifestMappingV3.getMetaDataV3(document));
     }
 
     /**
@@ -181,10 +176,10 @@ public class EdmManifestV3MappingTest {
     public void testThumbnail() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_THUMBNAIL);
         Image[] images = EdmManifestMappingV3.getThumbnailImageV3("test", document);
-        assertNotNull(images);
-        assertEquals(1, images.length);
-        assertEquals(EdmManifestData.TEST_THUMBNAIL_ID, images[0].getId());
-        assertEquals("Image", images[0].getType().get());
+        Assertions.assertNotNull(images);
+        Assertions.assertEquals(1, images.length);
+        Assertions.assertEquals(EdmManifestData.TEST_THUMBNAIL_ID, images[0].getId());
+        Assertions.assertEquals("Image", images[0].getType().get());
     }
 
     /**
@@ -193,7 +188,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testThumbnailEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMappingV3.getThumbnailImageV3( "test", document));
+        Assertions.assertNull(EdmManifestMappingV3.getThumbnailImageV3( "test", document));
     }
 
     /**
@@ -212,7 +207,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testAttributionEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMappingV3.getAttributionV3("test", EdmManifestData.TEST_IS_SHOWN_BY, document));
+        Assertions.assertNull(EdmManifestMappingV3.getAttributionV3("test", EdmManifestData.TEST_IS_SHOWN_BY, document));
     }
 
     /**
@@ -222,10 +217,10 @@ public class EdmManifestV3MappingTest {
     public void testRightsFromEuropeanaAggregation() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_LICENSE_EUROPEANAAGGREGATION);
         Rights rights = EdmManifestMappingV3.getRights("test", document);
-        assertNotNull(rights);
-        assertEquals("licenseTextEuropeana", rights.getId());
-        assertEquals("Text", rights.getType().get());
-        assertEquals("text/html", rights.getFormat());
+        Assertions.assertNotNull(rights);
+        Assertions.assertEquals("licenseTextEuropeana", rights.getId());
+        Assertions.assertEquals("Text", rights.getType().get());
+        Assertions.assertEquals("text/html", rights.getFormat());
     }
 
     /**
@@ -235,8 +230,8 @@ public class EdmManifestV3MappingTest {
     public void testRightsFromOtherAggregations() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_LICENSE_OTHERAGGREGATION);
         Rights rights = EdmManifestMappingV3.getRights("test", document);
-        assertNotNull(rights);
-        assertEquals("licenseTextAggregation", rights.getId());
+        Assertions.assertNotNull(rights);
+        Assertions.assertEquals("licenseTextAggregation", rights.getId());
     }
 
     /**
@@ -245,7 +240,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testRightsEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMappingV3.getRights("test", document));
+        Assertions.assertNull(EdmManifestMappingV3.getRights("test", document));
     }
 
     /**
@@ -254,10 +249,10 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testSeeAlso() {
         DataSet[] datasets = EdmManifestMappingV3.getDataSetsV3("TEST-ID");
-        assertNotNull(datasets);
-        assertEquals(3, datasets.length);
+        Assertions.assertNotNull(datasets);
+        Assertions.assertEquals(3, datasets.length);
         for (DataSet dataset : datasets) {
-            assertTrue(dataset.getId().contains("TEST-ID"));
+            Assertions.assertTrue(dataset.getId().contains("TEST-ID"));
         }
     }
 
@@ -285,13 +280,13 @@ public class EdmManifestV3MappingTest {
     public void testStartCanvasWithMultipleProxyAggregation() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_MULTIPLE_PROXY_AGG);
         String proxyIn = EdmManifestUtils.getDataProviderFromProxyWithOutLineage(document, null);
-        Assert.assertNotNull(proxyIn);
+        Assertions.assertNotNull(proxyIn);
 
         String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
         String isShownAt = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownAt");
 
-        Assert.assertNotNull(edmIsShownBy);
-        Assert.assertNull(isShownAt);
+        Assertions.assertNotNull(edmIsShownBy);
+        Assertions.assertNull(isShownAt);
 
         Canvas[] canvases = EdmManifestMappingV3.getItems("/test-id", edmIsShownBy, document, null);
         Canvas start = EdmManifestMappingV3.getStartCanvasV3(canvases, edmIsShownBy);
@@ -319,7 +314,7 @@ public class EdmManifestV3MappingTest {
 
     @Test
     public void testStartCanvasEmpty() {
-       assertNull(EdmManifestMappingV3.getStartCanvasV3(null, null));
+       Assertions.assertNull(EdmManifestMappingV3.getStartCanvasV3(null, null));
     }
 
     /**
@@ -328,7 +323,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testCanvasEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        assertNull(EdmManifestMappingV3.getItems("test", null, document, null));
+        Assertions.assertNull(EdmManifestMappingV3.getItems("test", null, document, null));
     }
 
     /**
@@ -337,7 +332,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testCanvasMissingIsShownAtHasView() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_NOISSHOWNBY);
-        assertNull(EdmManifestMappingV3.getItems("test", null, document, null));
+        Assertions.assertNull(EdmManifestMappingV3.getItems("test", null, document, null));
     }
 
     /**
@@ -348,9 +343,9 @@ public class EdmManifestV3MappingTest {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
         String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
         Canvas[] canvases = EdmManifestMappingV3.getItems("/test-id", edmIsShownBy, document, null);
-        assertNotNull(canvases);
+        Assertions.assertNotNull(canvases);
         // note that the 3rd canvas is not edmIsShownBy or hasView so not included
-        assertEquals(2, canvases.length);
+        Assertions.assertEquals(2, canvases.length);
 
         // CANVAS 1
         Canvas canvas1 = canvases[0];
@@ -407,54 +402,54 @@ public class EdmManifestV3MappingTest {
     }
 
     private void checkCanvas(ExpectedCanvasAndAnnotationPageValues expected, Canvas canvas) {
-        assertNotNull(canvas);
-        assertTrue("Expected id ending with " + expected.idEndsWith + " but id is "+canvas.getId(),
-                canvas.getId().endsWith(expected.idEndsWith));
-        assertEquals(expected.type, canvas.getType().get());
+        Assertions.assertNotNull(canvas);
+        Assertions.assertTrue(canvas.getId().endsWith(expected.idEndsWith),
+                "Expected id ending with " + expected.idEndsWith + " but id is "+canvas.getId());
+        Assertions.assertEquals(expected.type, canvas.getType().get());
         testLanguageMap(expected.label, canvas.getLabel());
-        assertEquals(expected.duration, canvas.getDuration());
+        Assertions.assertEquals(expected.duration, canvas.getDuration());
         testLanguageMap(expected.attribution, canvas.getRequiredStatement());
         if (expected.rightsId == null) {
-            assertNull(canvas.getRights());
+            Assertions.assertNull(canvas.getRights());
         } else {
-            assertEquals(expected.rightsId, canvas.getRights().getId());
+            Assertions.assertEquals(expected.rightsId, canvas.getRights().getId());
         }
         if (expected.annoPageAnnotationAndBody == null) {
-            assertNull(canvas.getItems());
+            Assertions.assertNull(canvas.getItems());
         } else {
-            assertNotNull(canvas.getItems());
+            Assertions.assertNotNull(canvas.getItems());
             AnnotationPage ap = canvas.getItems()[0];
-            assertNotNull(ap);
-            assertEquals(expected.annoPageid, ap.getId());
-            assertEquals(expected.annoPageType, ap.getType().get());
+            Assertions.assertNotNull(ap);
+            Assertions.assertEquals(expected.annoPageid, ap.getId());
+            Assertions.assertEquals(expected.annoPageType, ap.getType().get());
             checkAnnotationAndBodyAndServiceValues(expected.annoPageAnnotationAndBody, ap.getItems());
         }
     }
 
     private void checkAnnotationAndBodyAndServiceValues(ExpectedAnnotationAndBodyValues[] expectedAnnotations, Annotation[] annotations) {
-        assertNotNull(annotations);
-        assertNotNull(expectedAnnotations);
+        Assertions.assertNotNull(annotations);
+        Assertions.assertNotNull(expectedAnnotations);
         for (int i = 0; i < expectedAnnotations.length; i++) {
             ExpectedAnnotationAndBodyValues expected = expectedAnnotations[i];
             Annotation annotation = annotations[i];
-            assertEquals("Annotation id", expected.id, annotation.getId());
-            assertEquals("Annotation type", expected.type, annotation.getType().get());
-            assertEquals("Annotation motivation", expected.motivation, annotation.getMotivation());
-            assertEquals("Annotation timeMode", expected.timeMode, annotation.getTimeMode());
-            assertEquals("Annotation target", expected.target, annotation.getTarget());
+            Assertions.assertEquals(expected.id, annotation.getId(), "Annotation id");
+            Assertions.assertEquals(expected.type, annotation.getType().get(), "Annotation type");
+            Assertions.assertEquals(expected.motivation, annotation.getMotivation(), "Annotation motivation");
+            Assertions.assertEquals(expected.timeMode, annotation.getTimeMode(), "Annotation timeMode");
+            Assertions.assertEquals(expected.target, annotation.getTarget(), "Annotation target");
             AnnotationBody body = annotation.getBody();
-            assertNotNull(body); // body should always be present
-            assertEquals("AnnotationBody id", expected.bodyId, body.getId());
-            assertEquals("AnnotationBody type",expected.bodyType, body.getType().get());
-            assertEquals("AnnotationBody format", expected.bodyFormat, body.getFormat());
+            Assertions.assertNotNull(body); // body should always be present
+            Assertions.assertEquals(expected.bodyId, body.getId(), "AnnotationBody id");
+            Assertions.assertEquals(expected.bodyType, body.getType().get(), "AnnotationBody type");
+            Assertions.assertEquals(expected.bodyFormat, body.getFormat(), "AnnotationBody format");
             if (expected.hasService) {
                 Service service = body.getService();
-                assertNotNull(service);
-                assertEquals("Service id", expected.bodyServiceId, service.getId());
-                assertEquals("Service type", expected.bodyServiceType, service.getType().get());
-                assertEquals("Service profile", expected.bodyServiceProfile, service.getProfile());
+                Assertions.assertNotNull(service);
+                Assertions.assertEquals(expected.bodyServiceId, service.getId(), "Service id");
+                Assertions.assertEquals(expected.bodyServiceType, service.getType().get(), "Service type");
+                Assertions.assertEquals(expected.bodyServiceProfile, service.getProfile(), "Service profile");
             } else {
-                assertNull (annotation.getBody().getService());
+                Assertions.assertNull (annotation.getBody().getService());
             }
 
         }
@@ -492,18 +487,18 @@ public class EdmManifestV3MappingTest {
      * Test if the provided languageMap contains a particular key and set of values. Ordering of values is also checked
      */
     protected static void testLanguageMap(String expectedKey, String[] expectedValues, LanguageMap map) {
-        assertNotNull(map);
+        Assertions.assertNotNull(map);
         if (expectedKey == null) {
-            assertEquals(0, map.size());
-            assertNull("Expected value cannot be set when there is no key!", expectedValues);
+            Assertions.assertEquals(0, map.size());
+            Assertions.assertNull(expectedValues, "Expected value cannot be set when there is no key!");
         } else {
-            assertTrue("Key '" + expectedKey + "' not found!", map.containsKey(expectedKey));
+            Assertions.assertTrue(map.containsKey(expectedKey), "Key '" + expectedKey + "' not found!");
             String[] values = map.get(expectedKey);
             if (expectedValues == null) {
-                assertNull(values);
+                Assertions.assertNull(values);
             } else {
                 for (int i = 0; i < expectedValues.length; i++) {
-                    assertEquals(values[i], expectedValues[i]);
+                    Assertions.assertEquals(values[i], expectedValues[i]);
                 }
             }
         }
@@ -511,7 +506,7 @@ public class EdmManifestV3MappingTest {
 
     private void testLanguageMap(LanguageMap expectedMap, LanguageMap map) {
         if (expectedMap == null) {
-            assertNull(map);
+            Assertions.assertNull(map);
         } else {
             for (String expectedKey : expectedMap.keySet()) {
                 testLanguageMap(expectedKey, expectedMap.get(expectedKey), map);

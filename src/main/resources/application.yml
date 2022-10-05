@@ -4,3 +4,29 @@ server.port: 8083
 spring:
   application:
     name: IIIF Manifest API
+
+server:
+  error:
+    include-message: always
+    include-stacktrace: on_param
+    include-exception: false
+
+  # Enabling http2 should increase performance in most cases, but best to check if it really does
+  # Note that it only works when using https.
+  http2:
+    enabled: true
+
+  compression:
+    enabled: true
+    min-response-size: 4096
+    mime-types: application/json, application/ld+json
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: info
+
+  info:
+    env:
+      enabled: true

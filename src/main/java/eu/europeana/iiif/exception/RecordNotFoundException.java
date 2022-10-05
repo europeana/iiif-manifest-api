@@ -1,19 +1,16 @@
-package eu.europeana.iiif.service.exception;
+package eu.europeana.iiif.exception;
 
+import eu.europeana.api.commons.error.EuropeanaApiException;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  * Exception that is thrown is a record cannot be found (we get 404)
  * @author Patrick Ehlert
  * Created on 26-01-2018
  */
-@ResponseStatus(HttpStatus.NOT_FOUND)
-public class RecordNotFoundException extends IIIFException {
+public class RecordNotFoundException extends EuropeanaApiException {
 
-    public RecordNotFoundException(String msg, Throwable t) {
-        super(msg, t);
-    }
+    private static final long serialVersionUID = 1255711334519327124L;
 
     public RecordNotFoundException(String msg) {
         super(msg);
@@ -25,5 +22,10 @@ public class RecordNotFoundException extends IIIFException {
     @Override
     public boolean doLog() {
         return false;
+    }
+
+    @Override
+    public HttpStatus getResponseStatus() {
+        return HttpStatus.NOT_FOUND;
     }
 }

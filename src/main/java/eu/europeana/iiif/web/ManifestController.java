@@ -1,11 +1,12 @@
 package eu.europeana.iiif.web;
 
-import eu.europeana.iiif.model.Definitions;
+import eu.europeana.api.commons.error.EuropeanaApiException;
+import eu.europeana.iiif.AcceptUtils;
+import eu.europeana.iiif.exception.InvalidIIIFVersionException;
 import eu.europeana.iiif.service.CacheUtils;
 import eu.europeana.iiif.service.EdmManifestUtils;
 import eu.europeana.iiif.service.ManifestService;
 import eu.europeana.iiif.service.ValidateUtils;
-import eu.europeana.iiif.service.exception.IIIFException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,16 +19,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.net.URL;
 import java.time.ZonedDateTime;
-import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import static eu.europeana.iiif.model.Definitions.MEDIA_TYPE_IIIF_JSONLD_V2;
-import static eu.europeana.iiif.model.Definitions.MEDIA_TYPE_IIIF_JSONLD_V3;
-import static eu.europeana.iiif.model.Definitions.MEDIA_TYPE_IIIF_JSON_V2;
-import static eu.europeana.iiif.model.Definitions.MEDIA_TYPE_IIIF_JSON_V3;
-import static eu.europeana.iiif.model.Definitions.MEDIA_TYPE_JSON;
-import static eu.europeana.iiif.model.Definitions.MEDIA_TYPE_JSONLD;
+import static eu.europeana.iiif.AcceptUtils.*;
 
 /**
  * Rest controller that handles manifest requests
@@ -40,13 +33,6 @@ import static eu.europeana.iiif.model.Definitions.MEDIA_TYPE_JSONLD;
 public class ManifestController {
 
     private static final Logger LOG = LogManager.getLogger(ManifestController.class);
-
-    private static final String ACCEPT_HEADER = "Accept";
-    private static final String  CONTENT_TYPE           = "Content-Type";
-    /* for parsing accept headers */
-    private static final Pattern ACCEPT_PROFILE_PATTERN = Pattern.compile("profile=\"(.*?)\"");
-    private static final String  ACCEPT_JSON            = "Accept=" + MEDIA_TYPE_JSON;
-    private static final String  ACCEPT_JSONLD          = "Accept=" + MEDIA_TYPE_JSONLD;
 
     private ManifestService manifestService;
 
@@ -65,7 +51,7 @@ public class ManifestController {
      * @param addFullText  (optional) perform fulltext exists check or not`1
      * @param fullTextApi  (optional) alternative fullTextApi baseUrl to use for retrieving record data
      * @return JSON-LD string containing manifest
-     * @throws IIIFException when something goes wrong during processing
+     * @throws EuropeanaApiException when something goes wrong during processing
      */
     @SuppressWarnings("squid:S00107") // too many parameters -> we cannot avoid it.
 
@@ -79,9 +65,15 @@ public class ManifestController {
             @RequestParam(value = "fullText", required = false, defaultValue = "true") Boolean addFullText,
             @RequestParam(value = "fullTextApi", required = false) URL fullTextApi,
             HttpServletRequest request,
-            HttpServletResponse response) throws IIIFException {
+            HttpServletResponse response) throws EuropeanaApiException {
         return handleRequest(collectionId, recordId, wskey, version, recordApi, addFullText, fullTextApi, true, request);
     }
+
+    @GetMapping(value = "/test/error")
+    public void testError() throws InvalidIIIFVersionException {
+        throw new InvalidIIIFVersionException("This is a test");
+    }
+
 
     @GetMapping(value = "/{collectionId}/{recordId}/manifest", headers = ACCEPT_JSONLD)
     public ResponseEntity<String> manifestRequestJsonLd(
@@ -93,7 +85,7 @@ public class ManifestController {
             @RequestParam(value = "fullText", required = false, defaultValue = "true") Boolean addFullText,
             @RequestParam(value = "fullTextApi", required = false) URL fullTextApi,
             HttpServletRequest request,
-            HttpServletResponse response) throws IIIFException {
+            HttpServletResponse response) throws EuropeanaApiException {
         return handleRequest(collectionId, recordId, wskey, version, recordApi, addFullText, fullTextApi, false, request);
     }
 
@@ -105,8 +97,7 @@ public class ManifestController {
             boolean addFullText,
             URL fullTextApi,
             boolean isJson,
-            HttpServletRequest request
-                                                ) throws IIIFException {
+            HttpServletRequest request) throws EuropeanaApiException {
         String id = "/" + collectionId + "/" + recordId;
         ValidateUtils.validateWskeyFormat(wskey);
         ValidateUtils.validateRecordIdFormat(id);
@@ -118,19 +109,15 @@ public class ManifestController {
             ValidateUtils.validateApiUrlFormat(fullTextApi);
         }
 
-        if (!isAcceptHeaderOK(request)) {
-            return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
-        }
-        // if no version was provided as request param, then we check the accept header for a profiles= value
-        String iiifVersion = version;
-        if (iiifVersion == null) {
-            iiifVersion = versionFromAcceptHeader(request);
+        String iiifVersion = AcceptUtils.getRequestVersion(request, version);
+        if (StringUtils.isEmpty(iiifVersion)) {
+            throw new InvalidIIIFVersionException(ACCEPT_VERSION_INVALID);
         }
 
         String json = manifestService.getRecordJson(id, wskey, recordApi);
         ZonedDateTime lastModified = EdmManifestUtils.getRecordTimestampUpdate(json);
         String eTag = generateETag(id, lastModified, iiifVersion);
-        HttpHeaders headers = CacheUtils.generateCacheHeaders("no-cache", eTag, lastModified, ACCEPT_HEADER);
+        HttpHeaders headers = CacheUtils.generateCacheHeaders("no-cache", eTag, lastModified, ACCEPT);
         ResponseEntity cached = CacheUtils.checkCached(request, headers, lastModified, eTag);
         if (cached != null) {
             LOG.debug("Returning 304 response");
@@ -151,60 +138,14 @@ public class ManifestController {
                 manifest = manifestService.generateManifestV2(json); // fallback option
             }
         }
-        addContentTypeToResponseHeader(headers, iiifVersion, isJson);
+        AcceptUtils.addContentTypeToResponseHeader(headers, iiifVersion, isJson);
         return new ResponseEntity<>(manifestService.serializeManifest(manifest), headers, HttpStatus.OK);
     }
 
-    private String versionFromAcceptHeader(HttpServletRequest request) {
-        String result = "2"; // default version if no accept header is present
-        String accept = request.getHeader(ACCEPT_HEADER);
-        if (StringUtils.isNotEmpty(accept)) {
-            Matcher m = ACCEPT_PROFILE_PATTERN.matcher(accept);
-            if (m.find()) {
-                String profiles = m.group(1);
-                if (profiles.toLowerCase(Locale.getDefault()).contains(Definitions.MEDIA_TYPE_IIIF_V3)) {
-                    result = "3";
-                } else {
-                    result = "2";
-                }
-            }
-        }
-        return result;
-    }
-
-    private boolean isAcceptHeaderOK(HttpServletRequest request) {
-        String accept = request.getHeader(ACCEPT_HEADER);
-        return (StringUtils.isBlank(accept)) ||
-               (StringUtils.containsIgnoreCase(accept, "*/*")) ||
-               (StringUtils.containsIgnoreCase(accept, "application/json")) ||
-               (StringUtils.containsIgnoreCase(accept, "application/ld+json"));
-    }
 
     private String generateETag(String recordId, ZonedDateTime recordUpdated, String iiifVersion) {
         String hashData = recordId + recordUpdated + manifestService.getSettings().getAppVersion() + iiifVersion;
         return CacheUtils.generateETag(hashData, true);
     }
 
-    /**
-     * Adds content-type header to response.
-     *
-     * @param headers response header
-     * @param version response version (based on request)
-     * @param isJson  indicates whether application/json header should be added to response.
-     */
-    private void addContentTypeToResponseHeader(HttpHeaders headers, String version, boolean isJson) {
-        if ("3".equalsIgnoreCase(version)) {
-            if (isJson) {
-                headers.add(CONTENT_TYPE, MEDIA_TYPE_IIIF_JSON_V3);
-            } else {
-                headers.add(CONTENT_TYPE, MEDIA_TYPE_IIIF_JSONLD_V3);
-            }
-        } else {
-            if (isJson) {
-                headers.add(CONTENT_TYPE, MEDIA_TYPE_IIIF_JSON_V2);
-            } else {
-                headers.add(CONTENT_TYPE, MEDIA_TYPE_IIIF_JSONLD_V2);
-            }
-        }
-    }
 }

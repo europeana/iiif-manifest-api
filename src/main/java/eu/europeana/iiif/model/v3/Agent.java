@@ -1,6 +1,6 @@
 package eu.europeana.iiif.model.v3;
 
-import eu.europeana.iiif.model.Definitions;
+import eu.europeana.iiif.model.ManifestDefinitions;
 
 /**
  *  Contains a static reference to Europeana as a provider (in English language)
@@ -13,7 +13,7 @@ public class Agent extends JsonLdIdType {
 
     private static Text[] europeanaHomepage = new Text[]{ new Text("https://www.europeana.eu",
                                                       new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, "Europeana")) };
-    private static Image[] logo = new Image[]{ new Image(Definitions.EUROPEANA_LOGO_URL) };
+    private static Image[] logo = new Image[]{ new Image(ManifestDefinitions.EUROPEANA_LOGO_URL) };
 
     public Agent() {
         super("https://www.europeana.eu/en/about-us", "Agent");

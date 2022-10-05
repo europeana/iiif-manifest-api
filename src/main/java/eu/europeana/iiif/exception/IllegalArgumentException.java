@@ -1,19 +1,16 @@
-package eu.europeana.iiif.service.exception;
+package eu.europeana.iiif.exception;
 
+import eu.europeana.api.commons.error.EuropeanaApiException;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  * Thrown when we find illegal user input
  * @author Patrick Ehlert
  * Created on 09-07-2018
  */
-@ResponseStatus(HttpStatus.BAD_REQUEST)
-public class IllegalArgumentException extends IIIFException {
+public class IllegalArgumentException extends EuropeanaApiException {
 
-    public IllegalArgumentException(String msg, Throwable t) {
-        super(msg, t);
-    }
+    private static final long serialVersionUID = 6920934255738422247L;
 
     public IllegalArgumentException(String msg) {
         super(msg);
@@ -25,5 +22,10 @@ public class IllegalArgumentException extends IIIFException {
     @Override
     public boolean doLog() {
         return false;
+    }
+
+    @Override
+    public HttpStatus getResponseStatus() {
+        return HttpStatus.BAD_REQUEST;
     }
 }

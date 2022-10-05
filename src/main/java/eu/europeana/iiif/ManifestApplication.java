@@ -20,7 +20,7 @@ import java.util.Collections;
  * Created on 6-12-2017
  */
 @EnableWebMvc
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"eu.europeana.iiif", "eu.europeana.api"})  // needed to find EuropeanaApiErrorController in api-commons
 @PropertySource(value = "classpath:build.properties", ignoreResourceNotFound = true)
 public class ManifestApplication extends SpringBootServletInitializer {
 

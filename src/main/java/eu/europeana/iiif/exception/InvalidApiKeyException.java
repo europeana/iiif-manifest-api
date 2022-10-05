@@ -1,19 +1,16 @@
-package eu.europeana.iiif.service.exception;
+package eu.europeana.iiif.exception;
 
+import eu.europeana.api.commons.error.EuropeanaApiException;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  * Exception that is thrown when the provided API key is not valid
  * @author Patrick Ehlert
  * Created on 26-01-2018
  */
-@ResponseStatus(HttpStatus.UNAUTHORIZED)
-public class InvalidApiKeyException extends IIIFException {
+public class InvalidApiKeyException extends EuropeanaApiException {
 
-    public InvalidApiKeyException(String msg, Throwable t) {
-        super(msg, t);
-    }
+    private static final long serialVersionUID = 3639614753377679354L;
 
     public InvalidApiKeyException(String msg) {
         super(msg);
@@ -25,5 +22,10 @@ public class InvalidApiKeyException extends IIIFException {
     @Override
     public boolean doLog() {
         return false;
+    }
+
+    @Override
+    public HttpStatus getResponseStatus() {
+        return HttpStatus.UNAUTHORIZED;
     }
 }
