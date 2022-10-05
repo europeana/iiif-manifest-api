@@ -74,7 +74,7 @@ public final class EdmManifestMappingV3 {
 
         ManifestV3 manifest = new ManifestV3(europeanaId, ManifestDefinitions.getManifestId(europeanaId), isShownBy);
         manifest.setService(getServiceDescriptionV3(ms.getFullTextApiBaseUrl(), europeanaId));
-        manifest.setWithin(getWithinV3(jsonDoc));
+        manifest.setPartOf(getWithinV3(jsonDoc));
         manifest.setLabel(getLabelsV3(jsonDoc));
         manifest.setSummary(getDescriptionV3(jsonDoc));
         manifest.setMetadata(getMetaDataV3(jsonDoc));
