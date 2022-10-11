@@ -3,7 +3,7 @@ package eu.europeana.iiif.model.v2;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import eu.europeana.iiif.model.Definitions;
+import eu.europeana.iiif.model.ManifestDefinitions;
 import ioinformarics.oss.jackson.module.jsonld.annotation.JsonldType;
 
 /**
@@ -28,7 +28,7 @@ public class ManifestV2 extends JsonLdId {
     private String navDate;
     private String attribution;
     private String license;
-    private String logo = Definitions.EUROPEANA_LOGO_URL;
+    private String logo = ManifestDefinitions.EUROPEANA_LOGO_URL;
     private DataSet[] seeAlso;
     private Service service;
     private Sequence[] sequences;

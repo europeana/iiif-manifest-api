@@ -19,7 +19,7 @@ public class ManifestV3 extends JsonLdIdType {
     private static final String[] context = {"http://www.w3.org/ns/anno.jsonld",
                                              "http://iiif.io/api/presentation/3/context.json"};
     private static final Agent[] provider = new Agent[]{ new Agent() };
-    private Collection[] within;
+    private Collection[] partOf;
     private LanguageMap label; // edm:title
     private LanguageMap summary; // edm:description
     private MetaData[] metadata;
@@ -62,12 +62,12 @@ public class ManifestV3 extends JsonLdIdType {
         return ManifestV3.context;
     }
 
-    public Collection[] getWithin() {
-        return within;
+    public Collection[] getPartOf() {
+        return partOf;
     }
 
-    public void setWithin(Collection[] within) {
-        this.within = within;
+    public void setPartOf(Collection[] partOf) {
+        this.partOf = partOf;
     }
 
     /**

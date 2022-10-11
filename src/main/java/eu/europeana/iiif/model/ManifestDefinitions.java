@@ -1,10 +1,14 @@
 package eu.europeana.iiif.model;
 
+import eu.europeana.iiif.IIIFDefinitions;
+
 /**
+ * Definitions specifically for IIIF Manifest. For definitions shared between IIIF Manifest and Fulltext API
+ * @see IIIFDefinitions class
  * @author Patrick Ehlert
  * Created on 26-01-2018
  */
-public final class Definitions {
+public final class ManifestDefinitions {
 
     /**
      * Place holder for the dataset and record part of an ID. This is used in various places in the manifest
@@ -12,14 +16,10 @@ public final class Definitions {
     public static final String ID_PLACEHOLDER = "{DATASET_ID}/{RECORD_ID}";
 
     /**
-     * IIIF presentation path
-     */
-    public static final String IIIF_PRESENTATION_PATH = "/presentation";
-
-    /**
      * Base URL used for generation the various types of IDs
      */
-    public static final String IIIF_PRESENTATION_BASE_URL = "https://iiif.europeana.eu" + IIIF_PRESENTATION_PATH + ID_PLACEHOLDER;
+    public static final String IIIF_PRESENTATION_BASE_URL =
+            IIIFDefinitions.IIIF_EUROPENA_BASE_URL + IIIFDefinitions.PRESENTATION_PATH + ID_PLACEHOLDER;
 
     /**
      * Url of all manifest IDs but with placeholder for the actual dataset and record ID
@@ -39,81 +39,9 @@ public final class Definitions {
     public static final String CANVAS_ID = IIIF_PRESENTATION_BASE_URL + "/canvas/p";
 
     /**
-     * Url for annotation IDs but with placeholder for the actual dataset and record ID
-     * Note that there the order number is not included here (so first canvas should be /annotation/p1)
-     */
-    public static final String ANNOTATION_ID = IIIF_PRESENTATION_BASE_URL + "/annotation/p";
-
-    /**
      * Base url of a dataset ID (seeAlso part of manifest)
      */
     public static final String DATASET_ID_BASE_URL = "https://www.europeana.eu/api/v2/record";
-
-    /**
-     * Path to Fulltext Summary
-     */
-    public static final String FULLTEXT_SUMMARY_PATH = "/annopage/";
-
-
-    /**
-     * Fulltext Search path
-     */
-    public static final String FULLTEXT_SEARCH_PATH =  "/search";
-
-    /**
-     * Media type for json-ld
-     */
-    public static final String MEDIA_TYPE_JSONLD = "application/ld+json";
-
-    public static final String MEDIA_TYPE_JSON = "application/json";
-
-    public static final String UTF_8 = "charset=UTF-8";
-
-    /**
-     * Media type for IIIF version 2
-     */
-    public static final String MEDIA_TYPE_IIIF_V2 = "https://iiif.io/api/presentation/2/context.json";
-
-    /**
-     * Media type for IIIF version 3
-     */
-    public static final String MEDIA_TYPE_IIIF_V3 = "https://iiif.io/api/presentation/3/context.json";
-
-    /**
-     * Media type used in @context tag of Fulltext Summary
-     */
-    public static final String MEDIA_TYPE_W3ORG_JSONLD  = "https://www.w3.org/ns/anno.jsonld";
-
-    private static final String PROFILE = ";profile=\"";
-
-    /**
-     * Default Content-type returned on manifest requests for version 2
-     */
-    public static final String MEDIA_TYPE_IIIF_JSONLD_V2 = MEDIA_TYPE_JSONLD
-            + PROFILE
-            + MEDIA_TYPE_IIIF_V2
-            + "\";"
-            + UTF_8;
-
-    public static final String MEDIA_TYPE_IIIF_JSON_V2 = MEDIA_TYPE_JSON
-            + PROFILE
-            + MEDIA_TYPE_IIIF_V2
-            + "\";"
-            + UTF_8;
-    /**
-     * Default Content-type returned on manifest requests for version 3
-     */
-    public static final String MEDIA_TYPE_IIIF_JSONLD_V3 = MEDIA_TYPE_JSONLD
-            + PROFILE
-            + MEDIA_TYPE_IIIF_V3
-            + "\";"
-            + UTF_8;
-
-    public static final String MEDIA_TYPE_IIIF_JSON_V3 = MEDIA_TYPE_JSON
-            + PROFILE
-            + MEDIA_TYPE_IIIF_V3
-            + "\";"
-            + UTF_8;
 
     /**
      * Media type for rdf
@@ -154,16 +82,16 @@ public final class Definitions {
     public static final  String INFO_CANVAS_TYPE          = "FulltextSummaryCanvas";
     public static final  String INFO_ANNOPAGE_TYPE        = "AnnotationPage";
 
-    private Definitions() {
+    private ManifestDefinitions() {
         // empty constructor to avoid initializationRE
     }
 
     public static String getFulltextSummaryPath(String europeanaId) {
-        return IIIF_PRESENTATION_PATH + europeanaId + FULLTEXT_SUMMARY_PATH;
+        return IIIFDefinitions.PRESENTATION_PATH + europeanaId + IIIFDefinitions.FULLTEXT_SUMMARY_PATH + "/"; // for now trailing slash is needed
     }
 
     public static String getFulltextSearchPath(String europeanaId) {
-        return IIIF_PRESENTATION_PATH + europeanaId + FULLTEXT_SEARCH_PATH;
+        return IIIFDefinitions.PRESENTATION_PATH + europeanaId + IIIFDefinitions.FULLTEXT_SEARCH_PATH;
     }
 
     /**
@@ -173,7 +101,7 @@ public final class Definitions {
      * @return string containing the IIIF manifest ID
      */
     public static String getManifestId(String europeanaId) {
-        return Definitions.MANIFEST_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId);
+        return ManifestDefinitions.MANIFEST_ID.replace(ManifestDefinitions.ID_PLACEHOLDER, europeanaId);
     }
 
     /**
@@ -184,7 +112,7 @@ public final class Definitions {
      * @return String containing the canvas ID
      */
     public static String getCanvasId(String europeanaId, int order) {
-        return Definitions.CANVAS_ID.replace(Definitions.ID_PLACEHOLDER, europeanaId).concat(Integer.toString(order));
+        return ManifestDefinitions.CANVAS_ID.replace(ManifestDefinitions.ID_PLACEHOLDER, europeanaId).concat(Integer.toString(order));
     }
 
     /**
@@ -194,7 +122,7 @@ public final class Definitions {
      * @return string containing the dataset ID consisting of a base url, Europeana ID and postfix (rdf/xml, json or json-ld)
      */
     public static String getDatasetId(String europeanaId, String postFix) {
-        return Definitions.DATASET_ID_BASE_URL + europeanaId + postFix;
+        return ManifestDefinitions.DATASET_ID_BASE_URL + europeanaId + postFix;
     }
 
 }

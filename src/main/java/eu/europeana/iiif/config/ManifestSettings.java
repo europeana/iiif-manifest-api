@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-import static eu.europeana.iiif.model.Definitions.getFulltextSummaryPath;
+import static eu.europeana.iiif.model.ManifestDefinitions.getFulltextSummaryPath;
 
 /**
  * Container for all manifest settings that we load from the iiif.properties file. Note that we also have hard-coded

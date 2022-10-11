@@ -1,6 +1,6 @@
 package eu.europeana.iiif.model.v2;
 
-import eu.europeana.iiif.model.Definitions;
+import eu.europeana.iiif.model.ManifestDefinitions;
 
 /**
  * Source data of the resource, see http://prezi3.iiif.io/api/presentation/3.0/#technical-properties.
@@ -14,7 +14,7 @@ public class DataSet extends JsonLdId {
     private static final long serialVersionUID = 8476756746789079580L;
 
     private String format;
-    private String profile = Definitions.EDM_SCHEMA_URL;
+    private String profile = ManifestDefinitions.EDM_SCHEMA_URL;
 
     public DataSet(String id, String format) {
         super(id);

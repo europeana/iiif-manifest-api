@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static eu.europeana.iiif.model.Definitions.INFO_CANVAS_TYPE;
+import static eu.europeana.iiif.model.ManifestDefinitions.INFO_CANVAS_TYPE;
 
 /**
  * Created by luthien on 15/04/2021.

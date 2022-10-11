@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.europeana.iiif.model.v3.JsonLdIdType;
 
-import static eu.europeana.iiif.model.Definitions.INFO_ANNOPAGE_TYPE;
+import static eu.europeana.iiif.model.ManifestDefinitions.INFO_ANNOPAGE_TYPE;
 
 /**
  * Created by luthien on 15/04/2021.

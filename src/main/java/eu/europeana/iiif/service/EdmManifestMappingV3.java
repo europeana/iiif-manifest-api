@@ -2,8 +2,9 @@ package eu.europeana.iiif.service;
 
 import com.jayway.jsonpath.Filter;
 import com.jayway.jsonpath.JsonPath;
+import eu.europeana.iiif.AcceptUtils;
 import eu.europeana.iiif.config.ManifestSettings;
-import eu.europeana.iiif.model.Definitions;
+import eu.europeana.iiif.model.ManifestDefinitions;
 import eu.europeana.iiif.model.WebResource;
 import eu.europeana.iiif.model.WebResourceSorter;
 import eu.europeana.iiif.model.v3.Collection;
@@ -71,9 +72,9 @@ public final class EdmManifestMappingV3 {
             LOG.debug("isShownBy = {}", isShownBy);
         }
 
-        ManifestV3 manifest = new ManifestV3(europeanaId, Definitions.getManifestId(europeanaId), isShownBy);
+        ManifestV3 manifest = new ManifestV3(europeanaId, ManifestDefinitions.getManifestId(europeanaId), isShownBy);
         manifest.setService(getServiceDescriptionV3(ms.getFullTextApiBaseUrl(), europeanaId));
-        manifest.setWithin(getWithinV3(jsonDoc));
+        manifest.setPartOf(getWithinV3(jsonDoc));
         manifest.setLabel(getLabelsV3(jsonDoc));
         manifest.setSummary(getDescriptionV3(jsonDoc));
         manifest.setMetadata(getMetaDataV3(jsonDoc));
@@ -94,8 +95,8 @@ public final class EdmManifestMappingV3 {
     private static Service[] getServiceDescriptionV3(String fulltextBaseUrl, String europeanaId) {
         return new Service[]{new Service(EdmManifestUtils.getFullTextSearchUrl(fulltextBaseUrl, europeanaId),
                 null,
-                Definitions.SEARCH_CONTEXT_VALUE,
-                Definitions.SEARCH_PROFILE_VALUE)};
+                ManifestDefinitions.SEARCH_CONTEXT_VALUE,
+                ManifestDefinitions.SEARCH_PROFILE_VALUE)};
     }
 
     /**
@@ -307,12 +308,12 @@ public final class EdmManifestMappingV3 {
      */
     static eu.europeana.iiif.model.v3.DataSet[] getDataSetsV3(String europeanaId) {
         eu.europeana.iiif.model.v3.DataSet[] result = new eu.europeana.iiif.model.v3.DataSet[3];
-        result[0] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json-ld"),
-                Definitions.MEDIA_TYPE_JSONLD);
-        result[1] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".json"),
+        result[0] = new eu.europeana.iiif.model.v3.DataSet(ManifestDefinitions.getDatasetId(europeanaId, ".json-ld"),
+                AcceptUtils.MEDIA_TYPE_JSONLD);
+        result[1] = new eu.europeana.iiif.model.v3.DataSet(ManifestDefinitions.getDatasetId(europeanaId, ".json"),
                 org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
-        result[2] = new eu.europeana.iiif.model.v3.DataSet(Definitions.getDatasetId(europeanaId, ".rdf"),
-                Definitions.MEDIA_TYPE_RDF);
+        result[2] = new eu.europeana.iiif.model.v3.DataSet(ManifestDefinitions.getDatasetId(europeanaId, ".rdf"),
+                ManifestDefinitions.MEDIA_TYPE_RDF);
         return result;
     }
 
@@ -376,7 +377,7 @@ public final class EdmManifestMappingV3 {
     private static eu.europeana.iiif.model.v3.Canvas getCanvasV3(String europeanaId, int order, WebResource webResource,
                                                                  Map<String, Object>[] services, MediaType euScreenTypeHack) {
         eu.europeana.iiif.model.v3.Canvas c =
-                new eu.europeana.iiif.model.v3.Canvas(Definitions.getCanvasId(europeanaId, order), order);
+                new eu.europeana.iiif.model.v3.Canvas(ManifestDefinitions.getCanvasId(europeanaId, order), order);
 
         c.setLabel(new LanguageMap(null, "p. "+order));
 
@@ -442,7 +443,7 @@ public final class EdmManifestMappingV3 {
         // body can have a service
         String serviceId = EdmManifestUtils.getServiceId(webResource, europeanaId);
         if (serviceId != null) {
-            eu.europeana.iiif.model.v3.Service service = new eu.europeana.iiif.model.v3.Service(serviceId, Definitions.IMAGE_SERVICE_TYPE_3);
+            eu.europeana.iiif.model.v3.Service service = new eu.europeana.iiif.model.v3.Service(serviceId, ManifestDefinitions.IMAGE_SERVICE_TYPE_3);
             service.setProfile(EdmManifestUtils.lookupServiceDoapImplements(services, serviceId, europeanaId));
             annoBody.setService(service);
         }

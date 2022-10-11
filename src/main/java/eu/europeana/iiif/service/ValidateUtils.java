@@ -1,6 +1,6 @@
 package eu.europeana.iiif.service;
 
-import eu.europeana.iiif.service.exception.IllegalArgumentException;
+import eu.europeana.iiif.exception.IllegalArgumentException;
 import org.springframework.util.StringUtils;
 
 import java.net.URL;

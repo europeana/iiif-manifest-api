@@ -5,7 +5,7 @@ import eu.europeana.iiif.model.WebResource;
 import eu.europeana.iiif.model.WebResourceSorter;
 import eu.europeana.iiif.model.v3.LanguageMap;
 import eu.europeana.iiif.model.v3.Text;
-import eu.europeana.iiif.service.exception.DataInconsistentException;
+import eu.europeana.iiif.exception.DataInconsistentException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.util.StringUtils;
@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static eu.europeana.iiif.model.Definitions.getFulltextSearchPath;
+import static eu.europeana.iiif.model.ManifestDefinitions.getFulltextSearchPath;
 
 /**
  * This class contains all the common methods for mapping EDM record data to IIIF Manifest data for IIIF v2 and v3

@@ -1,43 +1,37 @@
-package eu.europeana.iiif;
+package eu.europeana.iiif.web;
 
-import eu.europeana.iiif.model.Definitions;
+import eu.europeana.iiif.AcceptUtils;
+import eu.europeana.iiif.IIIFDefinitions;
+import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v3.ManifestV3;
 import eu.europeana.iiif.service.ManifestService;
-import eu.europeana.iiif.config.ManifestSettings;
-import eu.europeana.iiif.web.ManifestController;
 import org.apache.logging.log4j.LogManager;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.TestPropertySource;
-
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.Matchers.containsString;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
  * Tests if the ManifestController returns the correct (version of) responses with the appropriate headers
  * @author Patrick Ehlert
  * Created on 06-03-2018
  */
-@RunWith(SpringJUnit4ClassRunner.class)
 @TestPropertySource("classpath:iiif-test.properties")
 @WebMvcTest(ManifestController.class)
 public class ManifestControllerTest {
@@ -51,6 +45,13 @@ public class ManifestControllerTest {
     private static final String ETAG_HEADER_V2 = "W/\"f0524d47eba1d4f83dbc02cd1786a4e12edfa2a187b0dab730ec9310fa01868d\"";
     private static final String ETAG_HEADER_V3 = "W/\"545f96ddfbdef6a91d60d0176229e8a2abb73f20694b425bd428573f522e0bbe\"";
     private static final String ETAG_HEADER_FALSE = "W/\"ca3d67df3ee77ece353fd070203c47a43ea383558df10a4ab0cd2ce4b46d7643\"";
+    
+    private static final String PROFILE_V2 = "profile=\""+ IIIFDefinitions.MEDIA_TYPE_IIIF_V2+"\"";
+    private static final String PROFILE_V3 = "profile=\""+ IIIFDefinitions.MEDIA_TYPE_IIIF_V3+"\"";
+    private static final String JSONLD_V2 = AcceptUtils.MEDIA_TYPE_JSONLD + AcceptUtils.ACCEPT_DELIMITER + PROFILE_V2;
+    private static final String JSON_V2 = AcceptUtils.MEDIA_TYPE_JSON + AcceptUtils.ACCEPT_DELIMITER + PROFILE_V2;
+    private static final String JSONLD_V3 = AcceptUtils.MEDIA_TYPE_JSONLD + AcceptUtils.ACCEPT_DELIMITER + PROFILE_V3;
+    private static final String JSON_V3 = AcceptUtils.MEDIA_TYPE_JSON + AcceptUtils.ACCEPT_DELIMITER + PROFILE_V3;    
 
     @Autowired
     private MockMvc mockMvc;
@@ -60,7 +61,7 @@ public class ManifestControllerTest {
     @MockBean
     private ManifestSettings manifestSettings;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         given(manifestSettings.getAppVersion()).willReturn("v1.0-test");
 
@@ -104,33 +105,33 @@ public class ManifestControllerTest {
     public void testManifestAcceptHeader() throws Exception {
         // first try v2 header
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
-                                                              .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\""))
+                                                              .header(AcceptUtils.ACCEPT, JSON_V2))
                     .andExpect(status().isOk())
-                    .andExpect(header().string("Content-Type", containsString("profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\"")))
-                    .andExpect(header().string("Content-Type", containsString("application/json")))
+                    .andExpect(header().string("Content-Type", containsString(PROFILE_V2)))
+                    .andExpect(header().string("Content-Type", containsString(AcceptUtils.MEDIA_TYPE_JSON)))
                     .andExpect(header().string("eTag", notNullValue()))
                     .andExpect(content().json(JSONLD_V2_OUTPUT));
 
         // then try v3
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
-                                                              .header("Accept", "application/ld+json;profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\""))
+                                                              .header(AcceptUtils.ACCEPT, JSONLD_V3))
                     .andExpect(status().isOk())
-                    .andExpect(header().string("Content-Type", containsString("profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\"")))
-                    .andExpect(header().string("Content-Type", containsString("application/ld+json")))
+                    .andExpect(header().string("Content-Type", containsString(PROFILE_V3)))
+                    .andExpect(header().string("Content-Type", containsString(AcceptUtils.MEDIA_TYPE_JSONLD)))
                     .andExpect(header().string("eTag", notNullValue()))
                     .andExpect(content().json(JSONLD_V3_OUTPUT));
 
         // check if we get v2 if there is an unknown, but otherwise valid accept
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
-                                                              .header("Accept", "application/json;profile=X"))
+                                                              .header(AcceptUtils.ACCEPT, AcceptUtils.MEDIA_TYPE_JSON + ";profile=X"))
                     .andExpect(status().isOk())
-                    .andExpect(header().string("Content-Type", containsString("profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\"")))
-                    .andExpect(header().string("Content-Type", containsString("application/json")))
+                    .andExpect(header().string("Content-Type", containsString(PROFILE_V2)))
+                    .andExpect(header().string("Content-Type", containsString(AcceptUtils.MEDIA_TYPE_JSON)))
                     .andExpect(content().json(JSONLD_V2_OUTPUT));
 
         // finally check if we get a 406 for unsupported accept headers
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
-                                                              .header("Accept", "application/xml"))
+                                                              .header(AcceptUtils.ACCEPT, "application/xml"))
                     .andExpect(status().isNotAcceptable());
     }
 
@@ -144,9 +145,9 @@ public class ManifestControllerTest {
         this.mockMvc.perform(get("/presentation/1/2/manifest")
                                      .param("wskey", "test")
                                      .param("format", "2")
-                                     .header("Accept", "application/ld+json"))
+                                     .header(AcceptUtils.ACCEPT, AcceptUtils.MEDIA_TYPE_JSONLD))
                     .andExpect(status().isOk())
-                    .andExpect(header().string("Content-Type", containsString("profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\"")))
+                    .andExpect(header().string("Content-Type", containsString(PROFILE_V2)))
                     .andExpect(header().string("eTag", notNullValue()))
                     .andExpect(content().json(JSONLD_V2_OUTPUT));
 
@@ -154,9 +155,9 @@ public class ManifestControllerTest {
         this.mockMvc.perform(get("/presentation/1/2/manifest")
                                      .param("wskey", "test")
                                      .param("format", "3")
-                                     .header("Accept", "application/ld+json"))
+                                     .header(AcceptUtils.ACCEPT, AcceptUtils.MEDIA_TYPE_JSONLD))
                     .andExpect(status().isOk())
-                    .andExpect(header().string("Content-Type", containsString("profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\"")))
+                    .andExpect(header().string("Content-Type", containsString(PROFILE_V3)))
                     .andExpect(header().string("eTag", notNullValue()))
                     .andExpect(content().json(JSONLD_V3_OUTPUT)).andDo(print());
     }
@@ -167,7 +168,7 @@ public class ManifestControllerTest {
     @Test
     public void testManifestCrossOrigin() throws Exception {
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
-                                                              .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\"")
+                                                              .header(AcceptUtils.ACCEPT, JSON_V2)
                                                               .header("Origin", "test"))
                     .andExpect(status().isOk())
                     .andExpect(header().string("Access-Control-Allow-Origin", anyOf(is("test"), is("*"))))
@@ -181,13 +182,13 @@ public class ManifestControllerTest {
     public void testManifestIfModifiedSince() throws Exception {
         // test after last-modified date
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
-                                                              .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\"")
+                                                              .header(AcceptUtils.ACCEPT, JSON_V2)
                                                               .header("If-Modified-Since", TIMESTAMP_AFTER))
                     .andExpect(status().isNotModified())
                     .andExpect(header().string("Last-Modified", equalTo(TIMESTAMP_UPDATE)));
         // test before last-modified date
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
-                                                              .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\"")
+                                                              .header(AcceptUtils.ACCEPT, JSON_V3)
                                                               .header("If-Modified-Since", TIMESTAMP_BEFORE))
                     .andExpect(status().isOk())
                     .andExpect(header().string("Last-Modified", equalTo(TIMESTAMP_UPDATE)));
@@ -200,20 +201,20 @@ public class ManifestControllerTest {
     public void testManifestIfNoneMatch() throws Exception {
         // retrieve eTag value
         MvcResult result = this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
-                                                                                 .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\""))
+                                                                                 .header(AcceptUtils.ACCEPT, JSON_V2))
                                        .andReturn();
         String eTag = result.getResponse().getHeader("eTag");
 
         // supply the same eTag value, expect HTTP 304
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
-                                                              .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\"")
+                                                              .header(AcceptUtils.ACCEPT, JSON_V2)
                                                               .header("If-None-Match", eTag))
                     .andExpect(header().string("eTag", equalTo(ETAG_HEADER_V2)))
                     .andExpect(status().isNotModified());
 
         // supply another eTag value will result in HTTP 200
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
-                                                              .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V2+"\"")
+                                                              .header(AcceptUtils.ACCEPT, JSON_V2)
                                                               .header("If-None-Match", ETAG_HEADER_FALSE))
                     .andExpect(header().string("eTag", equalTo(ETAG_HEADER_V2)))
                     .andExpect(status().isOk());
@@ -227,21 +228,21 @@ public class ManifestControllerTest {
     public void testManifestIfMatch() throws Exception {
         // retrieve eTag value
         MvcResult result = this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
-                                                                                 .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\""))
+                                                                                 .header(AcceptUtils.ACCEPT, JSON_V3))
                                        .andReturn();
         String eTag = result.getResponse().getHeader("eTag");
         LogManager.getLogger(ManifestController.class).info("First eTag = "+eTag);
 
         // supply the same eTag value, expect HTTP 200
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
-                                                              .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\"")
+                                                              .header(AcceptUtils.ACCEPT, JSON_V3)
                                                               .header("If-Match", eTag))
                     .andExpect(header().string("eTag", equalTo(ETAG_HEADER_V3)))
                     .andExpect(status().isOk());
 
         // supply another eTag value will result in HTTP 412
         this.mockMvc.perform(get("/presentation/1/2/manifest").param("wskey", "test")
-                                                              .header("Accept", "application/json; profile=\""+Definitions.MEDIA_TYPE_IIIF_V3+"\"")
+                                                              .header(AcceptUtils.ACCEPT, JSON_V3)
                                                               .header("If-Match", ETAG_HEADER_FALSE))
                     .andExpect(header().string("eTag", equalTo(ETAG_HEADER_V3)))
                     .andExpect(status().isPreconditionFailed());
