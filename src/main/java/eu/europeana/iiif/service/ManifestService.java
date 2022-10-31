@@ -15,6 +15,7 @@ import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.exception.IllegalArgumentException;
 import eu.europeana.iiif.model.ManifestDefinitions;
 import eu.europeana.iiif.model.info.FulltextSummary;
+import eu.europeana.iiif.model.info.FulltextSummaryAnnoPage;
 import eu.europeana.iiif.model.info.FulltextSummaryCanvas;
 import eu.europeana.iiif.model.v2.ManifestV2;
 import eu.europeana.iiif.model.v2.Sequence;
@@ -447,7 +448,6 @@ public class ManifestService {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
         ManifestV3 result = EdmManifestMappingV3.getManifestV3(settings, document);
-
         try {
             fillInFullTextLinksV3(result, fullTextApi);
         } catch (EuropeanaApiException ie) {
@@ -541,17 +541,21 @@ public class ManifestService {
 
     private void addFulltextLinkToCanvasV3(eu.europeana.iiif.model.v3.Canvas canvas, FulltextSummaryCanvas summaryCanvas) {
         List<AnnotationPage> summaryAnnoPages = new ArrayList<>();
-        Map<String, String> annoPageIDLang = summaryCanvas.getAnnoPageIDLang();
-        for (Map.Entry<String, String> entry : annoPageIDLang.entrySet()) {
-            summaryAnnoPages.add(new AnnotationPage(entry.getKey(), entry.getValue()));
-        }
+        createAnnotations(summaryAnnoPages, summaryCanvas);
         canvas.setAnnotations(summaryAnnoPages.toArray(new AnnotationPage[0]));
         for (eu.europeana.iiif.model.v3.AnnotationPage ap : canvas.getItems()){
             for (eu.europeana.iiif.model.v3.Annotation ann : ap.getItems()){
                 if (StringUtils.equalsAnyIgnoreCase(ann.getMotivation(), "painting")){
                     ann.getBody().setOriginalLanguage(summaryCanvas.getOriginalLanguage());
+
                 }
             }
+        }
+    }
+
+    private void createAnnotations(List<AnnotationPage> summaryAnnoPages, FulltextSummaryCanvas summaryCanvas) {
+        for (FulltextSummaryAnnoPage sap : summaryCanvas.getAnnotations()) {
+            summaryAnnoPages.add(new AnnotationPage(sap.getId(), sap.getLanguage(), sap.getSource()));
         }
     }
 

@@ -19,6 +19,9 @@ public class FulltextSummaryAnnoPage extends JsonLdIdType {
     @JsonIgnore
     private boolean orig;
 
+    @JsonProperty("source")
+    private String source;
+
     public FulltextSummaryAnnoPage(){}
 
     /**
@@ -29,10 +32,11 @@ public class FulltextSummaryAnnoPage extends JsonLdIdType {
      * @param language  String containing language of the FulltextSummaryAnnoPage
      * @param orig  boolean is this the original language true / false
      */
-    public FulltextSummaryAnnoPage(String id, String language, boolean orig){
+    public FulltextSummaryAnnoPage(String id, String language, boolean orig, String source){
         super(id, INFO_ANNOPAGE_TYPE);
         this.language = language;
         this.orig = orig;
+        this.source = source;
     }
 
     public String getLanguage() {
@@ -43,5 +47,11 @@ public class FulltextSummaryAnnoPage extends JsonLdIdType {
         this.language = language;
     }
 
+    public String getSource() {
+        return source;
+    }
 
+    public void setSource(String source) {
+        this.source = source;
+    }
 }
