@@ -137,12 +137,18 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- we are required to import security when using commons-error -->
+
+        <!-- we are required to import security when using commons-error but non-vulnerable version -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
+            <version>5.7.2</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+            <version>5.7.2</version>
+        </dependency>
 
         <dependency>
             <groupId>eu.europeana.metis</groupId>
