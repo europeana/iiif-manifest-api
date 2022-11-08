@@ -10,6 +10,7 @@ public class AnnotationPage extends JsonLdIdType {
 
     private Annotation[] items;
     private String language;
+    private String source;
 
     public AnnotationPage(String id) {
         super(id, "AnnotationPage");
@@ -18,6 +19,13 @@ public class AnnotationPage extends JsonLdIdType {
     public AnnotationPage(String id, String language) {
         super(id, "AnnotationPage");
         this.language = language;
+    }
+
+    // This used for setting id, lang and source in annotations field in canvas
+    public AnnotationPage(String id, String language, String source) {
+        super(id, "AnnotationPage");
+        this.language = language;
+        this.source = source;
     }
 
     public String getLanguage() {
@@ -30,5 +38,13 @@ public class AnnotationPage extends JsonLdIdType {
 
     public void setItems(Annotation[] items) {
         this.items = items;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
     }
 }
