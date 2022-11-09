@@ -147,7 +147,12 @@ public final class EdmManifestUtils {
         validWebResources.add(edmIsShownBy);
         LOG.trace("edmIsShownBy = {}", edmIsShownBy);
         for (String[] hasView : hasViews) {
-            validWebResources.addAll(Arrays.asList(hasView));
+            for (String view: hasView) {
+                // check for duplicates
+                if (!validWebResources.contains(view)) {
+                    validWebResources.add(view);
+                }
+            }
             for (String hv : hasView) {
                 LOG.trace("hasView = {}", hv);
             }
