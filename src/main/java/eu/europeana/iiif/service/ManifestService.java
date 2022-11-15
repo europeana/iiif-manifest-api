@@ -370,10 +370,31 @@ public class ManifestService {
         }
     }
 
+    /**
+     * Creates FulltextSummaryCanvas from FulltextSummary
+     * @param summary Fulltext AnnoPage info response object
+     *
+     * For translations with same dsId, LcID and pgID, multiple annoations Page will exists
+     * Hence add the Annotations only.
+     * Also for now, fulltextSummaryCanvas.getAnnotations() will have only one annotation
+     * @see <a href="https://github.com/europeana/fulltext-api/blob/7bfbb90981a760ff4d5231a0106307e6405eec51/api/src/main/java/eu/europeana/fulltext/api/service/FTService.java#L227">
+     * #collectionAnnoPageInfo</a>
+     *
+     * @return
+     */
     private Map<String, FulltextSummaryCanvas> createSummaryCanvasMap(FulltextSummary summary) {
         LinkedHashMap<String, FulltextSummaryCanvas> summaryCanvasMap = new LinkedHashMap<>();
         for (FulltextSummaryCanvas fulltextSummaryCanvas : summary.getCanvases()) {
-            summaryCanvasMap.put(fulltextSummaryCanvas.getPageNumber(), fulltextSummaryCanvas);
+            FulltextSummaryCanvas canvas = summaryCanvasMap.get(fulltextSummaryCanvas.getPageNumber());
+            if (canvas != null) {
+               canvas.addAnnotation(fulltextSummaryCanvas.getAnnotations().get(0));
+                // in this case there will be no original language (translations)
+                if (canvas.getOriginalLanguage() != null) {
+                    canvas.setOriginalLanguage(null);
+               }
+            } else {
+                summaryCanvasMap.put(fulltextSummaryCanvas.getPageNumber(), fulltextSummaryCanvas);
+            }
         }
         return summaryCanvasMap;
     }
@@ -499,7 +520,8 @@ public class ManifestService {
     private void addFulltextLinkToCanvasV2(eu.europeana.iiif.model.v2.Canvas canvas, FulltextSummaryCanvas summaryCanvas) {
         canvas.setOtherContent(summaryCanvas.getAnnoPageIDs().toArray(new String[0]));
         for (eu.europeana.iiif.model.v2.Annotation ann : canvas.getImages()){
-            if (StringUtils.equalsAnyIgnoreCase(ann.getMotivation(), "sc:painting")){
+            // original language will be null for translation
+            if (StringUtils.equalsAnyIgnoreCase(ann.getMotivation(), "sc:painting") && summaryCanvas.getOriginalLanguage() != null){
                 ann.getResource().setOriginalLanguage(summaryCanvas.getOriginalLanguage());
             }
         }
@@ -545,9 +567,9 @@ public class ManifestService {
         canvas.setAnnotations(summaryAnnoPages.toArray(new AnnotationPage[0]));
         for (eu.europeana.iiif.model.v3.AnnotationPage ap : canvas.getItems()){
             for (eu.europeana.iiif.model.v3.Annotation ann : ap.getItems()){
-                if (StringUtils.equalsAnyIgnoreCase(ann.getMotivation(), "painting")){
+                // for translations originalLanguage will be null
+                if (StringUtils.equalsAnyIgnoreCase(ann.getMotivation(), "painting") && summaryCanvas.getOriginalLanguage() != null){
                     ann.getBody().setOriginalLanguage(summaryCanvas.getOriginalLanguage());
-
                 }
             }
         }
