@@ -64,8 +64,7 @@ public class ManifestController {
             @RequestParam(value = "recordApi", required = false) URL recordApi,
             @RequestParam(value = "fullText", required = false, defaultValue = "true") Boolean addFullText,
             @RequestParam(value = "fullTextApi", required = false) URL fullTextApi,
-            HttpServletRequest request,
-            HttpServletResponse response) throws EuropeanaApiException {
+            HttpServletRequest request) throws EuropeanaApiException {
         return handleRequest(collectionId, recordId, wskey, version, recordApi, addFullText, fullTextApi, true, request);
     }
 
@@ -75,18 +74,17 @@ public class ManifestController {
     }
 
 
-    @GetMapping(value = "/{collectionId}/{recordId}/manifest", headers = ACCEPT_JSONLD)
+    @GetMapping(value = "/{colId}/{recordId}/manifest", headers = ACCEPT_JSONLD)
     public ResponseEntity<String> manifestRequestJsonLd(
-            @PathVariable String collectionId,
+            @PathVariable String colId,
             @PathVariable String recordId,
             @RequestParam(value = "wskey", required = true) String wskey,
             @RequestParam(value = "format", required = false) String version,
             @RequestParam(value = "recordApi", required = false) URL recordApi,
             @RequestParam(value = "fullText", required = false, defaultValue = "true") Boolean addFullText,
             @RequestParam(value = "fullTextApi", required = false) URL fullTextApi,
-            HttpServletRequest request,
-            HttpServletResponse response) throws EuropeanaApiException {
-        return handleRequest(collectionId, recordId, wskey, version, recordApi, addFullText, fullTextApi, false, request);
+            HttpServletRequest request) throws EuropeanaApiException {
+        return handleRequest(colId, recordId, wskey, version, recordApi, addFullText, fullTextApi, false, request);
     }
 
     private ResponseEntity<String> handleRequest( String collectionId,

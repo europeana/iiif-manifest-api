@@ -30,3 +30,10 @@ management:
   info:
     env:
       enabled: true
+
+# Creates a redirect from /console to /swagger-ui/index.html
+springdoc:
+  swagger-ui:
+    path: /console
+  # Don't include Error controller in API commons
+  paths-to-exclude: /error
