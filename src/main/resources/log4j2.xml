@@ -18,7 +18,7 @@
 
         <!-- To see caching at work, set below loggers to DEBUG -->
         <!-- To see how fulltext linking is resolved set ManifestService to DEBUG -->
-        <Logger name="eu.europeana.iiif.service.ManifestService" level="DEBUG"/>
+        <Logger name="eu.europeana.iiif.service.ManifestService" level="INFO"/>
         <Logger name="eu.europeana.iiif.web.ManifestController" level="INFO"/>
     </Loggers>
 </Configuration>
