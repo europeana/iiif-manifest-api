@@ -16,7 +16,6 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -190,16 +189,17 @@ public final class EdmManifestUtils {
             String sId = (String) s.get(ABOUT);
             if (sId != null && sId.equalsIgnoreCase(serviceId)) {
                 // Note: there is a problem with cardinality of the doapImplements field. It should be a String, but at the moment
-                // it is defined in EDM as a String[]. So we need to check what we get here.
+                // it is defined in EDM as a String[]. Here we get an Instance of List.
                 Object doapImplements = s.get("doapImplements");
-                if (doapImplements == null) {
-                    LOG.warn("Record {} has service {} with no doapImplements field", europeanaId, serviceId);
-                } else if (doapImplements instanceof List) {
-                    result = ((List<String>) doapImplements).get(0);
-                } else {
-                    result = (String) doapImplements;
-                }
-                break;
+                    if (doapImplements != null && doapImplements instanceof List) {
+                        // check for empty list as there are many cases where we do get an empty list. See : EA-3227
+                        if (((List<String>) doapImplements).isEmpty()) {
+                            LOG.warn("Record {} has service {} with empty doapImplements field value", europeanaId, serviceId);
+                        } else {
+                            result = ((List<String>) doapImplements).get(0);
+                        }
+                    }
+                    break;
             }
         }
         if (result == null) {
