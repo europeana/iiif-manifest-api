@@ -3,6 +3,7 @@ package eu.europeana.iiif.web;
 import eu.europeana.api.commons.error.EuropeanaApiException;
 import eu.europeana.iiif.AcceptUtils;
 import eu.europeana.iiif.exception.InvalidIIIFVersionException;
+import eu.europeana.iiif.exception.ManifestInvalidUrlException;
 import eu.europeana.iiif.service.CacheUtils;
 import eu.europeana.iiif.service.EdmManifestUtils;
 import eu.europeana.iiif.service.ManifestService;
@@ -16,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.net.URL;
 import java.time.ZonedDateTime;
 
@@ -38,6 +38,18 @@ public class ManifestController {
 
     public ManifestController(ManifestService manifestService) {
         this.manifestService = manifestService;
+    }
+
+    /**
+     * handles Invalid Urls like '/x/y/', '/x/manifest' , '/manifest'
+     * Returns 400 bad Request
+     * @return responseEntity
+     * @return
+     * @throws ManifestInvalidUrlException
+     */
+    @GetMapping(value = {"/{collectionId}/{recordId}", "/{Id}/manifest", "/manifest"})
+    public ResponseEntity<String> invalidMappingUrls() throws ManifestInvalidUrlException {
+        throw new ManifestInvalidUrlException("Either recordId or collectionId is missing. Correct url is /{collectionId}/{recordId}/manifest");
     }
 
     /**
@@ -72,7 +84,6 @@ public class ManifestController {
     public void testError() throws InvalidIIIFVersionException {
         throw new InvalidIIIFVersionException("This is a test");
     }
-
 
     @GetMapping(value = "/{colId}/{recordId}/manifest", headers = ACCEPT_JSONLD)
     public ResponseEntity<String> manifestRequestJsonLd(
