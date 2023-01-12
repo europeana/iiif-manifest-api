@@ -207,8 +207,6 @@
         </dependency>
 
 
-
-
         <!-- Test stuff -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -253,29 +251,7 @@
         <!-- set fixed name for easy deployment -->
         <finalName>${project.artifactId}</finalName>
 
-
         <plugins>
-            <plugin>
-                <!-- This will be active when running the verify or install goal
-                     To skip (e.g. during debugging) use 'mvn clean package')-->
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <version>7.3.0</version>
-                <configuration>
-                    <failBuildOnCVSS>8</failBuildOnCVSS>
-                    <suppressionFiles>
-                        <suppressionFile>owasp-suppress.xml</suppressionFile>
-                    </suppressionFiles>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -290,6 +266,34 @@
             </plugin>
         </plugins>
     </build>
-
+    
+    <profiles>
+        <profile>
+            <id>depcheck</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.owasp</groupId>
+                        <artifactId>dependency-check-maven</artifactId>
+                        <version>7.3.0</version>
+                        <configuration>
+                            <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+                            <failBuildOnCVSS>8</failBuildOnCVSS>
+                            <suppressionFiles>
+                                <suppressionFile>owasp-suppress.xml</suppressionFile>
+                            </suppressionFiles>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
