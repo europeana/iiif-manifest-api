@@ -22,6 +22,7 @@
         <java.version>11</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+        <sonar.organization>europeana</sonar.organization>
 
         <metis.version>7</metis.version>
         <fulltext-common.version>0.9.1</fulltext-common.version>
