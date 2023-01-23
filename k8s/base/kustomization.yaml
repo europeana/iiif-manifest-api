@@ -1,0 +1,11 @@
+resources:
+  - deployment.yaml
+
+commonLabels:
+  app: manifest-api
+
+# expects files to be in the same directory
+secretGenerator:
+  - name: iiif-api-secret
+    files:
+      - iiif.user.properties

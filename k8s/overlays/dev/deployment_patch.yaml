@@ -1,0 +1,11 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: manifest-api-deployment
+spec:
+  template:
+    spec:
+      containers:
+        - name: manifest-api
+          # required to use local image
+          imagePullPolicy: Never
