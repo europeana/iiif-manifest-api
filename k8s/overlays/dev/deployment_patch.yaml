@@ -1,11 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: manifest-api-deployment
+  name: iiif-api-deployment
 spec:
   template:
     spec:
       containers:
-        - name: manifest-api
+        - name: iiif-api
           # required to use local image
           imagePullPolicy: Never

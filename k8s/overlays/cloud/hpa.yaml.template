@@ -1,14 +1,14 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: manifest-api-hpa
+  name: iiif-api-hpa
 spec:
   maxReplicas: ${MAX_REPLICAS}
   minReplicas: ${MIN_REPLICAS}
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: manifest-api-deployment
+    name: iiif-api-deployment
   behavior:
     scaleDown:
       stabilizationWindowSeconds: 900

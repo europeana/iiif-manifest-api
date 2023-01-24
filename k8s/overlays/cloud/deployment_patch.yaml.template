@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: manifest-api-deployment
+  name: iiif-api-deployment
 spec:
   replicas: ${MIN_REPLICAS}
   template:
@@ -11,7 +11,7 @@ spec:
         fluentd/multiline: 'true'
     spec:
       containers:
-        - name: manifest-api
+        - name: iiif-api
           imagePullPolicy: Always
           env:
             - name: CATALINA_OPTS

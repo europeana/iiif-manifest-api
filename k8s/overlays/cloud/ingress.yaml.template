@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: manifest-api-ingress
+  name: iiif-api-ingress
   annotations:
     ${K8S_INGRESS_ANNOTATIONS}
 spec:
@@ -18,6 +18,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: manifest-api-service
+                name: iiif-api-service
                 port:
                   number: 80
