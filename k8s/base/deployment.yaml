@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: manifest-api-deployment
+  name: iiif-api-deployment
 spec:
   # selector.matchLabels is provided via Kustomize
   template:
     spec:
       containers:
-        - name: manifest-api
-          image: europeana/manifest-api
+        - name: iiif-api
+          image: europeana/iiif-api
           ports:
             - containerPort: 8080
           livenessProbe:

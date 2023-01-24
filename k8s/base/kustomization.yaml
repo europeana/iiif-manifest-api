@@ -2,7 +2,7 @@ resources:
   - deployment.yaml
 
 commonLabels:
-  app: manifest-api
+  app: iiif-api
 
 # expects files to be in the same directory
 secretGenerator:
