@@ -33,17 +33,18 @@ public class EdmManifestV2MappingTest {
         Assertions.assertEquals("id", EdmManifestUtils.getEuropeanaId(document));
     }
 
-    @Test
-    public void testWithin() {
-        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_WITHIN);
-        Assertions.assertEquals("https://data.theeuropeanlibrary.org/someurl", EdmManifestMappingV2.getWithinV2(document));
-    }
+    // EA-3325
+//    @Test
+//    public void testWithin() {
+//        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_WITHIN);
+//        Assertions.assertEquals("https://data.theeuropeanlibrary.org/someurl", EdmManifestMappingV2.getWithinV2(document));
+//    }
 
-    @Test
-    public void testWithinEmpty() {
-        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        Assertions.assertNull(EdmManifestMappingV2.getWithinV2(document));
-    }
+//    @Test
+//    public void testWithinEmpty() {
+//        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
+//        Assertions.assertNull(EdmManifestMappingV2.getWithinV2(document));
+//    }
 
      /**
      * Test if we get a title as a label, even when descriptions are present

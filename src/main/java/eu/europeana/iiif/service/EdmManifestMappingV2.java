@@ -52,7 +52,8 @@ public final class EdmManifestMappingV2 {
         String isShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(jsonDoc, europeanaId, "edmIsShownBy");
         ManifestV2 manifest = new ManifestV2(europeanaId, ManifestDefinitions.getManifestId(europeanaId), isShownBy);
         manifest.setService(getServiceDescriptionV2(ms.getFullTextApiBaseUrl(), europeanaId));
-        manifest.setWithin(getWithinV2(jsonDoc));
+        // EA-3325
+//        manifest.setWithin(getWithinV2(jsonDoc));
         manifest.setLabel(getLabelsV2(jsonDoc));
         manifest.setDescription(getDescriptionV2(jsonDoc));
         manifest.setMetadata(getMetaDataV2(jsonDoc));
@@ -82,13 +83,15 @@ public final class EdmManifestMappingV2 {
      * @param jsonDoc parsed json document
      * @return
      */
-    static String getWithinV2(Object jsonDoc) {
-        List<String> result = EdmManifestUtils.getEuropeanaLibraryCollections(jsonDoc);
-        if (result.isEmpty()) {
-            return null;
-        }
-        return result.get(0);
-    }
+
+    // EA-3325
+//    static String getWithinV2(Object jsonDoc) {
+//        List<String> result = EdmManifestUtils.getEuropeanaLibraryCollections(jsonDoc);
+//        if (result.isEmpty()) {
+//            return null;
+//        }
+//        return result.get(0);
+//    }
 
     /**
      * We first check all proxies for a title. If there are no titles, then we check the description fields

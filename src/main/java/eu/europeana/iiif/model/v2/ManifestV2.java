@@ -20,7 +20,8 @@ public class ManifestV2 extends JsonLdId {
 
     @JsonProperty("@context")
     private String context = "http://iiif.io/api/presentation/2/context.json";
-    private String within;
+    // EA-3325
+//    private String within;
     private LanguageObject[] label;
     private LanguageObject[] description;
     private MetaData[] metadata;
@@ -63,13 +64,14 @@ public class ManifestV2 extends JsonLdId {
         return context;
     }
 
-    public String getWithin() {
-        return within;
-    }
-
-    public void setWithin(String within) {
-        this.within = within;
-    }
+    // EA-3325
+//    public String getWithin() {
+//        return within;
+//    }
+//
+//    public void setWithin(String within) {
+//        this.within = within;
+//    }
 
     public LanguageObject[] getLabel() {
         return label;
