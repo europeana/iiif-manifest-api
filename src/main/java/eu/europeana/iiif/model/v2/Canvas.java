@@ -21,6 +21,7 @@ public class Canvas extends JsonLdId {
     private String attribution;
     private String license;
     private Annotation[] images;
+    private Image thumbnail;  // EA-3325
     private String [] otherContent;  // only 1 value is expected (or null)
 
     /**
@@ -97,6 +98,16 @@ public class Canvas extends JsonLdId {
 
     public void setImages(Annotation[] images) {
         this.images = images;
+    }
+
+    public Image getThumbnail() {
+        // EA-3325
+        return thumbnail;
+    }
+
+    public void setThumbnail(Image thumbnail) {
+        // EA-3325
+        this.thumbnail = thumbnail;
     }
 
     @JsonIgnore

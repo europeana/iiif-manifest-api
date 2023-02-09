@@ -13,10 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.jayway.jsonpath.Criteria.where;
 import static com.jayway.jsonpath.Filter.filter;
@@ -238,7 +235,7 @@ public final class EdmManifestMappingV2 {
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
         List<eu.europeana.iiif.model.v2.Canvas> canvases = new ArrayList<>(sortedResources.size());
         for (WebResource webResource: sortedResources) {
-            canvases.add(getCanvasV2(europeanaId, order, webResource, services));
+            canvases.add(getCanvasV2(europeanaId, order, webResource, services, jsonDoc));
             order++;
         }
         // there should be only 1 sequence, so sequence number is always 1
@@ -294,7 +291,8 @@ public final class EdmManifestMappingV2 {
     private static eu.europeana.iiif.model.v2.Canvas getCanvasV2(String europeanaId,
                                                                  int order,
                                                                  WebResource webResource,
-                                                                 Map<String, Object>[] services) {
+                                                                 Map<String, Object>[] services,
+                                                                 Object jsonDoc) {
         eu.europeana.iiif.model.v2.Canvas c =
                 new eu.europeana.iiif.model.v2.Canvas(ManifestDefinitions.getCanvasId(europeanaId, order), order);
 
@@ -313,6 +311,11 @@ public final class EdmManifestMappingV2 {
         String attributionText = (String) webResource.get(EdmManifestUtils.TEXT_ATTRIB_SNIPPET);
         if (!StringUtils.isEmpty(attributionText)){
             c.setAttribution(attributionText);
+        }
+
+        // EA-3325: check if the webResource has a "svcsHasService"; if not, add a thumbnail
+        if (Objects.isNull(webResource.get(EdmManifestUtils.SVCS_HAS_SERVICE))){
+            c.setThumbnail(getThumbnailImageV2(europeanaId, jsonDoc));
         }
 
         LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get("webResourceEdmRights");

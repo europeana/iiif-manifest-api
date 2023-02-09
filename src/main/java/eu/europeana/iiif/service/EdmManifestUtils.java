@@ -36,6 +36,7 @@ public final class EdmManifestUtils {
     public static final String HTML_ATTRIB_SNIPPET = "htmlAttributionSnippet";
     public static final String EBUCORE_HEIGHT = "ebucoreHeight";
     public static final String EBUCORE_WIDTH = "ebucoreWidth";
+    public static final String SVCS_HAS_SERVICE = "svcsHasService";
 
     private EdmManifestUtils() {
         // private constructor to prevent initialization

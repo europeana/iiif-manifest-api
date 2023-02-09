@@ -21,6 +21,7 @@ public class Canvas extends JsonLdIdType {
     private Rights rights;
     private AnnotationPage[] items;
     private AnnotationPage[] annotations; // full text identifiers
+    private Image[] thumbnail;     // EA-3325
 
     /**
      * Create a new canvas object
@@ -124,5 +125,15 @@ public class Canvas extends JsonLdIdType {
 
     public void setAnnotations(AnnotationPage[] annotations) {
         this.annotations = annotations;
+    }
+
+    public Image[] getThumbnail() {
+        // EA-3325
+        return thumbnail;
+    }
+
+    public void setThumbnail(Image[] thumbnail) {
+        // EA-3325
+        this.thumbnail = thumbnail;
     }
 }

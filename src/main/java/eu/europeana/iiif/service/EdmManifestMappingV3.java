@@ -365,7 +365,7 @@ public final class EdmManifestMappingV3 {
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
         List<eu.europeana.iiif.model.v3.Canvas> canvases = new ArrayList<>(sortedResources.size());
         for (WebResource webResource: sortedResources) {
-            canvases.add(getCanvasV3(europeanaId, order, webResource, services, euScreenTypeHack));
+            canvases.add(getCanvasV3(europeanaId, order, webResource, services, euScreenTypeHack, jsonDoc));
             order++;
         }
         return canvases.toArray(new eu.europeana.iiif.model.v3.Canvas[0]);
@@ -376,7 +376,8 @@ public final class EdmManifestMappingV3 {
      * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That's done later.
      */
     private static eu.europeana.iiif.model.v3.Canvas getCanvasV3(String europeanaId, int order, WebResource webResource,
-                                                                 Map<String, Object>[] services, MediaType euScreenTypeHack) {
+                                                                 Map<String, Object>[] services, MediaType euScreenTypeHack,
+                                                                 Object jsonDoc) {
         eu.europeana.iiif.model.v3.Canvas c =
                 new eu.europeana.iiif.model.v3.Canvas(ManifestDefinitions.getCanvasId(europeanaId, order), order);
 
@@ -431,6 +432,11 @@ public final class EdmManifestMappingV3 {
             anno.setTimeMode("trim");
         }
         anno.setTarget(c.getId());
+
+        //EA-3325: check if the webResource has a "svcsHasService"; if not, add a thumbnail
+        if (Objects.isNull(webResource.get(EdmManifestUtils.SVCS_HAS_SERVICE))){
+            c.setThumbnail(getThumbnailImageV3(europeanaId, jsonDoc));
+        }
 
         // annotation has 1 annotationBody
         eu.europeana.iiif.model.v3.AnnotationBody annoBody = new AnnotationBody(
