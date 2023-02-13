@@ -5,7 +5,7 @@
     <parent>
         <groupId>eu.europeana</groupId>
         <artifactId>europeana-parent-pom</artifactId>
-        <version>2.0</version>
+        <version>2.4</version>
     </parent>
 
     <groupId>eu.europeana.iiif</groupId>
@@ -13,8 +13,8 @@
     <version>0.8.3-SNAPSHOT</version>
     <packaging>war</packaging>
 
-    <name>Europeana IIIF Manifest API</name>
-    <description>Europeana IIIF Manifest API supporting IIIF v2 manifests</description>
+    <name>IIIF Manifest API</name>
+    <description>Europeana IIIF Manifest API supporting IIIF v2 and v3 manifests</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
