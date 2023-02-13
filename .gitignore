@@ -24,3 +24,6 @@ nbdist/
 .nb-gradle/
 
 **/iiif.user.properties
+
+### JEnv ###
+.java-version
