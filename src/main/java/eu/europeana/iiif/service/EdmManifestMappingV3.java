@@ -29,6 +29,9 @@ import static com.jayway.jsonpath.Filter.filter;
 // ignore pmd rule:  we want to make a clear which objects are v2 and which v3
 public final class EdmManifestMappingV3 {
 
+    // EA-3324 hack
+    private static final String AUDIO = "audio";
+    private static final String SOUND = "sound";
     private static final Logger LOG = LogManager.getLogger(EdmManifestMappingV3.class);
 
     private EdmManifestMappingV3() {
@@ -440,7 +443,9 @@ public final class EdmManifestMappingV3 {
 
         // annotation has 1 annotationBody
         eu.europeana.iiif.model.v3.AnnotationBody annoBody = new AnnotationBody(
-                (String) webResource.get(EdmManifestUtils.ABOUT),  StringUtils.capitalize(mediaType.toString().toLowerCase(Locale.GERMANY)));
+                  // EA-3324 Temporary hack awaiting Metis to fix this
+//                (String) webResource.get(EdmManifestUtils.ABOUT),  StringUtils.capitalize(mediaType.toString().toLowerCase(Locale.GERMANY)));
+                (String) webResource.get(EdmManifestUtils.ABOUT),  StringUtils.capitalize(StringUtils.replace(mediaType.toString().toLowerCase(Locale.GERMANY), AUDIO, SOUND)));
         anno.setBody(annoBody);
 
         if (!StringUtils.isEmpty(ebucoreMimeType)) {

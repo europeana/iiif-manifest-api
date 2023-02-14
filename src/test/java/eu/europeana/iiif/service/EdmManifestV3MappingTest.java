@@ -192,6 +192,19 @@ public class EdmManifestV3MappingTest {
     }
 
     /**
+     * Tests if thumbnails are added for non-IIIF resources (ie. without a "svcsHasService" field)
+     * JSON TEST_SEQUENCE_3CANVAS_1SERVICE has a "svcsHasService" field and shouldn't have a thumbnail added
+     * JSON TEST_SEQUENCE_MULTIPLE_PROXY_AGG doesn't have a "svcsHasService" field and shouldn't have a thumbnail
+     */
+    @Test
+    public void testThumbnailOrSVCS() {
+        Object hasNoThumbnail = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
+        Assertions.assertNull(EdmManifestMappingV3.getThumbnailImageV3( "test", hasNoThumbnail));
+        Object hasThumbnail = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_MULTIPLE_PROXY_AGG);
+        Assertions.assertNotNull(EdmManifestMappingV3.getThumbnailImageV3( "test", hasThumbnail));
+    }
+
+    /**
      * Test if we retrieve attribution properly
      */
     @Test

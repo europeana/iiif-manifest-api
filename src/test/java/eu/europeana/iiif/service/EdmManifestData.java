@@ -59,17 +59,18 @@ public class EdmManifestData {
             "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"htmlAttributionSnippet\": \"<span>wr2Attribution</span>\", \"webResourceEdmRights\":"+
             "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"wr2MimeType\" },"+
             "{\"about\": \"wr3Id\", \"textAttributionSnippet\": \"wr3Attribution\", \"htmlAttributionSnippet\": \"<span>wr3Attribution</span>\", \"webResourceEdmRights\":"+
-            "{\"def\":[\"wr3License\"]}, \"ebucoreHasMimeType\": \"video/mp4\", \"svcsHasService\": [\"service3Id\"], \"ebucoreDuration\": \"98765\"  }"+
-            "] } ], \"services\": [{\"about\": \"service3Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
+            "{\"def\":[\"wr3License\"]}, \"ebucoreHasMimeType\": \"video/mp4\", \"svcsHasService\": [\"service3Id\"], \"ebucoreDuration\": \"98765\" } ] } ], " +
+//            "\"europeanaAggregation\": {\"edmPreview\":\""+TEST_THUMBNAIL_ID+"\"}, " +
+            "\"services\": [{\"about\": \"service3Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
 
 
     public static final String TEST_SEQUENCE_MULTIPLE_PROXY_AGG = "{ \"object\" : { \"aggregations\": [" +
             "{\"about\": \"/aggregation/provider/1/\", \"edmIsShownBy\": \"provider_edmIsShownBy\", \"hasView\": [\"wr2Id\"]," +
             "\"webResources\": [{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"wr1MimeType\"}," +
             "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"htmlAttributionSnippet\": \"<span>wr2Attribution</span>\", \"webResourceEdmRights\": {\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"wr2MimeType\" }," +
-            "{\"about\": \"wr3Id\", \"textAttributionSnippet\": \"wr3Attribution\", \"htmlAttributionSnippet\": \"<span>wr3Attribution</span>\", \"webResourceEdmRights\":{\"def\":[\"wr3License\"]}, \"ebucoreHasMimeType\": \"video/mp4\", \"svcsHasService\": [\"service3Id\"], \"ebucoreDuration\": \"98765\"  }" +
-            "] }," +
+            "{\"about\": \"wr3Id\", \"textAttributionSnippet\": \"wr3Attribution\", \"htmlAttributionSnippet\": \"<span>wr3Attribution</span>\", \"webResourceEdmRights\":{\"def\":[\"wr3License\"]}, \"ebucoreHasMimeType\": \"video/mp4\", \"svcsHasService\": [\"service3Id\"], \"ebucoreDuration\": \"98765\" } ] }," +
             "{\"about\": \"/aggregation/aggregator/1/europeana_fashion_00000004\",\"edmIsShownBy\": \"SecondAggregation_edmIsShowByTest\"}]," +
+            "\"europeanaAggregation\":{\"edmRights\":{\"en\":[\"licenseTextEuropeana\"]}}," +
             "\"proxies\": [{\"about\": \"/proxy/europeana/1/\",\"proxyIn\": [\"/aggregation/europeana/1/europeana_fashion_00000004\"],\"lineage\": [\"/proxy/provider/1/\",\"/proxy/aggregator/1/\"],\"europeanaProxy\": true}," +
             "{\"about\": \"/proxy/aggregator/1/\",\"proxyIn\": [\"/aggregation/aggregator/1/europeana_fashion_00000004\"],\"lineage\": [\"/proxy/provider/1/europeana_fashion_00000004\"],\"edmType\": \"IMAGE\",\"europeanaProxy\": false}," +
             "{\"about\": \"/proxy/provider/1/\",\"proxyIn\": [\"/aggregation/provider/1/\"],\"proxyFor\": \"/item/1/europeana_fashion_00000004\",\"edmType\": \"IMAGE\",\"europeanaProxy\": false}] }}";
@@ -77,22 +78,6 @@ public class EdmManifestData {
     public static final String MULTIPLE_PROXY_IN = "{\"object\": { \"proxies\": [{\"about\": \"/proxy/europeana/1/\",\"proxyIn\": [\"/aggregation/europeana/1/europeana_fashion_00000004\"],\"lineage\": [\"/proxy/provider/1/\",\"/proxy/aggregator/1/\"],\"europeanaProxy\": true}," +
             "{\"about\": \"/proxy/aggregator/1/\",\"proxyIn\": [\"/aggregation/aggregator/1/europeana_fashion_00000004\"],\"lineage\": [\"/proxy/provider/1/europeana_fashion_00000004\"],\"edmType\": \"IMAGE\",\"europeanaProxy\": false}," +
             "{\"about\": \"/proxy/provider/1/\",\"proxyIn\": [\"/first/provider/test\",\"second proxyIn value\"],\"proxyFor\": \"/item/1/europeana_fashion_00000004\",\"edmType\": \"IMAGE\",\"europeanaProxy\": false}]}}";
-
-    public static final String ZZZTEST_SEQUENCE_3CANVAS_NOISSHOWNBY =
-        "{\"object\": " +
-            "{ \"proxies\":[{" +
-                "\"about\":\"/proxy/provider/testing\"," +
-                "\"proxyIn\":[\"/aggregation/provider/testing\"]}]," +
-            "\"aggregations\": [ {\"hasView\": [\"wr2Id\"], \"webResources\": [ "+
-            "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":"+
-            "{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"wr1MimeType\" },"+
-            "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"htmlAttributionSnippet\": \"<span>wr2Attribution</span>\", \"webResourceEdmRights\":"+
-            "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"wr2MimeType\" },"+
-            "{\"about\": \"wr3Id\", \"textAttributionSnippet\": \"wr3Attribution\", \"htmlAttributionSnippet\": \"<span>wr3Attribution</span>\", \"webResourceEdmRights\":"+
-            "{\"def\":[\"wr3License\"]}, \"ebucoreHasMimeType\": \"video/mp4\", \"svcsHasService\": [\"service3Id\"], \"ebucoreDuration\": \"98765\"  }"+
-            "] } ], " +
-            "\"europeanaAggregation\" : {\"edmRights\": { \"en\": [\"licenseTextEuropeana\"]}}" +
-            "\"services\": [{\"about\": \"service3Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
 
     public static final String TEST_SEQUENCE_3CANVAS_NOISSHOWNBY =
         "{\"object\":{\"proxies\":[{\"about\":\"/proxy/provider/testing\",\"proxyIn\":[\"/aggregation/provider/testing\"]}]," +
@@ -102,7 +87,8 @@ public class EdmManifestData {
         "\"webResourceEdmRights\":{\"def\":[\"wr2License\"]},\"ebucoreHasMimeType\":\"wr2MimeType\"},{\"about\":\"wr3Id\"," +
         "\"textAttributionSnippet\":\"wr3Attribution\",\"htmlAttributionSnippet\":\"<span>wr3Attribution</span>\"," +
         "\"webResourceEdmRights\":{\"def\":[\"wr3License\"]},\"ebucoreHasMimeType\":\"video/mp4\",\"svcsHasService\":[\"service3Id\"]," +
-        "\"ebucoreDuration\":\"98765\"}]}],\"europeanaAggregation\":{\"edmRights\":{\"en\":[\"licenseTextEuropeana\"]}}," +
+        "\"ebucoreDuration\":\"98765\"}]}]," +
+        "\"europeanaAggregation\": {\"edmPreview\":\""+TEST_THUMBNAIL_ID+"\"}, " +
         "\"services\":[{\"about\":\"service3Id\",\"doapImplements\":[\"serviceProfile\"]}]}}";
 
 
