@@ -27,7 +27,8 @@ public class ManifestV3 extends JsonLdIdType {
     private Image[] thumbnail;
     private Text[] homepage;
     private String navDate;
-    private LanguageMap requiredStatement; // edm:attribution
+//    private LanguageMap requiredStatement; // edm:attribution
+    private RequiredStatementMap requiredStatement; // edm:attribution
     private Rights rights;
     private DataSet[] seeAlso;
     private Service[] service;
@@ -130,13 +131,13 @@ public class ManifestV3 extends JsonLdIdType {
     }
 
     /**
-     * @return {@link LanguageMap} containing only an English attribution snippet (in html format)
+     * @return {@link RequiredStatementMap} containing only an English attribution snippet (in html format)
      */
-    public LanguageMap getRequiredStatement() {
+    public RequiredStatementMap getRequiredStatement() {
         return requiredStatement;
     }
 
-    public void setRequiredStatement(LanguageMap requiredStatement) {
+    public void setRequiredStatement(RequiredStatementMap requiredStatement) {
         this.requiredStatement = requiredStatement;
     }
 

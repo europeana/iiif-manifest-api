@@ -8,7 +8,7 @@ import eu.europeana.iiif.model.v3.Text;
 import eu.europeana.iiif.exception.DataInconsistentException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;

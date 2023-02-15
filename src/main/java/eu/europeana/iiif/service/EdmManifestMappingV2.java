@@ -17,6 +17,7 @@ import java.util.*;
 
 import static com.jayway.jsonpath.Criteria.where;
 import static com.jayway.jsonpath.Filter.filter;
+import static eu.europeana.iiif.model.ManifestDefinitions.CANVAS_THUMBNAIL_POSTFIX;
 
 /**
  * This class contains all the methods for mapping EDM record data to IIIF Manifest data for IIIF v2
@@ -27,6 +28,9 @@ import static com.jayway.jsonpath.Filter.filter;
  * Updated By Srishti Singh
  * modified on 25-03-2020
  *
+ * Updated By Lúthien
+ * modified on 15-02-2023
+ *
  */
 // ignore sonarqube rule: we return null on purpose in this class
 // ignore pmd rule:  we want to make a clear which objects are v2 and which v3
@@ -34,6 +38,8 @@ import static com.jayway.jsonpath.Filter.filter;
 public final class EdmManifestMappingV2 {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestMappingV2.class);
+
+    private static String THUMBNAIL_API_URL;
 
     private EdmManifestMappingV2() {
         // private constructor to prevent initialization
@@ -45,6 +51,7 @@ public final class EdmManifestMappingV2 {
      * @return IIIF Manifest v2 object
      */
     static ManifestV2 getManifestV2(ManifestSettings ms, Object jsonDoc) {
+        THUMBNAIL_API_URL = ms.getThumbnailApiUrl();
         String europeanaId = EdmManifestUtils.getEuropeanaId(jsonDoc);
         String isShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(jsonDoc, europeanaId, "edmIsShownBy");
         ManifestV2 manifest = new ManifestV2(europeanaId, ManifestDefinitions.getManifestId(europeanaId), isShownBy);
@@ -187,6 +194,21 @@ public final class EdmManifestMappingV2 {
     }
 
     /**
+     * EA-3325 Return array with the id of the canvas-specific thumbnail created from the Webresource id
+     * @param webresourceId hasview image ID
+     * @return Image object, or null if either provided String was null
+     */
+    static eu.europeana.iiif.model.v2.Image getCanvasThumbnailImageV2(String webresourceId) {
+        if (StringUtils.isAnyEmpty(THUMBNAIL_API_URL, webresourceId)) {
+            return null;
+        }
+        return new eu.europeana.iiif.model.v2.Image(
+            THUMBNAIL_API_URL + webresourceId + CANVAS_THUMBNAIL_POSTFIX,
+            null,
+            null);
+    }
+
+    /**
      * Return attribution text as a String
      * We look for the webResource that corresponds to our edmIsShownBy and return the 'textAttributionSnippet' for that.
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
@@ -313,9 +335,9 @@ public final class EdmManifestMappingV2 {
             c.setAttribution(attributionText);
         }
 
-        // EA-3325: check if the webResource has a "svcsHasService"; if not, add a thumbnail
+        //EA-3325: check if the webResource has a "svcsHasService"; if not, add a thumbnail
         if (Objects.isNull(webResource.get(EdmManifestUtils.SVCS_HAS_SERVICE))){
-            c.setThumbnail(getThumbnailImageV2(europeanaId, jsonDoc));
+            c.setThumbnail(getCanvasThumbnailImageV2(webResource.getId()));
         }
 
         LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get("webResourceEdmRights");
