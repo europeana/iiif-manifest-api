@@ -1,0 +1,4 @@
+# Send only unzipped war directory to Docker
+**
+!/target/manifest-api/
+**/*.user.properties
