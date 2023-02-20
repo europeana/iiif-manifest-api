@@ -8,7 +8,7 @@ import eu.europeana.iiif.model.v3.Text;
 import eu.europeana.iiif.exception.DataInconsistentException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -36,6 +36,7 @@ public final class EdmManifestUtils {
     public static final String HTML_ATTRIB_SNIPPET = "htmlAttributionSnippet";
     public static final String EBUCORE_HEIGHT = "ebucoreHeight";
     public static final String EBUCORE_WIDTH = "ebucoreWidth";
+    public static final String SVCS_HAS_SERVICE = "svcsHasService";
 
     private EdmManifestUtils() {
         // private constructor to prevent initialization

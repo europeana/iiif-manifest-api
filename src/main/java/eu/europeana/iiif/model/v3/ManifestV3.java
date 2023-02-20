@@ -19,14 +19,16 @@ public class ManifestV3 extends JsonLdIdType {
     private static final String[] context = {"http://www.w3.org/ns/anno.jsonld",
                                              "http://iiif.io/api/presentation/3/context.json"};
     private static final Agent[] provider = new Agent[]{ new Agent() };
-    private Collection[] partOf;
+    // EA-3325
+//    private Collection[] partOf;
     private LanguageMap label; // edm:title
     private LanguageMap summary; // edm:description
     private MetaData[] metadata;
     private Image[] thumbnail;
     private Text[] homepage;
     private String navDate;
-    private LanguageMap requiredStatement; // edm:attribution
+//    private LanguageMap requiredStatement; // edm:attribution
+    private RequiredStatementMap requiredStatement; // edm:attribution
     private Rights rights;
     private DataSet[] seeAlso;
     private Service[] service;
@@ -62,13 +64,14 @@ public class ManifestV3 extends JsonLdIdType {
         return ManifestV3.context;
     }
 
-    public Collection[] getPartOf() {
-        return partOf;
-    }
-
-    public void setPartOf(Collection[] partOf) {
-        this.partOf = partOf;
-    }
+    // EA-3325
+//    public Collection[] getPartOf() {
+//        return partOf;
+//    }
+//
+//    public void setPartOf(Collection[] partOf) {
+//        this.partOf = partOf;
+//    }
 
     /**
      * @return {@link LanguageMap} containing proxy/title, or if empty proxy/description
@@ -128,13 +131,13 @@ public class ManifestV3 extends JsonLdIdType {
     }
 
     /**
-     * @return {@link LanguageMap} containing only an English attribution snippet (in html format)
+     * @return {@link RequiredStatementMap} containing only an English attribution snippet (in html format)
      */
-    public LanguageMap getRequiredStatement() {
+    public RequiredStatementMap getRequiredStatement() {
         return requiredStatement;
     }
 
-    public void setRequiredStatement(LanguageMap requiredStatement) {
+    public void setRequiredStatement(RequiredStatementMap requiredStatement) {
         this.requiredStatement = requiredStatement;
     }
 

@@ -4,9 +4,9 @@ import eu.europeana.iiif.IIIFDefinitions;
 
 /**
  * Definitions specifically for IIIF Manifest. For definitions shared between IIIF Manifest and Fulltext API
+ *
+ * @author Patrick Ehlert Created on 26-01-2018
  * @see IIIFDefinitions class
- * @author Patrick Ehlert
- * Created on 26-01-2018
  */
 public final class ManifestDefinitions {
 
@@ -19,7 +19,7 @@ public final class ManifestDefinitions {
      * Base URL used for generation the various types of IDs
      */
     public static final String IIIF_PRESENTATION_BASE_URL =
-            IIIFDefinitions.IIIF_EUROPENA_BASE_URL + IIIFDefinitions.PRESENTATION_PATH + ID_PLACEHOLDER;
+        IIIFDefinitions.IIIF_EUROPENA_BASE_URL + IIIFDefinitions.PRESENTATION_PATH + ID_PLACEHOLDER;
 
     /**
      * Url of all manifest IDs but with placeholder for the actual dataset and record ID
@@ -27,14 +27,14 @@ public final class ManifestDefinitions {
     public static final String MANIFEST_ID = IIIF_PRESENTATION_BASE_URL + "/manifest";
 
     /**
-     * Url of a sequence IDs but with placeholder for the actual dataset and record ID.
-     * Note that there the order number is not included here (so first sequence should be /sequence/s1)
+     * Url of a sequence IDs but with placeholder for the actual dataset and record ID. Note that there the order number
+     * is not included here (so first sequence should be /sequence/s1)
      */
     public static final String SEQUENCE_ID = IIIF_PRESENTATION_BASE_URL + "/sequence/s";
 
     /**
-     * Url for canvas IDs but with placeholder for the actual dataset and record ID
-     * Note that there the order number is not included here (so first canvas should be /canvas/p1)
+     * Url for canvas IDs but with placeholder for the actual dataset and record ID Note that there the order number is
+     * not included here (so first canvas should be /canvas/p1)
      */
     public static final String CANVAS_ID = IIIF_PRESENTATION_BASE_URL + "/canvas/p";
 
@@ -79,15 +79,20 @@ public final class ManifestDefinitions {
     /**
      * Titles of Fulltext summary types
      */
-    public static final  String INFO_CANVAS_TYPE          = "FulltextSummaryCanvas";
-    public static final  String INFO_ANNOPAGE_TYPE        = "AnnotationPage";
+    public static final String INFO_CANVAS_TYPE   = "FulltextSummaryCanvas";
+    public static final String INFO_ANNOPAGE_TYPE = "AnnotationPage";
+
+    public static final String CANVAS_THUMBNAIL_POSTFIX = "&type=TEXT";
+
+    public static final String ATTRIBUTION_STRING = "Attribution";
 
     private ManifestDefinitions() {
         // empty constructor to avoid initializationRE
     }
 
     public static String getFulltextSummaryPath(String europeanaId) {
-        return IIIFDefinitions.PRESENTATION_PATH + europeanaId + IIIFDefinitions.FULLTEXT_SUMMARY_PATH + "/"; // for now trailing slash is needed
+        return IIIFDefinitions.PRESENTATION_PATH + europeanaId + IIIFDefinitions.FULLTEXT_SUMMARY_PATH +
+               "/"; // for now trailing slash is needed
     }
 
     public static String getFulltextSearchPath(String europeanaId) {
@@ -97,7 +102,8 @@ public final class ManifestDefinitions {
     /**
      * Create the IIIF manifest ID
      *
-     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
+     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading
+     *                    slash and not trailing slash)
      * @return string containing the IIIF manifest ID
      */
     public static String getManifestId(String europeanaId) {
@@ -107,19 +113,23 @@ public final class ManifestDefinitions {
     /**
      * Create a canvas ID
      *
-     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
+     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading
+     *                    slash and not trailing slash)
      * @param order       number
      * @return String containing the canvas ID
      */
     public static String getCanvasId(String europeanaId, int order) {
-        return ManifestDefinitions.CANVAS_ID.replace(ManifestDefinitions.ID_PLACEHOLDER, europeanaId).concat(Integer.toString(order));
+        return ManifestDefinitions.CANVAS_ID.replace(ManifestDefinitions.ID_PLACEHOLDER, europeanaId).concat(
+            Integer.toString(order));
     }
 
     /**
      * Create a dataset ID (datasets information are part of the manifest)
      *
-     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
-     * @return string containing the dataset ID consisting of a base url, Europeana ID and postfix (rdf/xml, json or json-ld)
+     * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading
+     *                    slash and not trailing slash)
+     * @return string containing the dataset ID consisting of a base url, Europeana ID and postfix (rdf/xml, json or
+     * json-ld)
      */
     public static String getDatasetId(String europeanaId, String postFix) {
         return ManifestDefinitions.DATASET_ID_BASE_URL + europeanaId + postFix;

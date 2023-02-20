@@ -33,6 +33,12 @@ public class ManifestSettings {
     @Value("${record-api.path}")
     private String recordApiPath;
 
+    @Value("${thumbnail-api.baseurl}")
+    private String thumbnailApiBaseUrl;
+
+    @Value("${thumbnail-api.path}")
+    private String thumbnailApiPath;
+
     @Value("${fulltext-api.baseurl}")
     private String fullTextApiBaseUrl;
 
@@ -51,6 +57,13 @@ public class ManifestSettings {
      */
     public String getRecordApiPath() {
         return recordApiPath;
+    }
+
+    /**
+     * @return Thumbnail url, concatenates base URL + path to endpoint; used to create canvas thumbnails
+     */
+    public String getThumbnailApiUrl() {
+        return thumbnailApiBaseUrl + thumbnailApiPath;
     }
 
     /**
@@ -92,6 +105,7 @@ public class ManifestSettings {
     private void logImportantSettings() {
         LOG.info("Manifest settings:");
         LOG.info("  Record API Url = {}{} ", this.getRecordApiBaseUrl(), this.getRecordApiPath());
+        LOG.info("  Thumbnail API Url = {} ", this.getThumbnailApiUrl());
         LOG.info("  Full-Text Summary Url = {}{} ", this.getFullTextApiBaseUrl(), getFulltextSummaryPath("/<collectionId>/<itemId>"));
         LOG.info("  Suppress parse exceptions = {}", this.getSuppressParseException());
     }

@@ -13,13 +13,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.jayway.jsonpath.Criteria.where;
 import static com.jayway.jsonpath.Filter.filter;
+import static eu.europeana.iiif.model.ManifestDefinitions.CANVAS_THUMBNAIL_POSTFIX;
 
 /**
  * This class contains all the methods for mapping EDM record data to IIIF Manifest data for IIIF v2
@@ -30,6 +28,9 @@ import static com.jayway.jsonpath.Filter.filter;
  * Updated By Srishti Singh
  * modified on 25-03-2020
  *
+ * Updated By Lúthien
+ * modified on 15-02-2023
+ *
  */
 // ignore sonarqube rule: we return null on purpose in this class
 // ignore pmd rule:  we want to make a clear which objects are v2 and which v3
@@ -37,6 +38,8 @@ import static com.jayway.jsonpath.Filter.filter;
 public final class EdmManifestMappingV2 {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestMappingV2.class);
+
+    private static String THUMBNAIL_API_URL;
 
     private EdmManifestMappingV2() {
         // private constructor to prevent initialization
@@ -48,11 +51,13 @@ public final class EdmManifestMappingV2 {
      * @return IIIF Manifest v2 object
      */
     static ManifestV2 getManifestV2(ManifestSettings ms, Object jsonDoc) {
+        THUMBNAIL_API_URL = ms.getThumbnailApiUrl();
         String europeanaId = EdmManifestUtils.getEuropeanaId(jsonDoc);
         String isShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(jsonDoc, europeanaId, "edmIsShownBy");
         ManifestV2 manifest = new ManifestV2(europeanaId, ManifestDefinitions.getManifestId(europeanaId), isShownBy);
         manifest.setService(getServiceDescriptionV2(ms.getFullTextApiBaseUrl(), europeanaId));
-        manifest.setWithin(getWithinV2(jsonDoc));
+        // EA-3325
+//        manifest.setWithin(getWithinV2(jsonDoc));
         manifest.setLabel(getLabelsV2(jsonDoc));
         manifest.setDescription(getDescriptionV2(jsonDoc));
         manifest.setMetadata(getMetaDataV2(jsonDoc));
@@ -82,13 +87,15 @@ public final class EdmManifestMappingV2 {
      * @param jsonDoc parsed json document
      * @return
      */
-    static String getWithinV2(Object jsonDoc) {
-        List<String> result = EdmManifestUtils.getEuropeanaLibraryCollections(jsonDoc);
-        if (result.isEmpty()) {
-            return null;
-        }
-        return result.get(0);
-    }
+
+    // EA-3325
+//    static String getWithinV2(Object jsonDoc) {
+//        List<String> result = EdmManifestUtils.getEuropeanaLibraryCollections(jsonDoc);
+//        if (result.isEmpty()) {
+//            return null;
+//        }
+//        return result.get(0);
+//    }
 
     /**
      * We first check all proxies for a title. If there are no titles, then we check the description fields
@@ -187,6 +194,21 @@ public final class EdmManifestMappingV2 {
     }
 
     /**
+     * EA-3325 Return array with the id of the canvas-specific thumbnail created from the Webresource id
+     * @param webresourceId hasview image ID
+     * @return Image object, or null if either provided String was null
+     */
+    static eu.europeana.iiif.model.v2.Image getCanvasThumbnailImageV2(String webresourceId) {
+        if (StringUtils.isAnyEmpty(THUMBNAIL_API_URL, webresourceId)) {
+            return null;
+        }
+        return new eu.europeana.iiif.model.v2.Image(
+            THUMBNAIL_API_URL + webresourceId + CANVAS_THUMBNAIL_POSTFIX,
+            null,
+            null);
+    }
+
+    /**
      * Return attribution text as a String
      * We look for the webResource that corresponds to our edmIsShownBy and return the 'textAttributionSnippet' for that.
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
@@ -235,7 +257,7 @@ public final class EdmManifestMappingV2 {
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
         List<eu.europeana.iiif.model.v2.Canvas> canvases = new ArrayList<>(sortedResources.size());
         for (WebResource webResource: sortedResources) {
-            canvases.add(getCanvasV2(europeanaId, order, webResource, services));
+            canvases.add(getCanvasV2(europeanaId, order, webResource, services, jsonDoc));
             order++;
         }
         // there should be only 1 sequence, so sequence number is always 1
@@ -291,7 +313,8 @@ public final class EdmManifestMappingV2 {
     private static eu.europeana.iiif.model.v2.Canvas getCanvasV2(String europeanaId,
                                                                  int order,
                                                                  WebResource webResource,
-                                                                 Map<String, Object>[] services) {
+                                                                 Map<String, Object>[] services,
+                                                                 Object jsonDoc) {
         eu.europeana.iiif.model.v2.Canvas c =
                 new eu.europeana.iiif.model.v2.Canvas(ManifestDefinitions.getCanvasId(europeanaId, order), order);
 
@@ -310,6 +333,11 @@ public final class EdmManifestMappingV2 {
         String attributionText = (String) webResource.get(EdmManifestUtils.TEXT_ATTRIB_SNIPPET);
         if (!StringUtils.isEmpty(attributionText)){
             c.setAttribution(attributionText);
+        }
+
+        //EA-3325: check if the webResource has a "svcsHasService"; if not, add a thumbnail
+        if (Objects.isNull(webResource.get(EdmManifestUtils.SVCS_HAS_SERVICE))){
+            c.setThumbnail(getCanvasThumbnailImageV2(webResource.getId()));
         }
 
         LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get("webResourceEdmRights");

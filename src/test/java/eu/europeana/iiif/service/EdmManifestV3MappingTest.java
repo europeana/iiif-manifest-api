@@ -1,5 +1,7 @@
 package eu.europeana.iiif.service;
 
+import static eu.europeana.iiif.model.ManifestDefinitions.ATTRIBUTION_STRING;
+
 import com.jayway.jsonpath.Configuration;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.v3.*;
@@ -192,13 +194,27 @@ public class EdmManifestV3MappingTest {
     }
 
     /**
+     * Tests if thumbnails are added for non-IIIF resources (ie. without a "svcsHasService" field)
+     * JSON TEST_SEQUENCE_3CANVAS_1SERVICE has a "svcsHasService" field and shouldn't have a thumbnail added
+     * JSON TEST_SEQUENCE_MULTIPLE_PROXY_AGG doesn't have a "svcsHasService" field and shouldn't have a thumbnail
+     */
+//    @Test
+//    public void testThumbnailOrSVCS() {
+//        Object hasNoThumbnail = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
+//        Assertions.assertNull(EdmManifestMappingV3.getCanvasThumbnailImageV3(( "test", hasNoThumbnail));
+//        Object hasThumbnail = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_MULTIPLE_PROXY_AGG);
+//        Assertions.assertNotNull(EdmManifestMappingV3.getThumbnailImageV3( "test", hasThumbnail));
+//    }
+
+    /**
      * Test if we retrieve attribution properly
+     * NB in EA-3324 the attribution was extended RequiredStatement =  <Map><String, LanguageMap>
      */
     @Test
     public void testAttribution() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_ATTRIBUTION);
-        LanguageMap attribution = EdmManifestMappingV3.getAttributionV3("test", EdmManifestData.TEST_IS_SHOWN_BY, document);
-        testLanguageMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{EdmManifestData.TEST_ATTRIBUTION_TEXT_V3}, attribution);
+        RequiredStatementMap requiredStatementMap = EdmManifestMappingV3.getAttributionV3("test", EdmManifestData.TEST_IS_SHOWN_BY, document);
+        testRequiredStatementMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{EdmManifestData.TEST_ATTRIBUTION_TEXT_V3}, requiredStatementMap);
     }
 
     /**
@@ -481,6 +497,33 @@ public class EdmManifestV3MappingTest {
         String bodyServiceId;
         String bodyServiceType;
         String bodyServiceProfile;
+    }
+
+
+
+    /**
+     * Test if the provided languageMap contains a particular key and set of values. Ordering of values is also checked
+     */
+    protected static void testRequiredStatementMap(String expectedKey, String[] expectedValues, RequiredStatementMap requiredStatementMap) {
+
+        Assertions.assertNotNull(requiredStatementMap);
+        if (expectedKey == null) {
+            Assertions.assertEquals(0, requiredStatementMap.size());
+            Assertions.assertNull(expectedValues, "Expected value cannot be set when there is no key!");
+        } else {
+            Assertions.assertTrue(requiredStatementMap.containsKey("label"), "Key 'label' not found!");
+            Assertions.assertTrue(requiredStatementMap.containsKey("value"), "Key 'value' not found!");
+            LanguageMap labelMap = requiredStatementMap.get("label");
+            Assertions.assertTrue(labelMap.containsKey(expectedKey), "Key '" + expectedKey + "' not found in label of Requiredstatement!");
+            Assertions.assertEquals(labelMap.get(expectedKey)[0], ATTRIBUTION_STRING);
+
+            LanguageMap valueMap = requiredStatementMap.get("value");
+            Assertions.assertTrue(valueMap.containsKey(expectedKey), "Key '" + expectedKey + "' not found in label of Requiredstatement!");
+
+            for (int i = 0; i < expectedValues.length; i++) {
+                Assertions.assertEquals(valueMap.get(expectedKey)[i], expectedValues[i]);
+            }
+        }
     }
 
     /**
