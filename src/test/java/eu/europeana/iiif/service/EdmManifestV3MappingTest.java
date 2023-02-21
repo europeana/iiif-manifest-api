@@ -5,6 +5,7 @@ import static eu.europeana.iiif.model.ManifestDefinitions.ATTRIBUTION_STRING;
 import com.jayway.jsonpath.Configuration;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.v3.*;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Assertions;
@@ -213,7 +214,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testAttribution() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_ATTRIBUTION);
-        RequiredStatementMap requiredStatementMap = EdmManifestMappingV3.getAttributionV3("test", EdmManifestData.TEST_IS_SHOWN_BY, document);
+        RequiredStatementMap requiredStatementMap = EdmManifestMappingV3.getAttributionV3Root("test", EdmManifestData.TEST_IS_SHOWN_BY, document);
         testRequiredStatementMap(LanguageMap.DEFAULT_METADATA_KEY, new String[]{EdmManifestData.TEST_ATTRIBUTION_TEXT_V3}, requiredStatementMap);
     }
 
@@ -223,7 +224,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testAttributionEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        Assertions.assertNull(EdmManifestMappingV3.getAttributionV3("test", EdmManifestData.TEST_IS_SHOWN_BY, document));
+        Assertions.assertNull(EdmManifestMappingV3.getAttributionV3Root("test", EdmManifestData.TEST_IS_SHOWN_BY, document));
     }
 
     /**
@@ -370,7 +371,9 @@ public class EdmManifestV3MappingTest {
         expectedCanvas.type = "Canvas";
         expectedCanvas.label = new LanguageMap(LanguageMap.NO_LANGUAGE_KEY, "p. 1");
         expectedCanvas.duration = 98.765;
-        expectedCanvas.attribution = new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, "<span>wr3Attribution</span>");
+        expectedCanvas.requiredStatementMap = new RequiredStatementMap(
+                new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, ATTRIBUTION_STRING),
+                new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, "<span>wr3Attribution</span>"));
         expectedCanvas.rightsId = "wr3License";
         expectedCanvas.annoPageid = null; // we only set if for fulltext annopages
         expectedCanvas.annoPageType = "AnnotationPage";
@@ -398,7 +401,9 @@ public class EdmManifestV3MappingTest {
         expectedCanvas2.type = "Canvas";
         expectedCanvas2.label = new LanguageMap(LanguageMap.NO_LANGUAGE_KEY, "p. 2");
         expectedCanvas2.duration = null;
-        expectedCanvas2.attribution = new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, "<span>wr2Attribution</span>");
+        expectedCanvas2.requiredStatementMap = new RequiredStatementMap(
+                new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, ATTRIBUTION_STRING),
+                new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, "<span>wr2Attribution</span>"));
         expectedCanvas2.rightsId = "wr2License";
         expectedCanvas2.annoPageid = null; // we only set if for fulltext annopages
         expectedCanvas2.annoPageType = "AnnotationPage";
@@ -424,7 +429,7 @@ public class EdmManifestV3MappingTest {
         Assertions.assertEquals(expected.type, canvas.getType().get());
         testLanguageMap(expected.label, canvas.getLabel());
         Assertions.assertEquals(expected.duration, canvas.getDuration());
-        testLanguageMap(expected.attribution, canvas.getRequiredStatement());
+        testRequiredStatementMap(expected.requiredStatementMap, canvas.getRequiredStatement());
         if (expected.rightsId == null) {
             Assertions.assertNull(canvas.getRights());
         } else {
@@ -476,7 +481,8 @@ public class EdmManifestV3MappingTest {
         String type;
         LanguageMap label;
         Double duration;
-        LanguageMap attribution;
+//        LanguageMap attribution;
+        RequiredStatementMap requiredStatementMap;
         String rightsId;
         // in these tests there can be only 1 annotationPage (because full-text availability check is done elsewhere)
         String annoPageid;
@@ -502,9 +508,9 @@ public class EdmManifestV3MappingTest {
 
 
     /**
-     * Test if the provided languageMap contains a particular key and set of values. Ordering of values is also checked
+     * Test if the provided RequiredStatementMap contains particular keys and sets of values
      */
-    protected static void testRequiredStatementMap(String expectedKey, String[] expectedValues, RequiredStatementMap requiredStatementMap) {
+    protected void testRequiredStatementMap(String expectedKey, String[] expectedValues, RequiredStatementMap requiredStatementMap) {
 
         Assertions.assertNotNull(requiredStatementMap);
         if (expectedKey == null) {
@@ -522,6 +528,20 @@ public class EdmManifestV3MappingTest {
 
             for (int i = 0; i < expectedValues.length; i++) {
                 Assertions.assertEquals(valueMap.get(expectedKey)[i], expectedValues[i]);
+            }
+        }
+    }
+
+    /**
+     * Test if the provided RequiredStatementMaps contains the same two LanguageMaps
+     */
+    protected void testRequiredStatementMap(RequiredStatementMap expectedMap, RequiredStatementMap map) {
+        if (expectedMap == null) {
+            Assertions.assertNull(map);
+        } else {
+            Assertions.assertEquals(2, map.size());
+            for (String expectedKey : expectedMap.keySet()) {
+                testLanguageMap(expectedMap.get(expectedKey), map.get(expectedKey));
             }
         }
     }
