@@ -17,7 +17,9 @@ public class Canvas extends JsonLdIdType {
     private Integer height;
     private Integer width;
     private Double duration;
-    private LanguageMap requiredStatement; // attribution
+//    private LanguageMap requiredStatement; // attribution
+    // EA-3324
+    private RequiredStatementMap requiredStatement;; // attribution
     private Rights rights;
     private AnnotationPage[] items;
     private AnnotationPage[] annotations; // full text identifiers
@@ -83,11 +85,12 @@ public class Canvas extends JsonLdIdType {
         this.duration = duration;
     }
 
-    public LanguageMap getRequiredStatement() {
+    // EA-3324 changed type of RequiredStatement from LanguageMap to RequiredStatementMap
+    public RequiredStatementMap getRequiredStatement() {
         return requiredStatement;
     }
 
-    public void setRequiredStatement(LanguageMap requiredStatement) {
+    public void setRequiredStatement(RequiredStatementMap requiredStatement) {
         this.requiredStatement = requiredStatement;
     }
 
