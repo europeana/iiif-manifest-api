@@ -28,8 +28,27 @@ public class ManifestSettings {
 
     private static final Logger LOG = LogManager.getLogger(ManifestSettings.class);
 
+    @Value("${manifest-api.baseurl}")
+    private String manifestApiBaseUrl;
+
+    @Value("${manifest-api.path}")
+    private String manifestApiPath;
+
+    @Value("${content-search-api.baseurl}")
+    private String contentSearchBaseUrl;
+
+    @Value("${content-search-api.path}")
+    private String contentSearchPath;
+
+    @Value("${fulltext-api.baseurl}")
+    private String fullTextApiBaseUrl;
+
+    @Value("${fulltext-api.path}")
+    private String fullTextApiPath;
+
     @Value("${record-api.baseurl}")
     private String recordApiBaseUrl;
+
     @Value("${record-api.path}")
     private String recordApiPath;
 
@@ -39,11 +58,34 @@ public class ManifestSettings {
     @Value("${thumbnail-api.path}")
     private String thumbnailApiPath;
 
-    @Value("${fulltext-api.baseurl}")
-    private String fullTextApiBaseUrl;
-
     @Value("${suppress-parse-exception}")
     private final Boolean suppressParseException = Boolean.FALSE; // default value if we run this outside of Spring (i.e. JUnit)
+
+
+
+    public String getManifestApiBaseUrl() {
+        return manifestApiBaseUrl;
+    }
+
+    public String getManifestApiPath() {
+        return manifestApiPath;
+    }
+
+
+    public String getContentSearchBaseUrl() {
+        return contentSearchBaseUrl;
+    }
+
+    public String getContentSearchPath() {
+        return contentSearchPath;
+    }
+
+    /**
+     * @return base url from where we can do a HEAD request to check if a full-text is available
+     */
+    public String getFullTextApiBaseUrl() {
+        return fullTextApiBaseUrl;
+    }
 
     /**
      * @return base url from where we should retrieve record json data
@@ -64,13 +106,6 @@ public class ManifestSettings {
      */
     public String getThumbnailApiUrl() {
         return thumbnailApiBaseUrl + thumbnailApiPath;
-    }
-
-    /**
-     * @return base url from where we can do a HEAD request to check if a full-text is available
-     */
-    public String getFullTextApiBaseUrl() {
-        return fullTextApiBaseUrl;
     }
 
     /**
