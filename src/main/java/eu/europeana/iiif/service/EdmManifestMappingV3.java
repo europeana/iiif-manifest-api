@@ -93,7 +93,7 @@ public final class EdmManifestMappingV3 {
         manifest.setThumbnail(getThumbnailImageV3(europeanaId, jsonDoc));
         manifest.setNavDate(EdmManifestUtils.getNavDate(europeanaId, jsonDoc));
         manifest.setHomePage(EdmManifestUtils.getHomePage(europeanaId, jsonDoc));
-        manifest.setRequiredStatement(getAttributionV3(europeanaId, isShownBy, jsonDoc));
+        manifest.setRequiredStatement(getAttributionV3Root(europeanaId, isShownBy, jsonDoc));
         manifest.setRights(getRights(europeanaId, jsonDoc));
         manifest.setSeeAlso(getDataSetsV3(europeanaId));
         manifest.setItems(getItems(europeanaId, isShownBy, jsonDoc, euScreenTypeHack));
@@ -314,18 +314,21 @@ public final class EdmManifestMappingV3 {
      * @param jsonDoc parsed json document
      * @return
      */
-    static RequiredStatementMap getAttributionV3(String europeanaId, String isShownBy, Object jsonDoc) {
+    static RequiredStatementMap getAttributionV3Root(String europeanaId, String isShownBy, Object jsonDoc) {
         Filter isShownByFilter = filter(where(EdmManifestUtils.ABOUT).is(isShownBy));
         String[] attributions = JsonPath.parse(jsonDoc).
                 read("$.object.aggregations[*].webResources[?]."+ EdmManifestUtils.HTML_ATTRIB_SNIPPET, String[].class, isShownByFilter);
         String attribution = (String) EdmManifestUtils.getFirstValueArray(EdmManifestUtils.HTML_ATTRIB_SNIPPET, europeanaId, attributions);
+        return createRequiredStatementMap(attribution);
+    }
+
+    static RequiredStatementMap createRequiredStatementMap(String attribution){
         if (StringUtils.isEmpty(attribution)) {
             return null;
         }
         return new RequiredStatementMap(new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, ATTRIBUTION_STRING),
                                         new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, attribution));
     }
-
 
     /**
      * Generates 3 datasets with the appropriate ID and format (one for rdf/xml, one for json and one for json-ld)
@@ -426,7 +429,7 @@ public final class EdmManifestMappingV3 {
 
         String attributionText = (String) webResource.get(EdmManifestUtils.HTML_ATTRIB_SNIPPET);
         if (!StringUtils.isEmpty(attributionText)){
-            c.setRequiredStatement(new LanguageMap(LanguageMap.DEFAULT_METADATA_KEY, attributionText));
+            c.setRequiredStatement(createRequiredStatementMap(attributionText));
         }
 
         LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get("webResourceEdmRights");
