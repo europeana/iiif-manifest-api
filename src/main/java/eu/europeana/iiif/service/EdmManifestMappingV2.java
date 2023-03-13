@@ -54,7 +54,6 @@ public final class EdmManifestMappingV2 {
         THUMBNAIL_API_URL = settings.getThumbnailApiUrl();
         String europeanaId = EdmManifestUtils.getEuropeanaId(jsonDoc);
         String isShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(jsonDoc, europeanaId, "edmIsShownBy");
-//        ManifestV2 manifest = new ManifestV2(europeanaId, ManifestDefinitions.getManifestId(europeanaId), isShownBy);
         ManifestV2 manifest = new ManifestV2(europeanaId, settings.getManifestId(europeanaId), isShownBy);
         manifest.setService(getServiceDescriptionV2(settings, europeanaId));
         // EA-3325
