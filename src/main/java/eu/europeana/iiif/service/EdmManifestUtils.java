@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static eu.europeana.iiif.model.ManifestDefinitions.getFulltextSearchPath;
-
 /**
  * This class contains all the common methods for mapping EDM record data to IIIF Manifest data for IIIF v2 and v3
  *
@@ -225,9 +223,9 @@ public final class EdmManifestUtils {
      *
      * @param europeanaId identifier to include in the path
      */
-    public static String getFullTextSearchUrl(String fulltextBaseUrl, String europeanaId) {
-        return fulltextBaseUrl + getFulltextSearchPath(europeanaId);
-    }
+//    public static String getFullTextSearchUrl(String fulltextBaseUrl, String europeanaId) {
+//        return fulltextBaseUrl + getFulltextSearchPath(europeanaId);
+//    }
 
     /**
      * Returns the data provider Aggregation
