@@ -16,6 +16,8 @@ public class FulltextSummaryAnnoPage extends JsonLdIdType {
     @JsonProperty("language")
     private String language;
 
+    private String[] textGranularity;
+
     @JsonIgnore
     private boolean orig;
 

@@ -381,6 +381,8 @@ public class ManifestService {
      * @return
      */
     private Map<String, FulltextSummaryCanvas> createSummaryCanvasMap(FulltextSummary summary) {
+        // TODO discuss with Hugo how to handle this issue of the granularity only making sense on the SummaryCanvas level
+        String[] textGranularity = summary.getTextGranularity();
         LinkedHashMap<String, FulltextSummaryCanvas> summaryCanvasMap = new LinkedHashMap<>();
         for (FulltextSummaryCanvas fulltextSummaryCanvas : summary.getCanvases()) {
             FulltextSummaryCanvas canvas = summaryCanvasMap.get(fulltextSummaryCanvas.getPageNumber());

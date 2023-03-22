@@ -1,6 +1,11 @@
 package eu.europeana.iiif.model.info;
 
+import static eu.europeana.iiif.IIIFDefinitions.MEDIA_TYPE_IIIF_V3;
+import static eu.europeana.iiif.IIIFDefinitions.MEDIA_TYPE_W3ORG_JSONLD;
+//import static eu.europeana.iiif.IIIFDefinitions.TEXT_GRANULARITY_CONTEXT;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonValue;
 import eu.europeana.iiif.IIIFDefinitions;
 
@@ -11,11 +16,16 @@ import java.util.List;
 /**
  * Created by luthien on 07/04/2021.
  */
+@JsonPropertyOrder({"@context", "textGranularity", "items"})
 public class FulltextSummary implements Serializable {
     private static final long serialVersionUID = -8052995235828716772L;
 
     @JsonProperty("@context")
-    private final String[] context = new String[]{IIIFDefinitions.MEDIA_TYPE_W3ORG_JSONLD, IIIFDefinitions.MEDIA_TYPE_IIIF_V3};
+    private final String[] context = new String[]{MEDIA_TYPE_W3ORG_JSONLD, MEDIA_TYPE_IIIF_V3};
+    // switch when available in this version
+//    private final String[] context = new String[]{MEDIA_TYPE_W3ORG_JSONLD, IIIFDefinitions.TEXT_GRANULARITY_CONTEXT, MEDIA_TYPE_IIIF_V3};
+
+    private String[] textGranularity;
 
     private String              dataSetId;
     private String              localId;
@@ -36,6 +46,14 @@ public class FulltextSummary implements Serializable {
         this.dataSetId = dataSetId;
         this.localId = localId;
         canvases = new ArrayList<>();
+    }
+
+    public String[] getTextGranularity() {
+        return textGranularity;
+    }
+
+    public void setTextGranularity(String[] textGranularity) {
+        this.textGranularity = textGranularity;
     }
 
     /**
