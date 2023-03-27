@@ -22,7 +22,7 @@ public class FulltextSummaryCanvas extends JsonLdIdType {
     private String originalLanguage;
 
     @JsonProperty("annotations")
-    private List<FulltextSummaryAnnoPage> annotations;
+    private List<FulltextSummaryAnnoPage> ftSummaryAnnoPages;
 
     public FulltextSummaryCanvas(){}
 
@@ -34,19 +34,19 @@ public class FulltextSummaryCanvas extends JsonLdIdType {
      */
     public FulltextSummaryCanvas(String id) {
         super(id, INFO_CANVAS_TYPE);
-        annotations = new ArrayList<>();
+        ftSummaryAnnoPages = new ArrayList<>();
     }
 
     /**
      * Adds an annotation - actually: an FulltextSummaryAnnoPage (AnnoPage for a specific language) to the FulltextSummaryCanvas
-     * @param alPage FulltextSummaryAnnoPage object to be added to the annotations List
+     * @param ftSummaryAnnoPage FulltextSummaryAnnoPage object to be added to the annotations List
      */
-    public void addAnnotation(FulltextSummaryAnnoPage alPage){
-        annotations.add(alPage);
+    public void addFTSummaryAnnoPage(FulltextSummaryAnnoPage ftSummaryAnnoPage){
+        ftSummaryAnnoPages.add(ftSummaryAnnoPage);
     }
 
-    public List<FulltextSummaryAnnoPage> getAnnotations() {
-        return new ArrayList<>(annotations);
+    public List<FulltextSummaryAnnoPage> getFTSummaryAnnoPages() {
+        return new ArrayList<>(ftSummaryAnnoPages);
     }
 
     /**
@@ -79,7 +79,7 @@ public class FulltextSummaryCanvas extends JsonLdIdType {
 
     public List<String> getAnnoPageIDs(){
         List<String> annoPageIDs  = new ArrayList<>();
-        for (FulltextSummaryAnnoPage sap : annotations) {
+        for (FulltextSummaryAnnoPage sap : ftSummaryAnnoPages) {
             annoPageIDs.add(sap.getId());
         }
         return annoPageIDs;
@@ -87,7 +87,7 @@ public class FulltextSummaryCanvas extends JsonLdIdType {
 
     public Map<String, String> getAnnoPageIDLang(){
         Map<String, String> annoPageLangs  = new HashMap<>();
-        for (FulltextSummaryAnnoPage sap : annotations) {
+        for (FulltextSummaryAnnoPage sap : ftSummaryAnnoPages) {
             annoPageLangs.put(sap.getId(), sap.getLanguage());
         }
         return annoPageLangs;

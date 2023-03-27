@@ -49,6 +49,14 @@ public class FulltextSummaryAnnoPage extends JsonLdIdType {
         this.language = language;
     }
 
+    public String[] getTextGranularity() {
+        return textGranularity;
+    }
+
+    public void setTextGranularity(String[] textGranularity) {
+        this.textGranularity = textGranularity;
+    }
+
     public String getSource() {
         return source;
     }

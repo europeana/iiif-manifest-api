@@ -4,7 +4,7 @@ package eu.europeana.iiif.model.info;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class FulltextSummaryCanvasTest {
+public class FulltextSummaryManifestCanvasTest {
 
     @Test
     public void testPageId() {

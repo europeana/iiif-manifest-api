@@ -9,7 +9,11 @@ public class AnnotationPage extends JsonLdIdType {
     private static final long serialVersionUID = -259542823420543924L;
 
     private Annotation[] items;
+
     private String language;
+
+    private String[] textGranularity;
+
     private String source;
 
     public AnnotationPage(String id) {
@@ -28,8 +32,24 @@ public class AnnotationPage extends JsonLdIdType {
         this.source = source;
     }
 
+    // Used for creating Annotationpages with FullText summary "annotations" (actually, FTAnnoPages)
+    public AnnotationPage(String id, String language, String[] textGranularity, String source) {
+        super(id, "AnnotationPage");
+        this.language = language;
+        this.textGranularity = textGranularity;
+        this.source = source;
+    }
+
     public String getLanguage() {
         return language;
+    }
+
+    public String[] getTextGranularity() {
+        return textGranularity;
+    }
+
+    public void setTextGranularity(String[] textGranularity) {
+        this.textGranularity = textGranularity;
     }
 
     public Annotation[] getItems() {

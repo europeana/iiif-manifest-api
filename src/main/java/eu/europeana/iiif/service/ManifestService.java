@@ -14,7 +14,7 @@ import eu.europeana.api.commons.error.EuropeanaApiException;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.exception.IllegalArgumentException;
 import eu.europeana.iiif.model.ManifestDefinitions;
-import eu.europeana.iiif.model.info.FulltextSummary;
+import eu.europeana.iiif.model.info.FulltextSummaryManifest;
 import eu.europeana.iiif.model.info.FulltextSummaryAnnoPage;
 import eu.europeana.iiif.model.info.FulltextSummaryCanvas;
 import eu.europeana.iiif.model.v2.ManifestV2;
@@ -320,8 +320,8 @@ public class ManifestService {
      */
     Map<String, FulltextSummaryCanvas> getFullTextSummary(String fullTextUrl) throws EuropeanaApiException {
 
-        FulltextSummary summary = null;
-        Instant start = Instant.now();
+        FulltextSummaryManifest summary = null;
+        Instant                 start   = Instant.now();
 
         try (CloseableHttpResponse response = fulltextHttpClient.execute(new HttpGet(fullTextUrl), httpCacheContext)) {
             Instant finish = Instant.now();
@@ -338,10 +338,10 @@ public class ManifestService {
         }
     }
 
-    private FulltextSummary handleSummaryResponse(CloseableHttpResponse response, String fullTextUrl) throws EuropeanaApiException {
-        boolean hasResult;
-        FulltextSummary summary = null;
-        int responseCode        = response.getStatusLine().getStatusCode();
+    private FulltextSummaryManifest handleSummaryResponse(CloseableHttpResponse response, String fullTextUrl) throws EuropeanaApiException {
+        boolean                 hasResult;
+        FulltextSummaryManifest summary      = null;
+        int                     responseCode = response.getStatusLine().getStatusCode();
         LOG.debug("Fulltext request {}, status code = {}", fullTextUrl, responseCode);
 
         hasResult = checkResponseCode(responseCode);
@@ -349,7 +349,7 @@ public class ManifestService {
 
         if (hasResult && entity != null) {
             try {
-                summary = getJsonMapper().readValue(EntityUtils.toString(entity), FulltextSummary.class);
+                summary = getJsonMapper().readValue(EntityUtils.toString(entity), FulltextSummaryManifest.class);
                 EntityUtils.consume(entity); // make sure entity is consumed fully so connection can be reused
             } catch (IOException ioe) {
                 throw new FullTextCheckException("Error reading answer from Fulltext API", ioe);
@@ -369,25 +369,23 @@ public class ManifestService {
     }
 
     /**
-     * Creates FulltextSummaryCanvas from FulltextSummary
+     * Creates FulltextSummaryCanvas from FulltextSummaryManifest
      * @param summary Fulltext AnnoPage info response object
      *
      * For translations with same dsId, LcID and pgID, multiple annoations Page will exists
      * Hence add the Annotations only.
-     * Also for now, fulltextSummaryCanvas.getAnnotations() will have only one annotation
+     * Also for now, fulltextSummaryCanvas.getFTSummaryAnnoPages() will have only one annotation
      * @see <a href="https://github.com/europeana/fulltext-api/blob/7bfbb90981a760ff4d5231a0106307e6405eec51/api/src/main/java/eu/europeana/fulltext/api/service/FTService.java#L227">
      * #collectionAnnoPageInfo</a>
      *
      * @return
      */
-    private Map<String, FulltextSummaryCanvas> createSummaryCanvasMap(FulltextSummary summary) {
-        // TODO discuss with Hugo how to handle this issue of the granularity only making sense on the SummaryCanvas level
-        String[] textGranularity = summary.getTextGranularity();
+    private Map<String, FulltextSummaryCanvas> createSummaryCanvasMap(FulltextSummaryManifest summary) {
         LinkedHashMap<String, FulltextSummaryCanvas> summaryCanvasMap = new LinkedHashMap<>();
         for (FulltextSummaryCanvas fulltextSummaryCanvas : summary.getCanvases()) {
             FulltextSummaryCanvas canvas = summaryCanvasMap.get(fulltextSummaryCanvas.getPageNumber());
             if (canvas != null) {
-               canvas.addAnnotation(fulltextSummaryCanvas.getAnnotations().get(0));
+               canvas.addFTSummaryAnnoPage(fulltextSummaryCanvas.getFTSummaryAnnoPages().get(0));
                 // in this case there will be no original language (translations)
                 if (canvas.getOriginalLanguage() != null) {
                     canvas.setOriginalLanguage(null);
@@ -563,8 +561,8 @@ public class ManifestService {
 
     private void addFulltextLinkToCanvasV3(eu.europeana.iiif.model.v3.Canvas canvas, FulltextSummaryCanvas summaryCanvas) {
         List<AnnotationPage> summaryAnnoPages = new ArrayList<>();
-        createAnnotations(summaryAnnoPages, summaryCanvas);
-        canvas.setAnnotations(summaryAnnoPages.toArray(new AnnotationPage[0]));
+        createFTSummaryAnnoPages(summaryAnnoPages, summaryCanvas);
+        canvas.setFtSummaryAnnoPages(summaryAnnoPages.toArray(new AnnotationPage[0]));
         for (eu.europeana.iiif.model.v3.AnnotationPage ap : canvas.getItems()){
             for (eu.europeana.iiif.model.v3.Annotation ann : ap.getItems()){
                 // for translations originalLanguage will be null
@@ -575,9 +573,9 @@ public class ManifestService {
         }
     }
 
-    private void createAnnotations(List<AnnotationPage> summaryAnnoPages, FulltextSummaryCanvas summaryCanvas) {
-        for (FulltextSummaryAnnoPage sap : summaryCanvas.getAnnotations()) {
-            summaryAnnoPages.add(new AnnotationPage(sap.getId(), sap.getLanguage(), sap.getSource()));
+    private void createFTSummaryAnnoPages(List<AnnotationPage> summaryAnnoPages, FulltextSummaryCanvas summaryCanvas) {
+        for (FulltextSummaryAnnoPage sap : summaryCanvas.getFTSummaryAnnoPages()) {
+            summaryAnnoPages.add(new AnnotationPage(sap.getId(), sap.getLanguage(), sap.getTextGranularity(), sap.getSource()));
         }
     }
 
