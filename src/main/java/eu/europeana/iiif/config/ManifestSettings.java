@@ -162,10 +162,10 @@ public class ManifestSettings {
     }
 
     /**
-     * @return Record API endpoint: record API Base URL + record API resource path + /
+     * @return Record API endpoint: record API Base URL + record API resource path
      */
     public String getRecordApiEndpoint() {
-        return getRecordApiBaseUrl() + getRecordApiPath() + "/";
+        return getRecordApiBaseUrl() + getRecordApiPath();
     }
 
     /**
