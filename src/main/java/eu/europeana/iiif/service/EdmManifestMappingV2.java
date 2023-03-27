@@ -50,12 +50,12 @@ public final class EdmManifestMappingV2 {
      * @param jsonDoc parsed json document
      * @return IIIF Manifest v2 object
      */
-    static ManifestV2 getManifestV2(ManifestSettings ms, Object jsonDoc) {
-        THUMBNAIL_API_URL = ms.getThumbnailApiUrl();
+    static ManifestV2 getManifestV2(ManifestSettings settings, Object jsonDoc) {
+        THUMBNAIL_API_URL = settings.getThumbnailApiUrl();
         String europeanaId = EdmManifestUtils.getEuropeanaId(jsonDoc);
         String isShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(jsonDoc, europeanaId, "edmIsShownBy");
-        ManifestV2 manifest = new ManifestV2(europeanaId, ManifestDefinitions.getManifestId(europeanaId), isShownBy);
-        manifest.setService(getServiceDescriptionV2(ms.getFullTextApiBaseUrl(), europeanaId));
+        ManifestV2 manifest = new ManifestV2(europeanaId, settings.getManifestId(europeanaId), isShownBy);
+        manifest.setService(getServiceDescriptionV2(settings, europeanaId));
         // EA-3325
 //        manifest.setWithin(getWithinV2(jsonDoc));
         manifest.setLabel(getLabelsV2(jsonDoc));
@@ -65,8 +65,8 @@ public final class EdmManifestMappingV2 {
         manifest.setNavDate(EdmManifestUtils.getNavDate(europeanaId, jsonDoc));
         manifest.setAttribution(getAttributionV2(europeanaId, isShownBy, jsonDoc));
         manifest.setLicense(getLicense(europeanaId, jsonDoc));
-        manifest.setSeeAlso(getDataSetsV2(europeanaId));
-        manifest.setSequences(getSequencesV2(europeanaId, isShownBy, jsonDoc));
+        manifest.setSeeAlso(getDataSetsV2(settings, europeanaId));
+        manifest.setSequences(getSequencesV2(settings, europeanaId, isShownBy, jsonDoc));
         if (manifest.getSequences() != null) {
             manifest.setStartCanvasPageNr(getStartCanvasV2(manifest.getSequences()[0].getCanvases(), isShownBy));
         }
@@ -76,8 +76,8 @@ public final class EdmManifestMappingV2 {
     /**
      * Generates a serviceV2 description for the manifest
      */
-    private static eu.europeana.iiif.model.v2.Service getServiceDescriptionV2(String fulltextBaseUrl, String europeanaId) {
-        return new eu.europeana.iiif.model.v2.Service(EdmManifestUtils.getFullTextSearchUrl(fulltextBaseUrl, europeanaId),
+    private static eu.europeana.iiif.model.v2.Service getServiceDescriptionV2(ManifestSettings settings, String europeanaId) {
+        return new eu.europeana.iiif.model.v2.Service(settings.getContentSearchURL(europeanaId),
                                                       ManifestDefinitions.SEARCH_CONTEXT_VALUE,
                                                       ManifestDefinitions.SEARCH_PROFILE_VALUE);
     }
@@ -229,13 +229,13 @@ public final class EdmManifestMappingV2 {
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
      * @return array of 3 datasets
      */
-    static eu.europeana.iiif.model.v2.DataSet[] getDataSetsV2(String europeanaId) {
+    static eu.europeana.iiif.model.v2.DataSet[] getDataSetsV2(ManifestSettings settings, String europeanaId) {
         eu.europeana.iiif.model.v2.DataSet[] result = new eu.europeana.iiif.model.v2.DataSet[3];
-        result[0] = new eu.europeana.iiif.model.v2.DataSet(ManifestDefinitions.getDatasetId(europeanaId, ".json-ld"),
+        result[0] = new eu.europeana.iiif.model.v2.DataSet(settings.getDatasetId(europeanaId, ".json-ld"),
                 AcceptUtils.MEDIA_TYPE_JSONLD);
-        result[1] = new eu.europeana.iiif.model.v2.DataSet(ManifestDefinitions.getDatasetId(europeanaId, ".json"),
+        result[1] = new eu.europeana.iiif.model.v2.DataSet(settings.getDatasetId(europeanaId, ".json"),
                 org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
-        result[2] = new eu.europeana.iiif.model.v2.DataSet(ManifestDefinitions.getDatasetId(europeanaId, ".rdf"),
+        result[2] = new eu.europeana.iiif.model.v2.DataSet(settings.getDatasetId(europeanaId, ".rdf"),
                 ManifestDefinitions.MEDIA_TYPE_RDF);
         return result;
     }
@@ -246,7 +246,7 @@ public final class EdmManifestMappingV2 {
      * @param jsonDoc parsed json document
      * @return
      */
-    static eu.europeana.iiif.model.v2.Sequence[] getSequencesV2(String europeanaId, String isShownBy, Object jsonDoc) {
+    static eu.europeana.iiif.model.v2.Sequence[] getSequencesV2(ManifestSettings settings, String europeanaId, String isShownBy, Object jsonDoc) {
         // generate canvases in a same order as the web resources
         List<WebResource> sortedResources = EdmManifestUtils.getSortedWebResources(europeanaId, isShownBy, jsonDoc);
         if (sortedResources.isEmpty()) {
@@ -257,13 +257,14 @@ public final class EdmManifestMappingV2 {
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
         List<eu.europeana.iiif.model.v2.Canvas> canvases = new ArrayList<>(sortedResources.size());
         for (WebResource webResource: sortedResources) {
-            canvases.add(getCanvasV2(europeanaId, order, webResource, services, jsonDoc));
+            canvases.add(getCanvasV2(settings, europeanaId, order, webResource, services, jsonDoc));
             order++;
         }
         // there should be only 1 sequence, so sequence number is always 1
         eu.europeana.iiif.model.v2.Sequence[] result = new eu.europeana.iiif.model.v2.Sequence[1];
         result[0] = new eu.europeana.iiif.model.v2.Sequence();
-        result[0].setStartCanvas(ManifestDefinitions.getCanvasId(europeanaId, 1));
+//        result[0].setStartCanvas(ManifestDefinitions.getCanvasId(europeanaId, 1));
+        result[0].setStartCanvas(settings.getCanvasId(europeanaId, 1));
         result[0].setCanvases(canvases.toArray(new eu.europeana.iiif.model.v2.Canvas[0]));
         return result;
     }
@@ -310,13 +311,14 @@ public final class EdmManifestMappingV2 {
     /**
      * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That is done later
      */
-    private static eu.europeana.iiif.model.v2.Canvas getCanvasV2(String europeanaId,
+    private static eu.europeana.iiif.model.v2.Canvas getCanvasV2(ManifestSettings settings,
+                                                                 String europeanaId,
                                                                  int order,
                                                                  WebResource webResource,
                                                                  Map<String, Object>[] services,
                                                                  Object jsonDoc) {
         eu.europeana.iiif.model.v2.Canvas c =
-                new eu.europeana.iiif.model.v2.Canvas(ManifestDefinitions.getCanvasId(europeanaId, order), order);
+                new eu.europeana.iiif.model.v2.Canvas(settings.getCanvasId(europeanaId, order), order);
 
         c.setLabel("p. "+order);
 

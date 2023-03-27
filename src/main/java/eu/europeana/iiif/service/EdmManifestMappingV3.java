@@ -83,8 +83,9 @@ public final class EdmManifestMappingV3 {
             LOG.debug("isShownBy = {}", isShownBy);
         }
 
-        ManifestV3 manifest = new ManifestV3(europeanaId, ManifestDefinitions.getManifestId(europeanaId), isShownBy);
-        manifest.setService(getServiceDescriptionV3(ms.getFullTextApiBaseUrl(), europeanaId));
+//        ManifestV3 manifest = new ManifestV3(europeanaId, ManifestDefinitions.getManifestId(europeanaId), isShownBy);
+        ManifestV3 manifest = new ManifestV3(europeanaId, ms.getManifestId(europeanaId), isShownBy);
+        manifest.setService(getServiceDescriptionV3(ms, europeanaId));
         // EA-3325
 //        manifest.setPartOf(getWithinV3(jsonDoc));
         manifest.setLabel(getLabelsV3(jsonDoc));
@@ -95,8 +96,8 @@ public final class EdmManifestMappingV3 {
         manifest.setHomePage(EdmManifestUtils.getHomePage(europeanaId, jsonDoc));
         manifest.setRequiredStatement(getAttributionV3Root(europeanaId, isShownBy, jsonDoc));
         manifest.setRights(getRights(europeanaId, jsonDoc));
-        manifest.setSeeAlso(getDataSetsV3(europeanaId));
-        manifest.setItems(getItems(europeanaId, isShownBy, jsonDoc, euScreenTypeHack));
+        manifest.setSeeAlso(getDataSetsV3(ms, europeanaId));
+        manifest.setItems(getItems(ms, europeanaId, isShownBy, jsonDoc, euScreenTypeHack));
         manifest.setStart(getStartCanvasV3(manifest.getItems(), isShownBy));
         return manifest;
     }
@@ -104,8 +105,8 @@ public final class EdmManifestMappingV3 {
     /**
      * Generates Service descriptions for the manifest
      */
-    private static Service[] getServiceDescriptionV3(String fulltextBaseUrl, String europeanaId) {
-        return new Service[]{new Service(EdmManifestUtils.getFullTextSearchUrl(fulltextBaseUrl, europeanaId),
+    private static Service[] getServiceDescriptionV3(ManifestSettings ms, String europeanaId) {
+        return new Service[]{new Service(ms.getContentSearchURL(europeanaId),
                 null,
                 ManifestDefinitions.SEARCH_CONTEXT_VALUE,
                 ManifestDefinitions.SEARCH_PROFILE_VALUE)};
@@ -335,13 +336,13 @@ public final class EdmManifestMappingV3 {
      * @param europeanaId consisting of dataset ID and record ID separated by a slash (string should have a leading slash and not trailing slash)
      * @return array of 3 datasets
      */
-    static eu.europeana.iiif.model.v3.DataSet[] getDataSetsV3(String europeanaId) {
+    static eu.europeana.iiif.model.v3.DataSet[] getDataSetsV3(ManifestSettings settings, String europeanaId) {
         eu.europeana.iiif.model.v3.DataSet[] result = new eu.europeana.iiif.model.v3.DataSet[3];
-        result[0] = new eu.europeana.iiif.model.v3.DataSet(ManifestDefinitions.getDatasetId(europeanaId, ".json-ld"),
+        result[0] = new eu.europeana.iiif.model.v3.DataSet(settings.getDatasetId(europeanaId, ".json-ld"),
                 AcceptUtils.MEDIA_TYPE_JSONLD);
-        result[1] = new eu.europeana.iiif.model.v3.DataSet(ManifestDefinitions.getDatasetId(europeanaId, ".json"),
+        result[1] = new eu.europeana.iiif.model.v3.DataSet(settings.getDatasetId(europeanaId, ".json"),
                 org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
-        result[2] = new eu.europeana.iiif.model.v3.DataSet(ManifestDefinitions.getDatasetId(europeanaId, ".rdf"),
+        result[2] = new eu.europeana.iiif.model.v3.DataSet(settings.getDatasetId(europeanaId, ".rdf"),
                 ManifestDefinitions.MEDIA_TYPE_RDF);
         return result;
     }
@@ -382,7 +383,7 @@ public final class EdmManifestMappingV3 {
      * @param jsonDoc
      * @return array of Canvases
      */
-    static eu.europeana.iiif.model.v3.Canvas[] getItems(String europeanaId, String isShownBy, Object jsonDoc, MediaType euScreenTypeHack) {
+    static eu.europeana.iiif.model.v3.Canvas[] getItems(ManifestSettings settings, String europeanaId, String isShownBy, Object jsonDoc, MediaType euScreenTypeHack) {
         // generate canvases in a same order as the web resources
         List<WebResource> sortedResources = EdmManifestUtils.getSortedWebResources(europeanaId, isShownBy, jsonDoc);
         if (sortedResources.isEmpty()) {
@@ -393,7 +394,7 @@ public final class EdmManifestMappingV3 {
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
         List<eu.europeana.iiif.model.v3.Canvas> canvases = new ArrayList<>(sortedResources.size());
         for (WebResource webResource: sortedResources) {
-            canvases.add(getCanvasV3(europeanaId, order, webResource, services, euScreenTypeHack, jsonDoc));
+            canvases.add(getCanvasV3(settings, europeanaId, order, webResource, services, euScreenTypeHack, jsonDoc));
             order++;
         }
         return canvases.toArray(new eu.europeana.iiif.model.v3.Canvas[0]);
@@ -403,11 +404,15 @@ public final class EdmManifestMappingV3 {
     /**
      * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That's done later.
      */
-    private static eu.europeana.iiif.model.v3.Canvas getCanvasV3(String europeanaId, int order, WebResource webResource,
-                                                                 Map<String, Object>[] services, MediaType euScreenTypeHack,
+    private static eu.europeana.iiif.model.v3.Canvas getCanvasV3(ManifestSettings settings,
+                                                                 String europeanaId,
+                                                                 int order,
+                                                                 WebResource webResource,
+                                                                 Map<String, Object>[] services,
+                                                                 MediaType euScreenTypeHack,
                                                                  Object jsonDoc) {
         eu.europeana.iiif.model.v3.Canvas c =
-                new eu.europeana.iiif.model.v3.Canvas(ManifestDefinitions.getCanvasId(europeanaId, order), order);
+                new eu.europeana.iiif.model.v3.Canvas(settings.getCanvasId(europeanaId, order), order);
 
         c.setLabel(new LanguageMap(null, "p. "+order));
 

@@ -308,8 +308,6 @@ public class ManifestService {
         }
     }
 
-
-
     /**
      * Performs a GET request for a particular EuropeanaID that:
      * - lists all canvases found for that EuropeanaID;

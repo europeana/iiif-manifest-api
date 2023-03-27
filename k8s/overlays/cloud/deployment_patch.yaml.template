@@ -16,7 +16,6 @@ spec:
           env:
             - name: CATALINA_OPTS
               value: "-javaagent:/usr/local/elastic-apm-agent.jar
-                      -Delastic.apm.enabled=${COLLECT_LOGS}              
                       -Delastic.apm.application_packages=${ELASTIC_APP_PACKAGES}
                       -Delastic.apm.server_urls=${ELASTIC_APM_SERVERS}
                       -Delastic.apm.service_name=${APP_NAME}
