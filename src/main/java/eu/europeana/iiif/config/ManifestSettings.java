@@ -255,7 +255,7 @@ public class ManifestSettings {
      * @return URL built from Content search base URL, manifest API presentation path, Europeana ID and Fulltext search path
      */
     public String getContentSearchURL(String europeanaId){
-        return getContentSearchBaseUrl() + getManifestApiPresentationPath() + "/" + europeanaId + IIIFDefinitions.FULLTEXT_SEARCH_PATH;
+        return getContentSearchBaseUrl() + getManifestApiPresentationPath() + europeanaId + IIIFDefinitions.FULLTEXT_SEARCH_PATH;
     }
 
 
