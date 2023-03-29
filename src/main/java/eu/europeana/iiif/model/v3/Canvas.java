@@ -1,6 +1,7 @@
 package eu.europeana.iiif.model.v3;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author Patrick Ehlert
@@ -22,8 +23,10 @@ public class Canvas extends JsonLdIdType {
     private RequiredStatementMap requiredStatement;; // attribution
     private Rights rights;
     private AnnotationPage[] items;
-    private AnnotationPage[] annotations; // full text identifiers
-    private Image[] thumbnail;     // EA-3325
+
+    @JsonProperty("annotations")
+    private AnnotationPage[] ftSummaryAnnoPages; // full text identifiers
+    private Image[]          thumbnail;     // EA-3325
 
     /**
      * Create a new canvas object
@@ -122,12 +125,12 @@ public class Canvas extends JsonLdIdType {
      * If fulltext is available they this will contain AnnotationPages with only the full text identifier
      * @return array of {@link AnnotationPage} with full text identifiers (if fulltext is available)
      */
-    public AnnotationPage[] getAnnotations() {
-        return annotations;
+    public AnnotationPage[] getFtSummaryAnnoPages() {
+        return ftSummaryAnnoPages;
     }
 
-    public void setAnnotations(AnnotationPage[] annotations) {
-        this.annotations = annotations;
+    public void setFtSummaryAnnoPages(AnnotationPage[] ftSummaryAnnoPages) {
+        this.ftSummaryAnnoPages = ftSummaryAnnoPages;
     }
 
     public Image[] getThumbnail() {

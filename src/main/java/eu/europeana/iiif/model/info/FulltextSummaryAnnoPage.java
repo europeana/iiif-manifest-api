@@ -16,6 +16,8 @@ public class FulltextSummaryAnnoPage extends JsonLdIdType {
     @JsonProperty("language")
     private String language;
 
+    private String[] textGranularity;
+
     @JsonIgnore
     private boolean orig;
 
@@ -45,6 +47,14 @@ public class FulltextSummaryAnnoPage extends JsonLdIdType {
 
     public void setLanguage(String language) {
         this.language = language;
+    }
+
+    public String[] getTextGranularity() {
+        return textGranularity;
+    }
+
+    public void setTextGranularity(String[] textGranularity) {
+        this.textGranularity = textGranularity;
     }
 
     public String getSource() {
