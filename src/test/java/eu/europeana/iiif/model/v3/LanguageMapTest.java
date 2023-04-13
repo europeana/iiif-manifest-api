@@ -4,8 +4,6 @@ import eu.europeana.iiif.service.LanguageMapUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-
 /**
  * Test if creating new language maps works fine. If no language or 'def' is specified strings should be filled under
  * the special '@none' key

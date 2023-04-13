@@ -3,7 +3,7 @@ package eu.europeana.iiif.service;
 import com.jayway.jsonpath.Configuration;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.model.v2.*;
-import org.junit.Assert;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +12,6 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-
-import static org.junit.Assert.*;
 
 /**
  * Tests the EDM-IIIF Manifest v2 mapping
