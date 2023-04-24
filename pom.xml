@@ -172,6 +172,7 @@
             <artifactId>jackson-core</artifactId>
             <version>${jackson-core.version}</version>
         </dependency>
+
         <!-- https://mvnrepository.com/artifact/com.io-informatics.oss/jackson-jsonld -->
         <dependency>
             <groupId>com.io-informatics.oss</groupId>
@@ -194,6 +195,13 @@
             </exclusions>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-xml -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+            <version>${jackson-core.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
@@ -206,7 +214,6 @@
             <artifactId>commons-lang3</artifactId>
             <version>${commons.lang3.version}</version>
         </dependency>
-
 
         <!-- Test stuff -->
         <dependency>
