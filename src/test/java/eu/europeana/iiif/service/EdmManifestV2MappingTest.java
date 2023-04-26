@@ -1,8 +1,10 @@
 package eu.europeana.iiif.service;
 
 import com.jayway.jsonpath.Configuration;
+import eu.europeana.iiif.config.AppConfig;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.config.MediaTypes;
+import eu.europeana.iiif.config.SerializationConfig;
 import eu.europeana.iiif.model.v2.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -20,7 +22,7 @@ import java.time.ZoneOffset;
  */
 
 @TestPropertySource("classpath:iiif-test.properties")
-@SpringBootTest(classes = {EdmManifestMappingV2.class, ManifestSettings.class})
+@SpringBootTest(classes = {EdmManifestMappingV2.class, ManifestSettings.class, AppConfig.class, SerializationConfig.class})
 public class EdmManifestV2MappingTest {
 
     // Initialize the manifest service, because that will setup our default Jackson mapper configuration used in the tests
@@ -307,7 +309,7 @@ public class EdmManifestV2MappingTest {
         ecv.annotationAndBody.idEndsWith = "/test-id/annotation/p1";
         ecv.annotationAndBody.onId = ecv.id;
         ecv.annotationAndBody.bodyId = "wr3Id";
-        ecv.annotationAndBody.format = "video/mp4";
+        ecv.annotationAndBody.format = "image/webp";
         ecv.annotationAndBody.service = new ExpectedServiceValues();
         ecv.annotationAndBody.service.id = "service3Id";
         ecv.annotationAndBody.service.profile = "serviceProfile";

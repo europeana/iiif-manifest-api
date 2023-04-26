@@ -3,8 +3,10 @@ package eu.europeana.iiif.service;
 import static eu.europeana.iiif.model.ManifestDefinitions.ATTRIBUTION_STRING;
 
 import com.jayway.jsonpath.Configuration;
+import eu.europeana.iiif.config.AppConfig;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.config.MediaTypes;
+import eu.europeana.iiif.config.SerializationConfig;
 import eu.europeana.iiif.model.v3.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,7 +23,7 @@ import org.springframework.test.context.TestPropertySource;
  */
 
 @TestPropertySource("classpath:iiif-test.properties")
-@SpringBootTest(classes = {EdmManifestMappingV3.class, ManifestSettings.class})
+@SpringBootTest(classes = {EdmManifestMappingV3.class, ManifestSettings.class, AppConfig.class, SerializationConfig.class})
 public class EdmManifestV3MappingTest {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestV3MappingTest.class);
@@ -326,6 +328,7 @@ public class EdmManifestV3MappingTest {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_NOISSHOWNBY);
         String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
 
+        System.out.println(mediaTypes.mediaTypeCategories.size());
         Canvas[] canvases = EdmManifestMappingV3.getItems(settings, mediaTypes, "/test-id", edmIsShownBy, document, null);
         Canvas start = EdmManifestMappingV3.getStartCanvasV3(canvases, edmIsShownBy);
 
@@ -393,8 +396,8 @@ public class EdmManifestV3MappingTest {
         expectedAnnotation.timeMode = "trim";
         expectedAnnotation.target = "https://iiif.europeana.eu/presentation/test-id/canvas/p1";
         expectedAnnotation.bodyId = "wr3Id";
-        expectedAnnotation.bodyType = "Video";
-        expectedAnnotation.bodyFormat = "video/mp4";
+        expectedAnnotation.bodyType = "Image";
+        expectedAnnotation.bodyFormat = "image/webp";
         expectedAnnotation.hasService = true;
         expectedAnnotation.bodyServiceId = "service3Id";
         expectedAnnotation.bodyServiceProfile = "serviceProfile";
@@ -420,11 +423,11 @@ public class EdmManifestV3MappingTest {
         expectedAnnotation2.id = null;
         expectedAnnotation2.type = "Annotation";
         expectedAnnotation2.motivation = "painting";
-        expectedAnnotation2.timeMode = null;
+        expectedAnnotation2.timeMode = "trim";
         expectedAnnotation2.target = "https://iiif.europeana.eu/presentation/test-id/canvas/p2";
         expectedAnnotation2.bodyId = "wr2Id";
-        expectedAnnotation2.bodyType = "Other";
-        expectedAnnotation2.bodyFormat = "wr2MimeType";
+        expectedAnnotation2.bodyType = "Image";
+        expectedAnnotation2.bodyFormat = "image/png";
         expectedAnnotation2.hasService = false;
         checkCanvas(expectedCanvas2, canvas2);
     }

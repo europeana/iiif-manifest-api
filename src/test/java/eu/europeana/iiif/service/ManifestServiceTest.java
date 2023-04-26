@@ -5,6 +5,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import eu.europeana.api.commons.error.EuropeanaApiException;
 import eu.europeana.iiif.ExampleData;
 import eu.europeana.iiif.config.ManifestSettings;
+import eu.europeana.iiif.config.MediaTypes;
 import eu.europeana.iiif.exception.InvalidApiKeyException;
 import eu.europeana.iiif.exception.RecordNotFoundException;
 import eu.europeana.iiif.exception.RecordRetrieveException;
@@ -43,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  */
 @WireMockTest(httpsEnabled = true)
 @TestPropertySource(locations = "classpath:iiif-test.properties")
-@SpringBootTest(classes = {ManifestService.class, ManifestSettings.class})
+@SpringBootTest(classes = {ManifestService.class, ManifestSettings.class, MediaTypes.class})
 public class ManifestServiceTest {
 
     private static final String EXAMPLE_WSKEY = "junit";
