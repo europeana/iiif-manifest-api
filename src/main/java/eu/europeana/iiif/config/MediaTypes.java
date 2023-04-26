@@ -6,7 +6,9 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import eu.europeana.iiif.model.MediaType;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -17,12 +19,19 @@ import java.util.Optional;
 public class MediaTypes {
 
         @JacksonXmlElementWrapper(useWrapping = false)
-        @JacksonXmlProperty(localName = "source")
-        private List<MediaType> mediaTypes;
+        @JacksonXmlProperty(localName = "format")
+        public List<MediaType> mediaTypeCategories;
 
-        public List<MediaType> getMediaTypes() {
-            return mediaTypes;
-        }
+        private Map<String, MediaType> map = new HashMap<>();
+
+         /**
+         * Map contains all the suppoerted media types except EU Screen entries
+         * @return
+         */
+         public Map<String, MediaType> getMap() {
+             return this.map;
+         }
+
 
         /**
          * Checks if a media Type is configured for the given mime Type
@@ -31,7 +40,7 @@ public class MediaTypes {
          * @return true if a Media Type match is configured, false otherwise.
          */
         public boolean hasMediaType(String mimeType) {
-            return mediaTypes.stream().anyMatch(s -> mimeType.contains(s.getMimeType()));
+            return map.containsKey(mimeType);
         }
 
         /**
@@ -42,13 +51,13 @@ public class MediaTypes {
          */
         public Optional<MediaType> getMediaType(String mimetype) {
             if (StringUtils.isNotEmpty(mimetype)) {
-                return mediaTypes.stream().filter(s -> mimetype.contains(s.getMimeType())).findFirst();
+                return Optional.ofNullable(map.get(mimetype));
             }
             return Optional.empty();
         }
 
         public Optional<MediaType> getEUScreenType(String edmType) {
-            return mediaTypes.stream().filter(s -> s.isEuScreen() && s.getType().equalsIgnoreCase(edmType)).findFirst();
+            return mediaTypeCategories.stream().filter(s -> s.isEuScreen() && s.getType().equalsIgnoreCase(edmType)).findFirst();
         }
 
 }

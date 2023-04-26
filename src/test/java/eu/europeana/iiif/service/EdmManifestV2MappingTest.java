@@ -2,8 +2,8 @@ package eu.europeana.iiif.service;
 
 import com.jayway.jsonpath.Configuration;
 import eu.europeana.iiif.config.ManifestSettings;
+import eu.europeana.iiif.config.MediaTypes;
 import eu.europeana.iiif.model.v2.*;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +12,6 @@ import org.springframework.test.context.TestPropertySource;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-
-import static org.junit.Assert.*;
 
 /**
  * Tests the EDM-IIIF Manifest v2 mapping
@@ -26,10 +24,13 @@ import static org.junit.Assert.*;
 public class EdmManifestV2MappingTest {
 
     // Initialize the manifest service, because that will setup our default Jackson mapper configuration used in the tests
-    private static final ManifestService ms = new ManifestService(new ManifestSettings());
+    private static final ManifestService ms = new ManifestService(new ManifestSettings(), new MediaTypes());
 
     @Autowired
     private ManifestSettings settings;
+
+    @Autowired
+    private MediaTypes mediaTypes;
 
     @Test
     public void testId() {
@@ -267,7 +268,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testSequenceEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        Assertions.assertNull(EdmManifestMappingV2.getSequencesV2(settings, "test", null, document));
+        Assertions.assertNull(EdmManifestMappingV2.getSequencesV2(settings, mediaTypes, "test", null, document));
     }
 
     /**
@@ -276,7 +277,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testSequenceMissingIsShownAtHasView() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_NOISSHOWNBY);
-        Assertions.assertNull(EdmManifestMappingV2.getSequencesV2(settings, "test", null, document));
+        Assertions.assertNull(EdmManifestMappingV2.getSequencesV2(settings, mediaTypes, "test", null, document));
     }
 
     /**
@@ -286,7 +287,7 @@ public class EdmManifestV2MappingTest {
     public void testSequence() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
         String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
-        Sequence[] sequence = EdmManifestMappingV2.getSequencesV2(settings, "/test-id", edmIsShownBy, document);
+        Sequence[] sequence = EdmManifestMappingV2.getSequencesV2(settings, mediaTypes,"/test-id", edmIsShownBy, document);
         Assertions.assertNotNull(sequence);
         Assertions.assertEquals(1, sequence.length); // there should always be only 1 sequence
 

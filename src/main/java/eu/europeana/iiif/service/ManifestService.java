@@ -12,6 +12,7 @@ import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import eu.europeana.api.commons.error.EuropeanaApiException;
 import eu.europeana.iiif.config.ManifestSettings;
+import eu.europeana.iiif.config.MediaTypes;
 import eu.europeana.iiif.exception.IllegalArgumentException;
 import eu.europeana.iiif.model.ManifestDefinitions;
 import eu.europeana.iiif.model.info.FulltextSummaryManifest;
@@ -82,13 +83,17 @@ public class ManifestService {
     private final CloseableHttpClient recordHttpClient;
     private final CloseableHttpClient fulltextHttpClient;
     private HttpCacheContext    httpCacheContext = null;
+    private final MediaTypes mediaTypes;
+
 
     /**
      * Creates an instance of the ManifestService bean with provided settings
      * @param settings read from properties file
+     * @param mediaTypes
      */
-    public ManifestService(ManifestSettings settings) {
+    public ManifestService(ManifestSettings settings, MediaTypes mediaTypes) {
         this.settings = settings;
+        this.mediaTypes = mediaTypes;
 
         // configure http client
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
@@ -406,7 +411,7 @@ public class ManifestService {
     public ManifestV2 generateManifestV2(String json) {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        ManifestV2 result = EdmManifestMappingV2.getManifestV2(settings, document);
+        ManifestV2 result = EdmManifestMappingV2.getManifestV2(settings, mediaTypes, document);
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Generated in {} ms", System.currentTimeMillis() - start);
@@ -425,7 +430,7 @@ public class ManifestService {
     public ManifestV2 generateManifestV2(String json, URL fullTextApi) {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        ManifestV2 result = EdmManifestMappingV2.getManifestV2(settings, document);
+        ManifestV2 result = EdmManifestMappingV2.getManifestV2(settings, mediaTypes, document);
 
         try {
             fillInFullTextLinksV2(result, fullTextApi);
@@ -448,7 +453,7 @@ public class ManifestService {
     public ManifestV3 generateManifestV3(String json) {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        ManifestV3 result = EdmManifestMappingV3.getManifestV3(settings, document);
+        ManifestV3 result = EdmManifestMappingV3.getManifestV3(settings, mediaTypes, document);
         if (LOG.isDebugEnabled()) {
             LOG.debug("Generated in {} ms ", System.currentTimeMillis() - start);
         }
@@ -466,7 +471,7 @@ public class ManifestService {
     public ManifestV3 generateManifestV3(String json, URL fullTextApi) {
         long start = System.currentTimeMillis();
         Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(json);
-        ManifestV3 result = EdmManifestMappingV3.getManifestV3(settings, document);
+        ManifestV3 result = EdmManifestMappingV3.getManifestV3(settings, mediaTypes, document);
         try {
             fillInFullTextLinksV3(result, fullTextApi);
         } catch (EuropeanaApiException ie) {

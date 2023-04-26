@@ -7,7 +7,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
  * @author srishti singh
  * @since 18 April 2023
  */
-@JacksonXmlRootElement(localName = "source")
+@JacksonXmlRootElement(localName = "format")
 public class MediaType {
 
     private static final String BROWSER = "Browser";
@@ -17,7 +17,7 @@ public class MediaType {
     public static final String  VIDEO    = "Video";
     public static final String  SOUND    = "Sound";
 
-    @JacksonXmlProperty(isAttribute = true)
+    @JacksonXmlProperty(localName =  "mediaType", isAttribute = true)
     private String mimeType;
 
     @JacksonXmlProperty(isAttribute = true)

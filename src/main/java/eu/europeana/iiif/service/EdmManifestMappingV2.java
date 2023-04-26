@@ -4,10 +4,11 @@ import com.jayway.jsonpath.Filter;
 import com.jayway.jsonpath.JsonPath;
 import eu.europeana.iiif.AcceptUtils;
 import eu.europeana.iiif.config.ManifestSettings;
+import eu.europeana.iiif.config.MediaTypes;
 import eu.europeana.iiif.model.ManifestDefinitions;
+import eu.europeana.iiif.model.MediaType;
 import eu.europeana.iiif.model.WebResource;
-import eu.europeana.iiif.model.v2.LanguageObject;
-import eu.europeana.iiif.model.v2.ManifestV2;
+import eu.europeana.iiif.model.v2.*;
 import eu.europeana.iiif.model.v3.LanguageMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -50,7 +51,7 @@ public final class EdmManifestMappingV2 {
      * @param jsonDoc parsed json document
      * @return IIIF Manifest v2 object
      */
-    static ManifestV2 getManifestV2(ManifestSettings settings, Object jsonDoc) {
+    static ManifestV2 getManifestV2(ManifestSettings settings, MediaTypes mediaTypes, Object jsonDoc) {
         THUMBNAIL_API_URL = settings.getThumbnailApiUrl();
         String europeanaId = EdmManifestUtils.getEuropeanaId(jsonDoc);
         String isShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(jsonDoc, europeanaId, "edmIsShownBy");
@@ -66,9 +67,12 @@ public final class EdmManifestMappingV2 {
         manifest.setAttribution(getAttributionV2(europeanaId, isShownBy, jsonDoc));
         manifest.setLicense(getLicense(europeanaId, jsonDoc));
         manifest.setSeeAlso(getDataSetsV2(settings, europeanaId));
-        manifest.setSequences(getSequencesV2(settings, europeanaId, isShownBy, jsonDoc));
-        if (manifest.getSequences() != null) {
+        Sequence [] sequences = getSequencesV2(settings, mediaTypes, europeanaId, isShownBy, jsonDoc);
+        if (sequences != null) {
+            manifest.setSequences(sequences);
             manifest.setStartCanvasPageNr(getStartCanvasV2(manifest.getSequences()[0].getCanvases(), isShownBy));
+        } else {
+            LOG.debug("No Canvas generated for europeanaId {}", europeanaId);
         }
         return manifest;
     }
@@ -246,27 +250,33 @@ public final class EdmManifestMappingV2 {
      * @param jsonDoc parsed json document
      * @return
      */
-    static eu.europeana.iiif.model.v2.Sequence[] getSequencesV2(ManifestSettings settings, String europeanaId, String isShownBy, Object jsonDoc) {
+    static eu.europeana.iiif.model.v2.Sequence[] getSequencesV2(ManifestSettings settings, MediaTypes mediaTypes,String europeanaId, String isShownBy, Object jsonDoc) {
         // generate canvases in a same order as the web resources
         List<WebResource> sortedResources = EdmManifestUtils.getSortedWebResources(europeanaId, isShownBy, jsonDoc);
         if (sortedResources.isEmpty()) {
             return null;
         }
-
         int order = 1;
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
         List<eu.europeana.iiif.model.v2.Canvas> canvases = new ArrayList<>(sortedResources.size());
         for (WebResource webResource: sortedResources) {
-            canvases.add(getCanvasV2(settings, europeanaId, order, webResource, services, jsonDoc));
-            order++;
+            Canvas canvas = getCanvasV2(settings, mediaTypes, europeanaId, order, webResource, services);
+            // for non supported media types we do not create any canvas. Case-4 of media type handling : See-EA-3413
+            if (canvas != null) {
+                canvases.add(canvas);
+                order++;
+            }
         }
-        // there should be only 1 sequence, so sequence number is always 1
-        eu.europeana.iiif.model.v2.Sequence[] result = new eu.europeana.iiif.model.v2.Sequence[1];
-        result[0] = new eu.europeana.iiif.model.v2.Sequence();
-//        result[0].setStartCanvas(ManifestDefinitions.getCanvasId(europeanaId, 1));
-        result[0].setStartCanvas(settings.getCanvasId(europeanaId, 1));
-        result[0].setCanvases(canvases.toArray(new eu.europeana.iiif.model.v2.Canvas[0]));
-        return result;
+        // if there are canvas generated add the sequence
+        if (!canvases.isEmpty()) {
+            // there should be only 1 sequence, so sequence number is always 1
+            eu.europeana.iiif.model.v2.Sequence[] result = new eu.europeana.iiif.model.v2.Sequence[1];
+            result[0] = new eu.europeana.iiif.model.v2.Sequence();
+            result[0].setStartCanvas(settings.getCanvasId(europeanaId, 1));
+            result[0].setCanvases(canvases.toArray(new eu.europeana.iiif.model.v2.Canvas[0]));
+            return result;
+        }
+        return null;
     }
 
 
@@ -312,11 +322,11 @@ public final class EdmManifestMappingV2 {
      * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That is done later
      */
     private static eu.europeana.iiif.model.v2.Canvas getCanvasV2(ManifestSettings settings,
+                                                                 MediaTypes mediaTypes,
                                                                  String europeanaId,
                                                                  int order,
                                                                  WebResource webResource,
-                                                                 Map<String, Object>[] services,
-                                                                 Object jsonDoc) {
+                                                                 Map<String, Object>[] services) {
         eu.europeana.iiif.model.v2.Canvas c =
                 new eu.europeana.iiif.model.v2.Canvas(settings.getCanvasId(europeanaId, order), order);
 
@@ -342,7 +352,7 @@ public final class EdmManifestMappingV2 {
             c.setThumbnail(getCanvasThumbnailImageV2(webResource.getId()));
         }
 
-        LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get("webResourceEdmRights");
+        LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get(EdmManifestUtils.WEB_RESOURCE_EDM_RIGHTS);
         if (license != null && !license.values().isEmpty()) {
             c.setLicense(license.values().iterator().next().get(0));
         }
@@ -352,11 +362,41 @@ public final class EdmManifestMappingV2 {
         c.getImages()[0] = new eu.europeana.iiif.model.v2.Annotation();
         c.getImages()[0].setOn(c.getId());
 
-        // annotation has 1 annotationBody
+        // MEDIA TYPE HANDLING ....
+
+        // Fetch the mime type from the web resource
+        String ebuCoreMimeType = (String) webResource.get(EdmManifestUtils.EBUCORE_HAS_MIMETYPE);
+        MediaType mediaType = null;
+
+        // get the configured media type of the mimetype
+        Optional<MediaType> media = mediaTypes.getMediaType(ebuCoreMimeType);
+        if (media.isPresent()) {
+            mediaType = media.get();
+        }
+
+        // ignored cases CASE 4 for version 2
+        if (mediaType == null || ifMediaTypeIsNotBrowserOrRendered(mediaType)) {
+            LOG.debug("No canvas added for webresource {} as the media type - {} is invalid or not supported.",
+                    webResource.get(EdmManifestUtils.ABOUT),
+                    ebuCoreMimeType);
+            return null;
+        }
+
+        // Now create the annotation body based on the media type (annotation has 1 annotationBody)
         eu.europeana.iiif.model.v2.AnnotationBody annoBody = new eu.europeana.iiif.model.v2.AnnotationBody((String) webResource.get(EdmManifestUtils.ABOUT));
-        String ebuCoreMimeType = (String) webResource.get("ebucoreHasMimeType");
-        if (!StringUtils.isEmpty(ebuCoreMimeType)) {
-            annoBody.setFormat(ebuCoreMimeType);
+
+        // case 2
+         if (mediaType.isBrowserSupported()) {
+             annoBody.setFormat(mediaType.getMimeType());
+         }
+
+         // case 3
+        if (mediaType.isRendered()) {
+            annoBody = new eu.europeana.iiif.model.v2.AnnotationBody(c.getThumbnail().getId());
+            // update height and width
+            setHeightWidthForRendered(c);
+            // set rendering
+            c.setRendering(new Rendering((String) webResource.get(EdmManifestUtils.ABOUT), mediaType.getMimeType(), mediaType.getLabel()));
         }
 
         // body can have a service
@@ -368,5 +408,41 @@ public final class EdmManifestMappingV2 {
         }
         c.getImages()[0].setResource(annoBody);
         return c;
+    }
+
+    /**
+     * If media type is present but is not browser or rendered supported
+     * return true
+     * As we have only these two supported media types for now this
+     * condition is not necessary but for future and to make code bit resilient we are still checking this
+     *
+     * @param mediaType
+     * @return
+     */
+    private static boolean ifMediaTypeIsNotBrowserOrRendered(MediaType mediaType) {
+        return mediaType != null && !(mediaType.isRendered() || mediaType.isBrowserSupported());
+    }
+
+    /**
+     * Update the width and height of the canvas based
+     * on few conditons
+     * @param c
+     */
+    private static void setHeightWidthForRendered(Canvas c) {
+        Integer height = c.getHeight();
+        Integer width = c.getWidth();
+
+        if (height != null && width != null) {
+            // width is higher (and equal) than 400px - Set width = 400 ; Set height = (height / width) x 400
+            if (width >= 400) {
+                c.setWidth(400);
+                c.setHeight((int) ((height/(width.doubleValue())) * 400));
+            }
+        } else {
+            // if the WebResource does not have width or height
+            // Set width and height to 400 (this is the size of the default icon which is what will likely be displayed)
+            c.setHeight(400);
+            c.setWidth(400);
+        }
     }
 }

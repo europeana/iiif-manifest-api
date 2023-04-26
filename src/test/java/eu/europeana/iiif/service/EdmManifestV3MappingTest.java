@@ -4,8 +4,8 @@ import static eu.europeana.iiif.model.ManifestDefinitions.ATTRIBUTION_STRING;
 
 import com.jayway.jsonpath.Configuration;
 import eu.europeana.iiif.config.ManifestSettings;
+import eu.europeana.iiif.config.MediaTypes;
 import eu.europeana.iiif.model.v3.*;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Assertions;
@@ -27,10 +27,13 @@ public class EdmManifestV3MappingTest {
     private static final Logger LOG = LogManager.getLogger(EdmManifestV3MappingTest.class);
 
     // Initialize the manifest service, because that will setup our default Jackson mapper configuration used in the tests
-    private static final ManifestService ms = new ManifestService(new ManifestSettings());
+    private static final ManifestService ms = new ManifestService(new ManifestSettings(), new MediaTypes());
 
     @Autowired
     private ManifestSettings settings;
+
+    @Autowired
+    private MediaTypes mediaTypes;
 
     // we don't test some fields because this is already done in v2, for example 'id' and 'navdate'
 
@@ -284,7 +287,7 @@ public class EdmManifestV3MappingTest {
     public void testStartCanvas() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
         String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
-        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, "/test-id", edmIsShownBy, document, null);
+        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, mediaTypes, "/test-id", edmIsShownBy, document, null);
         Canvas start = EdmManifestMappingV3.getStartCanvasV3(canvases, edmIsShownBy);
 
         // test if only a few fields are set and the rest is null
@@ -309,7 +312,7 @@ public class EdmManifestV3MappingTest {
         Assertions.assertNotNull(edmIsShownBy);
         Assertions.assertNull(isShownAt);
 
-        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, "/test-id", edmIsShownBy, document, null);
+        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, mediaTypes, "/test-id", edmIsShownBy, document, null);
         Canvas start = EdmManifestMappingV3.getStartCanvasV3(canvases, edmIsShownBy);
 
         ExpectedCanvasAndAnnotationPageValues expectedCanvas = new ExpectedCanvasAndAnnotationPageValues();
@@ -323,7 +326,7 @@ public class EdmManifestV3MappingTest {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_NOISSHOWNBY);
         String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
 
-        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, "/test-id", edmIsShownBy, document, null);
+        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, mediaTypes, "/test-id", edmIsShownBy, document, null);
         Canvas start = EdmManifestMappingV3.getStartCanvasV3(canvases, edmIsShownBy);
 
         // test if only a few fields are set and the rest is null
@@ -344,7 +347,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testCanvasEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        Assertions.assertNull(EdmManifestMappingV3.getItems(settings, "test", null, document, null));
+        Assertions.assertNull(EdmManifestMappingV3.getItems(settings, mediaTypes, "test", null, document, null));
     }
 
     /**
@@ -353,7 +356,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testCanvasMissingIsShownAtHasView() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_NOISSHOWNBY);
-        Assertions.assertNull(EdmManifestMappingV3.getItems(settings, "test", null, document, null));
+        Assertions.assertNull(EdmManifestMappingV3.getItems(settings, mediaTypes, "test", null, document, null));
     }
 
     /**
@@ -363,7 +366,7 @@ public class EdmManifestV3MappingTest {
     public void testCanvases() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
         String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
-        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, "/test-id", edmIsShownBy, document, null);
+        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, mediaTypes, "/test-id", edmIsShownBy, document, null);
         Assertions.assertNotNull(canvases);
         // note that the 3rd canvas is not edmIsShownBy or hasView so not included
         Assertions.assertEquals(2, canvases.length);

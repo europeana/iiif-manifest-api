@@ -35,6 +35,11 @@ public final class EdmManifestUtils {
     public static final String EBUCORE_HEIGHT = "ebucoreHeight";
     public static final String EBUCORE_WIDTH = "ebucoreWidth";
     public static final String SVCS_HAS_SERVICE = "svcsHasService";
+    public static final String WEB_RESOURCE_EDM_RIGHTS = "webResourceEdmRights";
+    public static final String EBUCORE_DURATION = "ebucoreDuration";
+    public static final String EBUCORE_HAS_MIMETYPE = "ebucoreHasMimeType";
+    public static final String LINGUISTIC = "zxx";
+
 
     private EdmManifestUtils() {
         // private constructor to prevent initialization
@@ -208,7 +213,7 @@ public final class EdmManifestUtils {
     }
 
     public static String getServiceId(WebResource wr, String europeanaId) {
-        List<String> serviceIds = (List<String>) wr.get("svcsHasService");
+        List<String> serviceIds = (List<String>) wr.get(SVCS_HAS_SERVICE);
         if (serviceIds != null && !serviceIds.isEmpty()) {
             String serviceId = (String) EdmManifestUtils.getFirstValueArray("service", europeanaId, serviceIds.toArray());
             LOG.trace("WebResource {} has serviceId {}", wr.getId(), serviceId);

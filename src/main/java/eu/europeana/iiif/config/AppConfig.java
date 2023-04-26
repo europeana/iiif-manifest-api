@@ -1,6 +1,7 @@
 package eu.europeana.iiif.config;
 
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import eu.europeana.iiif.model.MediaType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.context.annotation.Bean;
@@ -40,6 +41,12 @@ public class AppConfig {
                 String contents = reader.lines().collect(Collectors.joining(System.lineSeparator()));
                 mediaTypes = xmlMapper.readValue(contents, MediaTypes.class);
             }
+        }
+
+        if (!mediaTypes.mediaTypeCategories.isEmpty()) {
+            mediaTypes.getMap().putAll(mediaTypes.mediaTypeCategories.stream().filter(media -> !media.isEuScreen()).collect(Collectors.toMap(MediaType::getMimeType, e-> e)));
+        } else {
+            LOG.error("media Categories not configured at startup. mediacategories.xml file not added or is empty");
         }
         return mediaTypes;
     }
