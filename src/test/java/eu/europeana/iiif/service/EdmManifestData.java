@@ -57,7 +57,7 @@ public class EdmManifestData {
             "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":"+
             "{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"image/jpeg\" },"+
             "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"htmlAttributionSnippet\": \"<span>wr2Attribution</span>\", \"webResourceEdmRights\":"+
-            "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"image/png\" },"+
+            "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"audio/mp4\" },"+
             "{\"about\": \"wr3Id\", \"textAttributionSnippet\": \"wr3Attribution\", \"htmlAttributionSnippet\": \"<span>wr3Attribution</span>\", \"webResourceEdmRights\":"+
             "{\"def\":[\"wr3License\"]}, \"ebucoreHasMimeType\": \"image/webp\", \"svcsHasService\": [\"service3Id\"], \"ebucoreDuration\": \"98765\"  }"+
             "] } ], \"services\": [{\"about\": \"service3Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";

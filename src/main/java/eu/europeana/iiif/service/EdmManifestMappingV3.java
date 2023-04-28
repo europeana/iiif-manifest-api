@@ -501,7 +501,7 @@ public final class EdmManifestMappingV3 {
         if (euScreenTypeHack != null) {
             LOG.debug("Override mediaType {} with {} because of EUScreen hack", mediaType, euScreenTypeHack);
             mediaType = euScreenTypeHack;
-            anno.setTimeMode("trim");
+            anno.setTimeMode("trim"); // as it's AV
         } else {
             // get the mediaType from the mimetype fetched
             Optional<MediaType> media = mediaTypes.getMediaType(ebucoreMimeType);
@@ -511,9 +511,10 @@ public final class EdmManifestMappingV3 {
         }
 
         // CASE 4 -  No canvas should be generated -
-        // if media type is not supported OR If media type is supported (browser or rendered) but is video or sound
+        // if media type is not supported (media type is null)
+        // OR if item is not EU screen and media type is not either browser or rendered
         // See - EA-3413
-        if (mediaType == null || ifSupportedMediaTypeIsAudioOrSound(mediaType)) {
+        if (mediaType == null || (euScreenTypeHack == null && ifMediaTypeIsNotBrowserOrRendered(mediaType))) {
             LOG.debug("No canvas added for webresource {} as the media type - {} is invalid or not supported.",
                     webResource.get(EdmManifestUtils.ABOUT),
                     ebucoreMimeType);
@@ -523,14 +524,17 @@ public final class EdmManifestMappingV3 {
         // Now create the annotation body with webresource url and media type
         AnnotationBody annoBody = new AnnotationBody((String) webResource.get(EdmManifestUtils.ABOUT), mediaType.getType());
 
-        // case 2 - browser supported and not video or sound for format 3
-        if (mediaType.isBrowserSupported() && !mediaType.isVideoOrSound()) {
-            anno.setTimeMode("trim");
+        // case 2 - browser supported
+        if (mediaType.isBrowserSupported() ) {
             annoBody.setFormat(mediaType.getMimeType());
+            // add timeMode for AV
+            if (mediaType.isVideoOrSound()) {
+                anno.setTimeMode("trim");
+            }
         }
 
-        // case 3 - rendered and npt video or sound
-        if(mediaType.isRendered() && !mediaType.isVideoOrSound()) {
+        // case 3 - rendered - No time mode added as we paint an image here
+        if(mediaType.isRendered()) {
             // Use the URL of the thumbnail for the respective WebResource as id of the Annotation Body
             annoBody = new AnnotationBody(c.getThumbnail()[0].getId(), mediaType.getType());
 
@@ -558,12 +562,17 @@ public final class EdmManifestMappingV3 {
     }
 
     /**
-     * If media type is either Browser or Rendered but has type video or sound
+     * If media type is not either Browser or Rendered
+     *
+     * NOTE - This is will not happen with the media categories configured for now.
+     * As if media type is present it will either be browser or rendered.
+     * But for future if something else is added in the XML file
+     * the code should be resilient to handle that
      * @param mediaType
      * @return
      */
-    private static boolean ifSupportedMediaTypeIsAudioOrSound(MediaType mediaType) {
-        return mediaType != null && ((mediaType.isRendered() || mediaType.isBrowserSupported()) && mediaType.isVideoOrSound());
+    private static boolean ifMediaTypeIsNotBrowserOrRendered(MediaType mediaType) {
+        return mediaType != null && !(mediaType.isRendered() || mediaType.isBrowserSupported());
     }
 
     /**

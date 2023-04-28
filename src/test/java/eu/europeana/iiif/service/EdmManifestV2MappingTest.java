@@ -296,8 +296,10 @@ public class EdmManifestV2MappingTest {
         // test canvas part
         Assertions.assertTrue(sequence[0].getStartCanvas().endsWith("/test-id" + "/canvas/p1"));
         Assertions.assertNotNull(sequence[0].getCanvases());
-        // note that one of the 3 canvases is not edmIsShownBy or hasView so it's not included
-        Assertions.assertEquals(2, sequence[0].getCanvases().length);
+        // note that only one canvas is added
+        // Wrid2 is AV - sof for v2 it's not added
+        // one of the 3 canvases is not edmIsShownBy or hasView so it's not included
+        Assertions.assertEquals(1, sequence[0].getCanvases().length);
 
         // we only check the first canvas
         ExpectedCanvasValues ecv = new ExpectedCanvasValues();

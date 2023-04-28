@@ -375,7 +375,7 @@ public final class EdmManifestMappingV2 {
         }
 
         // ignored cases CASE 4 for version 2
-        if (mediaType == null || ifMediaTypeIsNotBrowserOrRendered(mediaType)) {
+        if (mediaType == null || ifSupportedMediaTypeIsVideoOrSound(mediaType)) {
             LOG.debug("No canvas added for webresource {} as the media type - {} is invalid or not supported.",
                     webResource.get(EdmManifestUtils.ABOUT),
                     ebuCoreMimeType);
@@ -386,12 +386,12 @@ public final class EdmManifestMappingV2 {
         eu.europeana.iiif.model.v2.AnnotationBody annoBody = new eu.europeana.iiif.model.v2.AnnotationBody((String) webResource.get(EdmManifestUtils.ABOUT));
 
         // case 2
-         if (mediaType.isBrowserSupported()) {
+         if (mediaType.isBrowserSupported() && !mediaType.isVideoOrSound()) {
              annoBody.setFormat(mediaType.getMimeType());
          }
 
          // case 3
-        if (mediaType.isRendered()) {
+        if (mediaType.isRendered() && !mediaType.isVideoOrSound()) {
             annoBody = new eu.europeana.iiif.model.v2.AnnotationBody(c.getThumbnail().getId());
             // update height and width
             setHeightWidthForRendered(c);
@@ -411,16 +411,15 @@ public final class EdmManifestMappingV2 {
     }
 
     /**
-     * If media type is present but is not browser or rendered supported
+     * If media type is present and
+     * is either browser or rendered supported but has type video or sound
      * return true
-     * As we have only these two supported media types for now this
-     * condition is not necessary but for future and to make code bit resilient we are still checking this
      *
      * @param mediaType
      * @return
      */
-    private static boolean ifMediaTypeIsNotBrowserOrRendered(MediaType mediaType) {
-        return mediaType != null && !(mediaType.isRendered() || mediaType.isBrowserSupported());
+    private static boolean ifSupportedMediaTypeIsVideoOrSound(MediaType mediaType) {
+        return mediaType != null && ((mediaType.isRendered() || mediaType.isBrowserSupported()) && mediaType.isVideoOrSound());
     }
 
     /**
