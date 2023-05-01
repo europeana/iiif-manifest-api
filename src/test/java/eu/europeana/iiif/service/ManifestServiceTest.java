@@ -321,7 +321,7 @@ public class ManifestServiceTest {
         String jsonLd = ms.serializeManifest(getManifestV2(recordId));
         assertNotNull(jsonLd);
         LogManager.getLogger(ManifestService.class).info("jsonld v2 = " + jsonLd);
-        assertTrue(jsonLd.contains("\"@id\" : \"" + settings.getManifestApiBaseUrl() + recordId + "/manifest"));
+        assertTrue(jsonLd.contains("\"@id\" : \"" + settings.getManifestApiBaseUrl() +"/presentation" + recordId + "/manifest"));
         assertTrue(jsonLd.contains("\"http://iiif.io/api/presentation/2/context.json\""));
     }
 
@@ -334,7 +334,7 @@ public class ManifestServiceTest {
         String jsonLd = ms.serializeManifest(getManifestV3(recordId));
         assertNotNull(jsonLd);
         LogManager.getLogger(ManifestService.class).info("jsonld v3 = "+jsonLd);
-        assertTrue(jsonLd.contains("\"id\" : \"" + settings.getManifestApiBaseUrl() + recordId + "/manifest"));
+        assertTrue(jsonLd.contains("\"id\" : \"" + settings.getManifestApiBaseUrl() +"/presentation" + recordId + "/manifest"));
         assertTrue(jsonLd.contains("\"http://iiif.io/api/presentation/3/context.json\""));
     }
 
