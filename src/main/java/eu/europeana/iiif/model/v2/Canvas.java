@@ -21,6 +21,7 @@ public class Canvas extends JsonLdId {
     private String attribution;
     private String license;
     private Annotation[] images;
+    private Rendering rendering;     // EA-3413
     private Image thumbnail;  // EA-3325
     private String [] otherContent;  // only 1 value is expected (or null)
 
@@ -116,6 +117,14 @@ public class Canvas extends JsonLdId {
             return null;
         }
         return images[0];
+    }
+
+    public Rendering getRendering() {
+        return rendering;
+    }
+
+    public void setRendering(Rendering rendering) {
+        this.rendering = rendering;
     }
 
     public String[] getOtherContent() {

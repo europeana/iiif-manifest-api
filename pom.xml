@@ -172,6 +172,7 @@
             <artifactId>jackson-core</artifactId>
             <version>${jackson-core.version}</version>
         </dependency>
+
         <!-- https://mvnrepository.com/artifact/com.io-informatics.oss/jackson-jsonld -->
         <dependency>
             <groupId>com.io-informatics.oss</groupId>
@@ -194,6 +195,13 @@
             </exclusions>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-xml -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+            <version>${jackson-core.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
@@ -206,7 +214,6 @@
             <artifactId>commons-lang3</artifactId>
             <version>${commons.lang3.version}</version>
         </dependency>
-
 
         <!-- Test stuff -->
         <dependency>
@@ -221,29 +228,10 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- junit 5 -->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>${junit-jupiter.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-junit-jupiter</artifactId>
-            <version>${mockito.version}</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock-jre8</artifactId>
             <version>${wiremock.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.unitils</groupId>
-            <artifactId>unitils-core</artifactId>
-            <version>${unitils.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -251,8 +239,13 @@
     <build>
         <!-- set fixed name for easy deployment -->
         <finalName>${project.artifactId}</finalName>
-
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <!-- JUnit 5 requires Surefire version 2.22.0 or higher -->
+                <version>2.22.2</version>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

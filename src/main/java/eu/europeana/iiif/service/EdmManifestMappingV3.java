@@ -4,12 +4,13 @@ import com.jayway.jsonpath.Filter;
 import com.jayway.jsonpath.JsonPath;
 import eu.europeana.iiif.AcceptUtils;
 import eu.europeana.iiif.config.ManifestSettings;
+import eu.europeana.iiif.config.MediaTypes;
 import eu.europeana.iiif.model.ManifestDefinitions;
+import eu.europeana.iiif.model.MediaType;
 import eu.europeana.iiif.model.WebResource;
 import eu.europeana.iiif.model.WebResourceSorter;
 import eu.europeana.iiif.model.v3.Collection;
 import eu.europeana.iiif.model.v3.*;
-import eu.europeana.metis.schema.model.MediaType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.commons.lang3.StringUtils;
@@ -20,6 +21,8 @@ import static com.jayway.jsonpath.Criteria.where;
 import static com.jayway.jsonpath.Filter.filter;
 import static eu.europeana.iiif.model.ManifestDefinitions.ATTRIBUTION_STRING;
 import static eu.europeana.iiif.model.ManifestDefinitions.CANVAS_THUMBNAIL_POSTFIX;
+import static eu.europeana.iiif.model.MediaType.VIDEO;
+import static eu.europeana.iiif.model.MediaType.SOUND;
 
 /**
  * This class contains all the methods for mapping EDM record data to IIIF Manifest data for IIIF v3
@@ -34,15 +37,63 @@ import static eu.europeana.iiif.model.ManifestDefinitions.CANVAS_THUMBNAIL_POSTF
 // ignore pmd rule:  we want to make a clear which objects are v2 and which v3
 public final class EdmManifestMappingV3 {
 
-    // EA-3324 hack
-    private static final String AUDIO = "audio";
-    private static final String SOUND = "sound";
     private static final Logger LOG = LogManager.getLogger(EdmManifestMappingV3.class);
 
     private static String THUMBNAIL_API_URL;
 
     private EdmManifestMappingV3() {
-        // private constructor to prevent initialization
+    }
+
+
+    /**
+     * Eu screen items are only checked in format/ iiif version 3
+     * If there is a edm:isShownAt or edm:isShownBy starting with http(s)://www.euscreen.eu/item.html
+     * and a proxy with edmType = SOUND or VIDEO, then generate a Canvas with that URL
+     *
+     * @param jsonDoc
+     * @param europeanaId
+     * @param isShownBy
+     * @return
+     */
+    private static MediaType ifEuScreenGetMediaType(MediaTypes mediaTypes, Object jsonDoc, String europeanaId, String isShownBy) {
+        MediaType euScreenTypeHack = null;
+
+        //1. find edmType (try first Europeana Proxy, use other proxies as fallback)
+        String edmType = (String) EdmManifestUtils.getFirstValueArray("edmType", europeanaId,
+                JsonPath.parse(jsonDoc).read("$.object.proxies[?(@.europeanaProxy == true)].edmType", String[].class));
+        if (StringUtils.isEmpty(edmType)) {
+            edmType = (String) EdmManifestUtils.getFirstValueArray("edmType", europeanaId,
+                    JsonPath.parse(jsonDoc).read("$.object.proxies[?(!@.lineage && @.europeanaProxy != true )].edmType", String[].class));
+        }
+
+        //2. get isShownAt
+        String isShownAt = EdmManifestUtils.getValueFromDataProviderAggregation(jsonDoc, europeanaId, "edmIsShownAt");
+        LOG.debug("isShownAt = {}", isShownAt);
+
+        // 3. check if it's a EUScreen item
+        if (isEuScreenItem(edmType, isShownBy, isShownAt)) {
+            LOG.debug("Item is EUScreen :  edmType - {}, isShownBy - {}", edmType, isShownBy);
+            // if the item is EUscreen then the value will always be present
+            euScreenTypeHack = mediaTypes.getEUScreenType(edmType).get();
+            isShownBy = isShownAt; // replace isShownBy with IsShownAt for EU Screen items
+        }
+        return euScreenTypeHack;
+    }
+
+    /**
+     * If there is a edm:isShownAt or edm:isShownBy starting with http(s)://www.euscreen.eu/item.html
+     * and a proxy with edmType = SOUND or VIDEO
+     *
+     * @param edmType
+     * @param isShownBy
+     * @param isShownAt
+     * @return
+     */
+    private static boolean isEuScreenItem(String edmType, String isShownBy, String isShownAt) {
+        String isShownAtOrBy = isShownBy.isEmpty() ? isShownAt : isShownBy;
+        return (isShownAtOrBy != null && (VIDEO.equalsIgnoreCase(edmType) || SOUND.equalsIgnoreCase(edmType))  &&
+                (isShownAtOrBy.startsWith("http://www.euscreen.eu/item.html") ||
+                        isShownAtOrBy.startsWith("https://www.euscreen.eu/item.html")));
     }
 
     /**
@@ -50,40 +101,13 @@ public final class EdmManifestMappingV3 {
      * @param jsonDoc parsed json document
      * @return IIIF Manifest v3 object
      */
-    static ManifestV3 getManifestV3(ManifestSettings ms, Object jsonDoc) {
+    static ManifestV3 getManifestV3(ManifestSettings ms, MediaTypes mediaTypes, Object jsonDoc) {
         THUMBNAIL_API_URL = ms.getThumbnailApiUrl();
         String europeanaId = EdmManifestUtils.getEuropeanaId(jsonDoc);
         String isShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(jsonDoc, europeanaId, "edmIsShownBy");
-        // EA-1973 + EA-2002 temporary(?) workaround for EUScreen; use isShownAt and use edmType instead of ebucoreMimetype
-        MediaType euScreenTypeHack = null;
-        if (StringUtils.isEmpty(isShownBy)) {
-            LOG.debug("isShownBy is empty");
-            // find edmType (try first Europeana Proxy, use other proxies as fallback)
-            String edmType = (String) EdmManifestUtils.getFirstValueArray("edmType", europeanaId,
-                    JsonPath.parse(jsonDoc).read("$.object.proxies[?(@.europeanaProxy == true)].edmType", String[].class));
-            if (StringUtils.isEmpty(edmType)) {
-                edmType = (String) EdmManifestUtils.getFirstValueArray("edmType", europeanaId,
-                        JsonPath.parse(jsonDoc).read("$.object.proxies[?(!@.lineage && @.europeanaProxy != true )].edmType", String[].class));
-            }
-            // find isShownAt
-            String isShownAt = EdmManifestUtils.getValueFromDataProviderAggregation(jsonDoc, europeanaId, "edmIsShownAt");
-            LOG.debug("edmType = {}, isShownAt = {}", edmType, isShownAt);
-            if (isShownAt != null && ("VIDEO".equalsIgnoreCase(edmType) || "SOUND".equalsIgnoreCase(edmType))  &&
-                    (isShownAt.startsWith("http://www.euscreen.eu/item.html") ||
-                            isShownAt.startsWith("https://www.euscreen.eu/item.html")) ){
-                LOG.debug("Using isShownAt because item is EUScreen video or audio");
-                isShownBy = isShownAt;
-                if ("SOUND".equalsIgnoreCase(edmType)) {
-                    euScreenTypeHack = MediaType.AUDIO;
-                } else {
-                    euScreenTypeHack = MediaType.VIDEO;
-                }
-            }
-        } else {
-            LOG.debug("isShownBy = {}", isShownBy);
-        }
 
-//        ManifestV3 manifest = new ManifestV3(europeanaId, ManifestDefinitions.getManifestId(europeanaId), isShownBy);
+        // if Item is EU screen then get the mediaTypevalue and the isShownBy value is replaced with isShownAt if empty
+        MediaType euScreenTypeHack = ifEuScreenGetMediaType(mediaTypes, jsonDoc, europeanaId, isShownBy);
         ManifestV3 manifest = new ManifestV3(europeanaId, ms.getManifestId(europeanaId), isShownBy);
         manifest.setService(getServiceDescriptionV3(ms, europeanaId));
         // EA-3325
@@ -97,8 +121,14 @@ public final class EdmManifestMappingV3 {
         manifest.setRequiredStatement(getAttributionV3Root(europeanaId, isShownBy, jsonDoc));
         manifest.setRights(getRights(europeanaId, jsonDoc));
         manifest.setSeeAlso(getDataSetsV3(ms, europeanaId));
-        manifest.setItems(getItems(ms, europeanaId, isShownBy, jsonDoc, euScreenTypeHack));
-        manifest.setStart(getStartCanvasV3(manifest.getItems(), isShownBy));
+        // get the canvas items and if present add to manifest
+        Canvas[] items = getItems(ms, mediaTypes, europeanaId, isShownBy, jsonDoc, euScreenTypeHack);
+        if (items != null && items.length > 0) {
+            manifest.setItems(items);
+            manifest.setStart(getStartCanvasV3(manifest.getItems(), isShownBy));
+        } else {
+            LOG.debug("No Canvas generated for europeanaId {}", europeanaId);
+        }
         return manifest;
     }
 
@@ -383,21 +413,25 @@ public final class EdmManifestMappingV3 {
      * @param jsonDoc
      * @return array of Canvases
      */
-    static eu.europeana.iiif.model.v3.Canvas[] getItems(ManifestSettings settings, String europeanaId, String isShownBy, Object jsonDoc, MediaType euScreenTypeHack) {
+    static eu.europeana.iiif.model.v3.Canvas[] getItems(ManifestSettings settings, MediaTypes mediaTypes, String europeanaId, String isShownBy, Object jsonDoc, MediaType euScreenTypeHack) {
         // generate canvases in a same order as the web resources
         List<WebResource> sortedResources = EdmManifestUtils.getSortedWebResources(europeanaId, isShownBy, jsonDoc);
         if (sortedResources.isEmpty()) {
             return null;
         }
-
         int order = 1;
         Map<String, Object>[] services = JsonPath.parse(jsonDoc).read("$.object[?(@.services)].services[*]", Map[].class);
         List<eu.europeana.iiif.model.v3.Canvas> canvases = new ArrayList<>(sortedResources.size());
         for (WebResource webResource: sortedResources) {
-            canvases.add(getCanvasV3(settings, europeanaId, order, webResource, services, euScreenTypeHack, jsonDoc));
-            order++;
+            Canvas canvas = getCanvasV3(settings, mediaTypes, europeanaId, order, webResource, services, euScreenTypeHack);
+            // for non supported media types we do not create any canvas. Case-4 of media type handling : See-EA-3413
+            if (canvas != null) {
+                canvases.add(canvas);
+                order++;
+            }
         }
         return canvases.toArray(new eu.europeana.iiif.model.v3.Canvas[0]);
+
     }
 
 
@@ -405,12 +439,12 @@ public final class EdmManifestMappingV3 {
      * Generates a new canvas, but note that we do not fill the otherContent (Full-Text) here. That's done later.
      */
     private static eu.europeana.iiif.model.v3.Canvas getCanvasV3(ManifestSettings settings,
+                                                                 MediaTypes mediaTypes,
                                                                  String europeanaId,
                                                                  int order,
                                                                  WebResource webResource,
                                                                  Map<String, Object>[] services,
-                                                                 MediaType euScreenTypeHack,
-                                                                 Object jsonDoc) {
+                                                                 MediaType euScreenTypeHack) {
         eu.europeana.iiif.model.v3.Canvas c =
                 new eu.europeana.iiif.model.v3.Canvas(settings.getCanvasId(europeanaId, order), order);
 
@@ -426,7 +460,7 @@ public final class EdmManifestMappingV3 {
             c.setWidth((Integer) obj);
         }
 
-        String durationText = (String) webResource.get("ebucoreDuration");
+        String durationText = (String) webResource.get(EdmManifestUtils.EBUCORE_DURATION);
         if (durationText != null) {
             Long durationInMs = Long.valueOf(durationText);
             c.setDuration(durationInMs / 1000D);
@@ -442,45 +476,80 @@ public final class EdmManifestMappingV3 {
             c.setRights(new Rights(license.values().iterator().next().get(0)));
         }
 
-        // a canvas has 1 annotation page by default (an extra annotation page is added later if there is a full text available)
-        AnnotationPage annoPage = new AnnotationPage(null); // id is not really necessary in this case
-        c.setItems(new AnnotationPage[] {annoPage});
-
-        // annotation page has 1 annotation
-        Annotation anno = new Annotation(null);
-        annoPage.setItems(new Annotation[] { anno });
-
-        // we use Metis to determine if it's an image, video, audio or text based on mimetype
-        String ebucoreMimeType = (String) webResource.get("ebucoreHasMimeType");
-        MediaType mediaType = MediaType.getMediaType(ebucoreMimeType);
-
-        // EA-1973 + EA-2002 temporary(?) workaround for EUScreen; use isShownAt and use edmType instead of ebucoreMimetype
-        if (euScreenTypeHack != null) {
-            LOG.debug("Override mediaType {} with {} because of EUScreen hack", mediaType, euScreenTypeHack);
-            mediaType = euScreenTypeHack;
-            ebucoreMimeType = null;
-        }
-
-        if (mediaType == MediaType.AUDIO || mediaType == MediaType.VIDEO) {
-            anno.setTimeMode("trim");
-        }
-        anno.setTarget(c.getId());
-
         //EA-3325: check if the webResource has a "svcsHasService"; if not, add a thumbnail
         if (Objects.isNull(webResource.get(EdmManifestUtils.SVCS_HAS_SERVICE))){
             c.setThumbnail(getCanvasThumbnailImageV3(webResource.getId()));
         }
 
-        // annotation has 1 annotationBody
-        eu.europeana.iiif.model.v3.AnnotationBody annoBody = new AnnotationBody(
-                  // EA-3324 Temporary hack awaiting Metis to fix this
-//                (String) webResource.get(EdmManifestUtils.ABOUT),  StringUtils.capitalize(mediaType.toString().toLowerCase(Locale.GERMANY)));
-                (String) webResource.get(EdmManifestUtils.ABOUT),  StringUtils.capitalize(StringUtils.replace(mediaType.toString().toLowerCase(Locale.GERMANY), AUDIO, SOUND)));
-        anno.setBody(annoBody);
+        // a canvas has 1 annotation page by default (an extra annotation page is added later if there is a full text available)
+        AnnotationPage annoPage = new AnnotationPage(null); // id is not really necessary in this case
+        c.setItems(new AnnotationPage[] {annoPage});
 
-        if (!StringUtils.isEmpty(ebucoreMimeType)) {
-            annoBody.setFormat(ebucoreMimeType);
+        // Add annotation - annotation page has 1 annotation
+        Annotation anno = new Annotation(null);
+        annoPage.setItems(new Annotation[] { anno });
+
+        anno.setTarget(c.getId());
+
+        // Fetch the mime type from the web resource
+        String ebucoreMimeType = (String) webResource.get(EdmManifestUtils.EBUCORE_HAS_MIMETYPE);
+        MediaType mediaType = null;
+
+        // MEDIA TYPE handling..
+
+        // case 1 -  EU screen items. Override the media type
+        if (euScreenTypeHack != null) {
+            LOG.debug("Override mediaType {} with {} because of EUScreen hack", mediaType, euScreenTypeHack);
+            mediaType = euScreenTypeHack;
+            anno.setTimeMode("trim"); // as it's AV
+        } else {
+            // get the mediaType from the mimetype fetched
+            Optional<MediaType> media = mediaTypes.getMediaType(ebucoreMimeType);
+            if (media.isPresent()) {
+                mediaType = media.get();
+            }
         }
+
+        // CASE 4 -  No canvas should be generated -
+        // if media type is not supported (media type is null)
+        // OR if item is not EU screen and media type is not either browser or rendered
+        // See - EA-3413
+        if (mediaType == null || (euScreenTypeHack == null && ifMediaTypeIsNotBrowserOrRendered(mediaType))) {
+            LOG.debug("No canvas added for webresource {} as the media type - {} is invalid or not supported.",
+                    webResource.get(EdmManifestUtils.ABOUT),
+                    ebucoreMimeType);
+            return null;
+        }
+
+        // Now create the annotation body with webresource url and media type
+        AnnotationBody annoBody = new AnnotationBody((String) webResource.get(EdmManifestUtils.ABOUT), mediaType.getType());
+
+        // case 2 - browser supported
+        if (mediaType.isBrowserSupported() ) {
+            annoBody.setFormat(mediaType.getMimeType());
+            // add timeMode for AV
+            if (mediaType.isVideoOrSound()) {
+                anno.setTimeMode("trim");
+            }
+        }
+
+        // case 3 - rendered - No time mode added as we paint an image here
+        if(mediaType.isRendered()) {
+            // Use the URL of the thumbnail for the respective WebResource as id of the Annotation Body
+            annoBody = new AnnotationBody(c.getThumbnail()[0].getId(), "Image");
+
+            // update the width and height
+            setHeightWidthForRendered(c);
+
+            // add rendering in canvas for original web resource url
+            c.setRendering(new Rendering((String) webResource.get(EdmManifestUtils.ABOUT),
+                    mediaType.getType(),
+                    mediaType.getMimeType(),
+                    new LanguageMap(EdmManifestUtils.LINGUISTIC, mediaType.getLabel())));
+
+        }
+        // annotation has 1 annotationBody
+        anno.setBody(annoBody);
 
         // body can have a service
         String serviceId = EdmManifestUtils.getServiceId(webResource, europeanaId);
@@ -490,5 +559,42 @@ public final class EdmManifestMappingV3 {
             annoBody.setService(service);
         }
         return c;
+    }
+
+    /**
+     * If media type is not either Browser or Rendered
+     *
+     * NOTE - This is will not happen with the media categories configured for now.
+     * As if media type is present it will either be browser or rendered.
+     * But for future if something else is added in the XML file
+     * the code should be resilient to handle that
+     * @param mediaType
+     * @return
+     */
+    private static boolean ifMediaTypeIsNotBrowserOrRendered(MediaType mediaType) {
+        return mediaType != null && !(mediaType.isRendered() || mediaType.isBrowserSupported());
+    }
+
+    /**
+     * Update the width and height of the canvas based
+     * on few conditons
+     * @param c
+     */
+    private static void setHeightWidthForRendered(Canvas c) {
+        Integer height = c.getHeight();
+        Integer width = c.getWidth();
+
+        if (height != null && width != null) {
+            // width is higher (and equal) than 400px - Set width = 400 ; Set height = (height / width) x 400
+            if (width >= 400) {
+                c.setWidth(400);
+                c.setHeight((int) ((height/(width.doubleValue())) * 400));
+            }
+        } else {
+            // if the WebResource does not have width or height
+            // Set width and height to 400 (this is the size of the default icon which is what will likely be displayed)
+            c.setHeight(400);
+            c.setWidth(400);
+        }
     }
 }

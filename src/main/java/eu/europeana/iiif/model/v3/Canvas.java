@@ -18,12 +18,11 @@ public class Canvas extends JsonLdIdType {
     private Integer height;
     private Integer width;
     private Double duration;
-//    private LanguageMap requiredStatement; // attribution
     // EA-3324
-    private RequiredStatementMap requiredStatement;; // attribution
+    private RequiredStatementMap requiredStatement; // attribution
     private Rights rights;
     private AnnotationPage[] items;
-
+    private Rendering rendering; // EA-3413
     @JsonProperty("annotations")
     private AnnotationPage[] ftSummaryAnnoPages; // full text identifiers
     private Image[]          thumbnail;     // EA-3325
@@ -107,6 +106,14 @@ public class Canvas extends JsonLdIdType {
 
     public AnnotationPage[] getItems() {
         return items;
+    }
+
+    public Rendering getRendering() {
+        return rendering;
+    }
+
+    public void setRendering(Rendering rendering) {
+        this.rendering = rendering;
     }
 
     @JsonIgnore

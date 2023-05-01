@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<config>
+        <format mediaType="image/gif"                    label="GIF"         type="Image"      support="Browser"/>
+        <format mediaType="image/jpeg"                   label="JPEG"        type="Image"      support="Browser"/>
+        <format mediaType="image/png"                    label="PNG"         type="Image"      support="Browser"/>
+        <format mediaType="image/bmp"                    label="BMP"         type="Image"      support="Browser"/>
+        <format mediaType="image/x-ms-bmp"               label="BMP"         type="Image"      support="Browser"/>
+        <format mediaType="image/svg+xml"                label="SVG"         type="Image"      support="Browser"/>
+        <format mediaType="image/webp"                   label="WebP"        type="Image"      support="Browser"/>
+        <format mediaType="audio/mp4"                    label="MP4"         type="Sound"      support="Browser"/>
+        <format mediaType="audio/mpeg"                   label="MPEG"        type="Sound"      support="Browser"/>
+        <format mediaType="audio/ogg"                    label="Ogg (Audio)" type="Sound"      support="Browser"/>
+        <format mediaType="audio/vnd.wave"               label="WAVE"        type="Sound"      support="Browser"/>
+        <format mediaType="audio/vorbis"                 label="Vorbis"      type="Sound"      support="Browser"/>
+        <format mediaType="audio/x-flac"                 label="FLAC"        type="Sound"      support="Browser"/>
+        <format mediaType="audio/x-wav"                  label="WAV"         type="Sound"      support="Browser"/>
+        <format mediaType="video/ogg"                    label="Ogg (Video)" type="Video"      support="Browser"/>
+        <format mediaType="video/mp4"                    label="MP4"         type="Video"      support="Browser"/>
+        <format mediaType="video/mpeg"                   label="MPEG"        type="Video"      support="Browser"/>
+        <format mediaType="video/quicktime"              label="QTFF"        type="Video"      support="Browser"/>
+        <format mediaType="video/webm"                   label="WebM"        type="Video"      support="Browser"/>
+        <format mediaType="video/x-m4v"                  label="M4V"         type="Video"      support="Browser"/>
+        <format mediaType="application/dash+xml"         label="MPEG-DASH"   type="Video"      support="Browser"/>
+        <format mediaType="video/x-flv"                  label="FLV"         type="Video"      support="Rendered"/>
+        <format mediaType="audio/x-ms-wma"               label="WMA"         type="Sound"      support="Rendered"/>
+        <format mediaType="video/x-ms-wmv"               label="WMV"         type="Video"      support="Rendered"/>
+        <format mediaType="video/x-msvideo"              label="AVI"         type="Video"      support="Rendered"/>
+        <format mediaType="image/jp2"                    label="JP2000"      type="Image"      support="Rendered"/>
+        <format mediaType="image/x-pict"                 label="PICT"        type="Image"      support="Rendered"/>
+        <format mediaType="image/tiff"                   label="TIFF"        type="Image"      support="Rendered"/>
+        <format mediaType="image/x-xcf"                  label="XCF"         type="Image"      support="Rendered"/>
+        <format mediaType="image/vnd.djvu"               label="DjVu"        type="Image"      support="Rendered"/>
+        <format mediaType="image/vnd.adobe.photoshop"    label="PSD"         type="Image"      support="Rendered"/>
+        <format mediaType="text/plain"                   label="TXT"         type="Text"       support="Rendered"/>
+        <format mediaType="application/pdf"              label="PDF"         type="Text"       support="Rendered"/>
+        <format mediaType="application/rtf"              label="RTF"         type="Text"       support="Rendered"/>
+        <format mediaType="application/epub+zip"         label="EPUB"        type="Text"       support="Rendered"/>
+        <format                                                              type="Video"      support="EUScreen"/>
+        <format                                                              type="Sound"      support="EUScreen"/>
+</config>

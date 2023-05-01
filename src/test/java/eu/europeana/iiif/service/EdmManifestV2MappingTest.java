@@ -1,9 +1,11 @@
 package eu.europeana.iiif.service;
 
 import com.jayway.jsonpath.Configuration;
+import eu.europeana.iiif.config.AppConfig;
 import eu.europeana.iiif.config.ManifestSettings;
+import eu.europeana.iiif.config.MediaTypes;
+import eu.europeana.iiif.config.SerializationConfig;
 import eu.europeana.iiif.model.v2.*;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +15,6 @@ import org.springframework.test.context.TestPropertySource;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-import static org.junit.Assert.*;
-
 /**
  * Tests the EDM-IIIF Manifest v2 mapping
  * @author Patrick Ehlert
@@ -22,14 +22,17 @@ import static org.junit.Assert.*;
  */
 
 @TestPropertySource("classpath:iiif-test.properties")
-@SpringBootTest(classes = {EdmManifestMappingV2.class, ManifestSettings.class})
+@SpringBootTest(classes = {EdmManifestMappingV2.class, ManifestSettings.class, AppConfig.class, SerializationConfig.class})
 public class EdmManifestV2MappingTest {
 
     // Initialize the manifest service, because that will setup our default Jackson mapper configuration used in the tests
-    private static final ManifestService ms = new ManifestService(new ManifestSettings());
+    private static final ManifestService ms = new ManifestService(new ManifestSettings(), new MediaTypes());
 
     @Autowired
     private ManifestSettings settings;
+
+    @Autowired
+    private MediaTypes mediaTypes;
 
     @Test
     public void testId() {
@@ -267,7 +270,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testSequenceEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        Assertions.assertNull(EdmManifestMappingV2.getSequencesV2(settings, "test", null, document));
+        Assertions.assertNull(EdmManifestMappingV2.getSequencesV2(settings, mediaTypes, "test", null, document));
     }
 
     /**
@@ -276,7 +279,7 @@ public class EdmManifestV2MappingTest {
     @Test
     public void testSequenceMissingIsShownAtHasView() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_NOISSHOWNBY);
-        Assertions.assertNull(EdmManifestMappingV2.getSequencesV2(settings, "test", null, document));
+        Assertions.assertNull(EdmManifestMappingV2.getSequencesV2(settings, mediaTypes, "test", null, document));
     }
 
     /**
@@ -286,15 +289,17 @@ public class EdmManifestV2MappingTest {
     public void testSequence() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
         String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
-        Sequence[] sequence = EdmManifestMappingV2.getSequencesV2(settings, "/test-id", edmIsShownBy, document);
+        Sequence[] sequence = EdmManifestMappingV2.getSequencesV2(settings, mediaTypes,"/test-id", edmIsShownBy, document);
         Assertions.assertNotNull(sequence);
         Assertions.assertEquals(1, sequence.length); // there should always be only 1 sequence
 
         // test canvas part
         Assertions.assertTrue(sequence[0].getStartCanvas().endsWith("/test-id" + "/canvas/p1"));
         Assertions.assertNotNull(sequence[0].getCanvases());
-        // note that one of the 3 canvases is not edmIsShownBy or hasView so it's not included
-        Assertions.assertEquals(2, sequence[0].getCanvases().length);
+        // note that only one canvas is added
+        // Wrid2 is AV - sof for v2 it's not added
+        // one of the 3 canvases is not edmIsShownBy or hasView so it's not included
+        Assertions.assertEquals(1, sequence[0].getCanvases().length);
 
         // we only check the first canvas
         ExpectedCanvasValues ecv = new ExpectedCanvasValues();
@@ -306,7 +311,7 @@ public class EdmManifestV2MappingTest {
         ecv.annotationAndBody.idEndsWith = "/test-id/annotation/p1";
         ecv.annotationAndBody.onId = ecv.id;
         ecv.annotationAndBody.bodyId = "wr3Id";
-        ecv.annotationAndBody.format = "video/mp4";
+        ecv.annotationAndBody.format = "image/webp";
         ecv.annotationAndBody.service = new ExpectedServiceValues();
         ecv.annotationAndBody.service.id = "service3Id";
         ecv.annotationAndBody.service.profile = "serviceProfile";

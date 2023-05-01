@@ -3,9 +3,11 @@ package eu.europeana.iiif.service;
 import static eu.europeana.iiif.model.ManifestDefinitions.ATTRIBUTION_STRING;
 
 import com.jayway.jsonpath.Configuration;
+import eu.europeana.iiif.config.AppConfig;
 import eu.europeana.iiif.config.ManifestSettings;
+import eu.europeana.iiif.config.MediaTypes;
+import eu.europeana.iiif.config.SerializationConfig;
 import eu.europeana.iiif.model.v3.*;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Assertions;
@@ -21,16 +23,19 @@ import org.springframework.test.context.TestPropertySource;
  */
 
 @TestPropertySource("classpath:iiif-test.properties")
-@SpringBootTest(classes = {EdmManifestMappingV3.class, ManifestSettings.class})
+@SpringBootTest(classes = {EdmManifestMappingV3.class, ManifestSettings.class, AppConfig.class, SerializationConfig.class})
 public class EdmManifestV3MappingTest {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestV3MappingTest.class);
 
     // Initialize the manifest service, because that will setup our default Jackson mapper configuration used in the tests
-    private static final ManifestService ms = new ManifestService(new ManifestSettings());
+    private static final ManifestService ms = new ManifestService(new ManifestSettings(), new MediaTypes());
 
     @Autowired
     private ManifestSettings settings;
+
+    @Autowired
+    private MediaTypes mediaTypes;
 
     // we don't test some fields because this is already done in v2, for example 'id' and 'navdate'
 
@@ -284,7 +289,7 @@ public class EdmManifestV3MappingTest {
     public void testStartCanvas() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
         String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
-        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, "/test-id", edmIsShownBy, document, null);
+        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, mediaTypes, "/test-id", edmIsShownBy, document, null);
         Canvas start = EdmManifestMappingV3.getStartCanvasV3(canvases, edmIsShownBy);
 
         // test if only a few fields are set and the rest is null
@@ -309,7 +314,7 @@ public class EdmManifestV3MappingTest {
         Assertions.assertNotNull(edmIsShownBy);
         Assertions.assertNull(isShownAt);
 
-        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, "/test-id", edmIsShownBy, document, null);
+        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, mediaTypes, "/test-id", edmIsShownBy, document, null);
         Canvas start = EdmManifestMappingV3.getStartCanvasV3(canvases, edmIsShownBy);
 
         ExpectedCanvasAndAnnotationPageValues expectedCanvas = new ExpectedCanvasAndAnnotationPageValues();
@@ -323,7 +328,8 @@ public class EdmManifestV3MappingTest {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_NOISSHOWNBY);
         String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
 
-        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, "/test-id", edmIsShownBy, document, null);
+        System.out.println(mediaTypes.mediaTypeCategories.size());
+        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, mediaTypes, "/test-id", edmIsShownBy, document, null);
         Canvas start = EdmManifestMappingV3.getStartCanvasV3(canvases, edmIsShownBy);
 
         // test if only a few fields are set and the rest is null
@@ -344,7 +350,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testCanvasEmpty() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_EMPTY);
-        Assertions.assertNull(EdmManifestMappingV3.getItems(settings, "test", null, document, null));
+        Assertions.assertNull(EdmManifestMappingV3.getItems(settings, mediaTypes, "test", null, document, null));
     }
 
     /**
@@ -353,7 +359,7 @@ public class EdmManifestV3MappingTest {
     @Test
     public void testCanvasMissingIsShownAtHasView() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_2CANVAS_NOISSHOWNBY);
-        Assertions.assertNull(EdmManifestMappingV3.getItems(settings, "test", null, document, null));
+        Assertions.assertNull(EdmManifestMappingV3.getItems(settings, mediaTypes, "test", null, document, null));
     }
 
     /**
@@ -363,7 +369,7 @@ public class EdmManifestV3MappingTest {
     public void testCanvases() {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
         String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
-        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, "/test-id", edmIsShownBy, document, null);
+        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, mediaTypes, "/test-id", edmIsShownBy, document, null);
         Assertions.assertNotNull(canvases);
         // note that the 3rd canvas is not edmIsShownBy or hasView so not included
         Assertions.assertEquals(2, canvases.length);
@@ -387,11 +393,11 @@ public class EdmManifestV3MappingTest {
         expectedAnnotation.id = null;
         expectedAnnotation.type = "Annotation";
         expectedAnnotation.motivation = "painting";
-        expectedAnnotation.timeMode = "trim";
+        expectedAnnotation.timeMode = null; // as it's not AV no time mode should be set
         expectedAnnotation.target = "https://iiif.europeana.eu/presentation/test-id/canvas/p1";
         expectedAnnotation.bodyId = "wr3Id";
-        expectedAnnotation.bodyType = "Video";
-        expectedAnnotation.bodyFormat = "video/mp4";
+        expectedAnnotation.bodyType = "Image";
+        expectedAnnotation.bodyFormat = "image/webp";
         expectedAnnotation.hasService = true;
         expectedAnnotation.bodyServiceId = "service3Id";
         expectedAnnotation.bodyServiceProfile = "serviceProfile";
@@ -417,11 +423,11 @@ public class EdmManifestV3MappingTest {
         expectedAnnotation2.id = null;
         expectedAnnotation2.type = "Annotation";
         expectedAnnotation2.motivation = "painting";
-        expectedAnnotation2.timeMode = null;
+        expectedAnnotation2.timeMode = "trim"; // as it's AV
         expectedAnnotation2.target = "https://iiif.europeana.eu/presentation/test-id/canvas/p2";
         expectedAnnotation2.bodyId = "wr2Id";
-        expectedAnnotation2.bodyType = "Other";
-        expectedAnnotation2.bodyFormat = "wr2MimeType";
+        expectedAnnotation2.bodyType = "Sound";
+        expectedAnnotation2.bodyFormat = "audio/mp4";
         expectedAnnotation2.hasService = false;
         checkCanvas(expectedCanvas2, canvas2);
     }
