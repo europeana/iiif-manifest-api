@@ -394,7 +394,7 @@ public class EdmManifestV3MappingTest {
         expectedAnnotation.type = "Annotation";
         expectedAnnotation.motivation = "painting";
         expectedAnnotation.timeMode = null; // as it's not AV no time mode should be set
-        expectedAnnotation.target = "https://iiif.europeana.eu/presentation/test-id/canvas/p1";
+        expectedAnnotation.target = settings.getCanvasId("/test-id", 1); //"https://iiif.europeana.eu/presentation/test-id/canvas/p1";
         expectedAnnotation.bodyId = "wr3Id";
         expectedAnnotation.bodyType = "Image";
         expectedAnnotation.bodyFormat = "image/webp";
@@ -424,7 +424,7 @@ public class EdmManifestV3MappingTest {
         expectedAnnotation2.type = "Annotation";
         expectedAnnotation2.motivation = "painting";
         expectedAnnotation2.timeMode = "trim"; // as it's AV
-        expectedAnnotation2.target = "https://iiif.europeana.eu/presentation/test-id/canvas/p2";
+        expectedAnnotation2.target = settings.getCanvasId("/test-id", 2); //"https://iiif.europeana.eu/presentation/test-id/canvas/p2";
         expectedAnnotation2.bodyId = "wr2Id";
         expectedAnnotation2.bodyType = "Sound";
         expectedAnnotation2.bodyFormat = "audio/mp4";
