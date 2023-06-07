@@ -17,9 +17,9 @@ public final class ValidateUtils {
 
     private static final Pattern WSKEY = Pattern.compile("^[a-zA-Z0-9]*$");
 
-    private static final Pattern API_BASEURL = Pattern.compile("^(https?://)[a-zA-Z0-9_-]+\\.(eanadev.org|europeana.eu)$");
+    private static final Pattern API_BASEURL = Pattern.compile("^(https?://)[a-zA-Z0-9_\\.\\-]+\\.(eanadev.org|europeana.eu)$");
 
-    private static final Pattern EUROPEANA_URL = Pattern.compile("^(https?://)[a-zA-Z0-9_-]+\\.(eanadev.org|europeana.eu)/(.+)$");
+    private static final Pattern EUROPEANA_URL = Pattern.compile("^(https?://)[a-zA-Z0-9_\\.\\-]+\\.(eanadev.org|europeana.eu)/(.+)$");
 
 
     private ValidateUtils() {

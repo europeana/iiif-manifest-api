@@ -11,7 +11,7 @@ import java.net.URL;
  * @author Patrick Ehlert
  * Created on 09-07-2018
  */
-public class ValidationUtilTest {
+public class ValidationUtilsTest {
 
     @Test
     public void testRecordId() throws IllegalArgumentException {
@@ -37,12 +37,15 @@ public class ValidationUtilTest {
 
     @Test
     public void testRecordApiUrl() throws IllegalArgumentException, MalformedURLException {
-        Assertions.assertTrue(ValidateUtils.validateApiUrlFormat(new URL("https://search-api-test.eanadev.org")));
+        Assertions.assertTrue(ValidateUtils.validateApiUrlFormat(new URL("https://srch-api-test.eanadev.org")));
+        Assertions.assertTrue(ValidateUtils.validateApiUrlFormat(new URL("https://srch-api.test.eanadev.org")));
+        Assertions.assertTrue(ValidateUtils.validateApiUrlFormat(new URL("http://srch-api.acceptance.eanadev.org")));
     }
 
     @Test
     public void testFullTextApiUrl() throws IllegalArgumentException, MalformedURLException {
-        Assertions.assertTrue(ValidateUtils.validateApiUrlFormat(new URL("https://fulltext-api-test.eanadev.org")));
+        Assertions.assertTrue(ValidateUtils.validateApiUrlFormat(new URL("https://ft-api-test.eanadev.org")));
+        Assertions.assertTrue(ValidateUtils.validateApiUrlFormat(new URL("http://ft-api.test.eanadev.org")));
     }
 
     @Test
