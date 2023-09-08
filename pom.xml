@@ -39,7 +39,7 @@
         <junit-jupiter.version>5.6.0</junit-jupiter.version>
         <unitils.version>3.4.6</unitils.version>
         <mockito.version>3.7.0</mockito.version>
-        <wiremock.version>2.33.2</wiremock.version>
+        <wiremock.version>2.35.1</wiremock.version>
 
     </properties>
 
