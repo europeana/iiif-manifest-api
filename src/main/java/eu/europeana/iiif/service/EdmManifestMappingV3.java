@@ -90,7 +90,7 @@ public final class EdmManifestMappingV3 {
      * @return
      */
     private static boolean isEuScreenItem(String edmType, String isShownBy, String isShownAt) {
-        String isShownAtOrBy = isShownBy.isEmpty() ? isShownAt : isShownBy;
+        String isShownAtOrBy = StringUtils.isBlank(isShownBy) ? isShownAt : isShownBy;
         return (isShownAtOrBy != null && (VIDEO.equalsIgnoreCase(edmType) || SOUND.equalsIgnoreCase(edmType))  &&
                 (isShownAtOrBy.startsWith("http://www.euscreen.eu/item.html") ||
                         isShownAtOrBy.startsWith("https://www.euscreen.eu/item.html")));
