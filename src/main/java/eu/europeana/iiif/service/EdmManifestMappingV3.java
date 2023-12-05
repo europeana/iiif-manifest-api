@@ -90,7 +90,7 @@ public final class EdmManifestMappingV3 {
      * @return
      */
     private static boolean isEuScreenItem(String edmType, String isShownBy, String isShownAt) {
-        String isShownAtOrBy = isShownBy.isEmpty() ? isShownAt : isShownBy;
+        String isShownAtOrBy = StringUtils.isBlank(isShownBy) ? isShownAt : isShownBy;
         return (isShownAtOrBy != null && (VIDEO.equalsIgnoreCase(edmType) || SOUND.equalsIgnoreCase(edmType))  &&
                 (isShownAtOrBy.startsWith("http://www.euscreen.eu/item.html") ||
                         isShownAtOrBy.startsWith("https://www.euscreen.eu/item.html")));
@@ -522,6 +522,7 @@ public final class EdmManifestMappingV3 {
         }
 
         // Now create the annotation body with webresource url and media type
+        // EA- 3436 add technical metadata for case 2 and 3
         AnnotationBody annoBody = new AnnotationBody((String) webResource.get(EdmManifestUtils.ABOUT), mediaType.getType());
 
         // case 2 - browser supported
@@ -531,6 +532,7 @@ public final class EdmManifestMappingV3 {
             if (mediaType.isVideoOrSound()) {
                 anno.setTimeMode("trim");
             }
+            addTechnicalMetadata(c, annoBody);
         }
 
         // case 3 - rendered - No time mode added as we paint an image here
@@ -547,6 +549,7 @@ public final class EdmManifestMappingV3 {
                     mediaType.getMimeType(),
                     new LanguageMap(EdmManifestUtils.LINGUISTIC, mediaType.getLabel())));
 
+            addTechnicalMetadata(c, annoBody);
         }
         // annotation has 1 annotationBody
         anno.setBody(annoBody);
@@ -573,6 +576,17 @@ public final class EdmManifestMappingV3 {
      */
     private static boolean ifMediaTypeIsNotBrowserOrRendered(MediaType mediaType) {
         return mediaType != null && !(mediaType.isRendered() || mediaType.isBrowserSupported());
+    }
+
+    /**
+     * Adds the technical metadata in the annotation body of the canvas
+     * @param canvas
+     * @param body
+     */
+    private static void addTechnicalMetadata(Canvas canvas, AnnotationBody body) {
+        body.setHeight(canvas.getHeight());
+        body.setWidth(canvas.getWidth());
+        body.setDuration(canvas.getDuration());
     }
 
     /**

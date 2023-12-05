@@ -12,6 +12,10 @@ public class AnnotationBody extends JsonLdIdType {
 
     private String format;
     private Service service;
+    // EA-3436
+    private Integer height;
+    private Integer width;
+    private Double duration;
 
     @JsonProperty("language")
     private String originalLanguage;
@@ -42,5 +46,29 @@ public class AnnotationBody extends JsonLdIdType {
 
     public void setOriginalLanguage(String originalLanguage) {
         this.originalLanguage = originalLanguage;
+    }
+
+    public Integer getHeight() {
+        return height;
+    }
+
+    public void setHeight(Integer height) {
+        this.height = height;
+    }
+
+    public Integer getWidth() {
+        return width;
+    }
+
+    public void setWidth(Integer width) {
+        this.width = width;
+    }
+
+    public Double getDuration() {
+        return duration;
+    }
+
+    public void setDuration(Double duration) {
+        this.duration = duration;
     }
 }

@@ -385,9 +385,11 @@ public final class EdmManifestMappingV2 {
         // Now create the annotation body based on the media type (annotation has 1 annotationBody)
         eu.europeana.iiif.model.v2.AnnotationBody annoBody = new eu.europeana.iiif.model.v2.AnnotationBody((String) webResource.get(EdmManifestUtils.ABOUT));
 
+        // EA- 3436 add technical metadata for case 2 and 3
         // case 2
          if (mediaType.isBrowserSupported() && !mediaType.isVideoOrSound()) {
              annoBody.setFormat(mediaType.getMimeType());
+             addTechnicalMetadata(c, annoBody);
          }
 
          // case 3
@@ -397,6 +399,7 @@ public final class EdmManifestMappingV2 {
             setHeightWidthForRendered(c);
             // set rendering
             c.setRendering(new Rendering((String) webResource.get(EdmManifestUtils.ABOUT), mediaType.getMimeType(), mediaType.getLabel()));
+            addTechnicalMetadata(c, annoBody);
         }
 
         // body can have a service
@@ -420,6 +423,16 @@ public final class EdmManifestMappingV2 {
      */
     private static boolean ifSupportedMediaTypeIsVideoOrSound(MediaType mediaType) {
         return mediaType != null && ((mediaType.isRendered() || mediaType.isBrowserSupported()) && mediaType.isVideoOrSound());
+    }
+
+    /**
+     * Adds the technical metadata in the annotation body of the canvas
+     * @param canvas
+     * @param body
+     */
+    private static void addTechnicalMetadata(Canvas canvas, AnnotationBody body) {
+        body.setHeight(canvas.getHeight());
+        body.setWidth(canvas.getWidth());
     }
 
     /**
