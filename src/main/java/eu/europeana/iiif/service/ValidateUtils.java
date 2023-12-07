@@ -4,8 +4,8 @@ import eu.europeana.iiif.exception.IllegalArgumentException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-
 /**
  * Validation helper functions to prevent injecting of characters into a request
  * @author Patrick Ehlert
@@ -21,6 +21,7 @@ public final class ValidateUtils {
 
     private static final Pattern EUROPEANA_URL = Pattern.compile("^(https?://)[a-zA-Z0-9_\\.\\-]+\\.(eanadev.org|europeana.eu)/(.+)$");
     public static final String FORWARD_SLASH = "/";
+    public static final String URL_PROTOCOL_SPLIT = "://";
 
 
     private ValidateUtils() {
@@ -77,6 +78,36 @@ public final class ValidateUtils {
      */
     public static final boolean isEuropeanaUrl(String url) {
         return EUROPEANA_URL.matcher(url).matches();
+    }
+
+
+
+    /**
+     * Method ensures that the baseUrl   begins with http or https and does not have trailing / .     *
+     *  e.g. "http://abc.com"   ,"https://abc.com"
+     * @param baseUrl path string
+     * @return valid baseUrl
+     */
+    public static String formatBaseUrl(String baseUrl){
+
+        if (!StringUtils.isBlank(baseUrl)) {
+            baseUrl = rebuildBaseUrl(baseUrl);
+        }
+        return baseUrl;
+    }
+
+    private static String rebuildBaseUrl(String baseUrl) {
+        StringBuilder url = new StringBuilder();
+           String[] split =  baseUrl.split(URL_PROTOCOL_SPLIT);
+            if (ArrayUtils.isNotEmpty(split)) {
+                url.append(split[0]).append(URL_PROTOCOL_SPLIT);
+                if (split.length == 2) {
+                    String rebuiltPath = formatResourcePath(split[1]);
+                    if(!StringUtils.isBlank(rebuiltPath))
+                       url.append(rebuiltPath.replaceFirst("/",""));
+                }
+           }
+        return url.toString();
     }
 
 
