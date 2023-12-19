@@ -2,6 +2,7 @@ package eu.europeana.iiif.config;
 
 import eu.europeana.iiif.IIIFDefinitions;
 import eu.europeana.iiif.model.ManifestDefinitions;
+import eu.europeana.iiif.service.ValidateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -103,8 +104,9 @@ public class ManifestSettings {
      */
     public String getManifestApiPresentationPath() {
         if (StringUtils.isNotBlank(manifestApiPresentationPath)){
-            LOG.debug("Using Presentation path found in iiif.properties: {}", manifestApiPresentationPath);
-            return manifestApiPresentationPath;
+            String path = ValidateUtils.formatResourcePath(manifestApiPresentationPath);
+            LOG.debug("Using Presentation path found in iiif.properties: {}", path);
+            return path;
         } else if (StringUtils.isNotBlank(IIIFDefinitions.PRESENTATION_PATH)){
             LOG.debug("Using Presentation path from IIIFDefinitions: {}", IIIFDefinitions.PRESENTATION_PATH);
             return IIIFDefinitions.PRESENTATION_PATH;
@@ -169,7 +171,7 @@ public class ManifestSettings {
      * @return Record API resource path (should be appended to the record API base url)
      */
     public String getRecordApiPath() {
-        return recordApiPath;
+        return ValidateUtils.formatResourcePath(recordApiPath);
     }
 
     /**
@@ -183,7 +185,7 @@ public class ManifestSettings {
      * @return Thumbnail url, concatenates base URL + path to endpoint; used to create canvas thumbnails
      */
     public String getThumbnailApiUrl() {
-        return thumbnailApiBaseUrl + thumbnailApiPath;
+        return thumbnailApiBaseUrl + ValidateUtils.formatResourcePath(thumbnailApiPath);
     }
 
     /**
@@ -296,9 +298,9 @@ public class ManifestSettings {
         if (StringUtils.isNotBlank(manifestApiBaseUrl)){
             LOG.info("  Manifest API Base Url set to {} ", manifestApiBaseUrl);
         }
-        if (StringUtils.isNotBlank(manifestApiPresentationPath)){
-            LOG.info("  Manifest API presentation path set to {} ", manifestApiPresentationPath);
-        }
+
+        LOG.info("  Manifest API presentation path set to {} ", getManifestApiPresentationPath());
+
         if (StringUtils.isNotBlank(manifestApiIdPlaceholder)){
             LOG.info("  Manifest API ID placeholder set to {} ", manifestApiIdPlaceholder);
         }

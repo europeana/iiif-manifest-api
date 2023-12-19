@@ -1,10 +1,10 @@
 package eu.europeana.iiif.service;
 
 import eu.europeana.iiif.exception.IllegalArgumentException;
-import org.springframework.util.StringUtils;
-
 import java.net.URL;
+import java.util.Arrays;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Validation helper functions to prevent injecting of characters into a request
@@ -20,6 +20,7 @@ public final class ValidateUtils {
     private static final Pattern API_BASEURL = Pattern.compile("^(https?://)[a-zA-Z0-9_\\.\\-]+\\.(eanadev.org|europeana.eu)$");
 
     private static final Pattern EUROPEANA_URL = Pattern.compile("^(https?://)[a-zA-Z0-9_\\.\\-]+\\.(eanadev.org|europeana.eu)/(.+)$");
+    public static final String FORWARD_SLASH = "/";
 
 
     private ValidateUtils() {
@@ -76,6 +77,31 @@ public final class ValidateUtils {
      */
     public static final boolean isEuropeanaUrl(String url) {
         return EUROPEANA_URL.matcher(url).matches();
+    }
+
+
+    /**
+     * Method ensures that the resource path begins with / and does not have trailing / .
+     * It also ensures that there is only sing / in between the path values.
+     *  e.g. /val1/val2
+     * @param resourcePath path string
+     * @return rebuilt resource path 
+     */
+    public static String formatResourcePath(String resourcePath) {
+        if (!StringUtils.isBlank(resourcePath)) {
+            resourcePath = rebuildResourcePath(resourcePath);
+        }
+        return resourcePath;
+    }
+
+    private static String rebuildResourcePath(String resourcePath) {
+        StringBuilder path = new StringBuilder();
+        Arrays.stream(resourcePath.split(FORWARD_SLASH)).forEach(pathNode -> {
+            if (!StringUtils.isBlank(pathNode)) {
+                path.append("/").append(pathNode);
+            }
+        });
+        return  path.toString();
     }
 
 }
