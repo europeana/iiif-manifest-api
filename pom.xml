@@ -19,12 +19,11 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <sonar.organization>europeana</sonar.organization>
 
-        <metis.version>7</metis.version>
         <fulltext-common.version>0.9.1</fulltext-common.version>
         <apicommons.version>0.3.20</apicommons.version>
         <!-- 3rd party -->
