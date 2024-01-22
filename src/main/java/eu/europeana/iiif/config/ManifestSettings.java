@@ -1,28 +1,21 @@
 package eu.europeana.iiif.config;
 
+import static eu.europeana.iiif.model.ManifestDefinitions.getFulltextSummaryPath;
+
 import eu.europeana.iiif.IIIFDefinitions;
 import eu.europeana.iiif.model.ManifestDefinitions;
 import eu.europeana.iiif.service.ValidateUtils;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+import javax.annotation.PostConstruct;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import javax.print.attribute.standard.Media;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Properties;
-import java.util.stream.Collectors;
-
-import static eu.europeana.iiif.model.ManifestDefinitions.getFulltextSummaryPath;
 
 /**
  * Container for all manifest settings that we load from the iiif.properties file. Note that we also have hard-coded
@@ -83,14 +76,16 @@ public class ManifestSettings {
      */
     public String getManifestApiBaseUrl() {
         if (StringUtils.isNotBlank(manifestApiBaseUrl)){
-            LOG.debug("Using Manifest base URL from iiif.properties: {}", manifestApiBaseUrl);
-            return manifestApiBaseUrl;
+            String baseUrlForManifest = ValidateUtils.formatBaseUrl(manifestApiBaseUrl);
+            LOG.debug("Using formatted  Manifest base URL from iiif.properties: {}", manifestApiBaseUrl);
+            return baseUrlForManifest;
         } else if (StringUtils.isNotBlank(IIIFDefinitions.IIIF_EUROPENA_BASE_URL)){
             LOG.debug("Using IIIFDefinitions value forManifest base URL: {}", IIIFDefinitions.IIIF_EUROPENA_BASE_URL);
             return IIIFDefinitions.IIIF_EUROPENA_BASE_URL;
         } else if (StringUtils.isNotBlank(fullTextApiBaseUrl)){
-            LOG.warn("Falling back to Fulltext API base URL {} in iiif.properties for Manifest API base URL", fullTextApiBaseUrl);
-            return fullTextApiBaseUrl;
+            String baseUrlForFullText = ValidateUtils.formatBaseUrl(fullTextApiBaseUrl);
+            LOG.warn("Falling back to Fulltext API base URL {} in iiif.properties for Manifest API formatted base URL", baseUrlForFullText);
+            return baseUrlForFullText;
         } else {
             LOG.error("No value found for Manifest base URL, Fulltext base URL or IIIFDefinitions.IIIF_EUROPENA_BASE_URL!");
             return null;
@@ -142,8 +137,9 @@ public class ManifestSettings {
      */
     public String getContentSearchBaseUrl() {
         if (StringUtils.isNotBlank(contentSearchBaseUrl)){
-            LOG.debug("Using Content Search Base URL from iiif.properties: {}", contentSearchBaseUrl);
-            return contentSearchBaseUrl;
+            String baseUrl = ValidateUtils.formatBaseUrl(contentSearchBaseUrl);
+            LOG.debug("Using Content Search Base URL from iiif.properties: {}", baseUrl);
+            return baseUrl;
         } else if (StringUtils.isNotBlank(fullTextApiBaseUrl)){
             LOG.debug("Using Fulltext Base URL for Context Search Base URL: {}", fullTextApiBaseUrl);
             return fullTextApiBaseUrl;
@@ -157,14 +153,14 @@ public class ManifestSettings {
      * @return Fulltext Base URL defined in iiif.properties from where we can do a HEAD request to check if a full-text is available
      */
     public String getFullTextApiBaseUrl() {
-        return fullTextApiBaseUrl;
+        return ValidateUtils.formatBaseUrl(fullTextApiBaseUrl);
     }
 
     /**
      * @return Record API Base URL from where we should retrieve record json data
      */
     public String getRecordApiBaseUrl() {
-        return recordApiBaseUrl;
+        return ValidateUtils.formatBaseUrl(recordApiBaseUrl);
     }
 
     /**
@@ -185,7 +181,7 @@ public class ManifestSettings {
      * @return Thumbnail url, concatenates base URL + path to endpoint; used to create canvas thumbnails
      */
     public String getThumbnailApiUrl() {
-        return thumbnailApiBaseUrl + ValidateUtils.formatResourcePath(thumbnailApiPath);
+        return ValidateUtils.formatBaseUrl(thumbnailApiBaseUrl) + ValidateUtils.formatResourcePath(thumbnailApiPath);
     }
 
     /**

@@ -67,6 +67,7 @@ class ValidationUtilsTest {
         Assertions.assertEquals("/val1/val2",ValidateUtils.formatResourcePath("/val1/val2"));
         Assertions.assertEquals("/val1/val2",ValidateUtils.formatResourcePath("/val1/val2/"));
         Assertions.assertEquals("/val1/val2",ValidateUtils.formatResourcePath("/val1//////val2///"));
+        Assertions.assertEquals("/val1",ValidateUtils.formatResourcePath("val1"));
     }
     @Test
     void testFormatResourcepath_empty_input(){
@@ -74,5 +75,18 @@ class ValidationUtilsTest {
         Assertions.assertEquals("",ValidateUtils.formatResourcePath(""));
     }
 
+
+
+    @Test
+    void testFormatBaseUrl(){
+        Assertions.assertEquals("http://abc.com",ValidateUtils.formatBaseUrl("http://abc.com/"));
+        Assertions.assertEquals("https://",ValidateUtils.formatBaseUrl ("https:///"));
+        Assertions.assertEquals("https://abc/ccd",ValidateUtils.formatBaseUrl ("https://abc/ccd///"));
+    }
+    @Test
+    void testFormatBaseUrl_empty_input(){
+        Assertions.assertNull(ValidateUtils.formatBaseUrl(null));
+        Assertions.assertEquals("",ValidateUtils.formatBaseUrl(""));
+    }
 
 }
