@@ -155,6 +155,20 @@
 
         <!-- for serializing -->
         <dependency>
+            <groupId>eu.europeana.metis</groupId>
+            <artifactId>metis-schema</artifactId>
+            <version>${metis.version}</version>
+            <exclusions>
+                <!-- exclude all other dependencies coming in from metis-schema -->
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- for serializing -->
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
             <version>${jackson-core.version}</version>
