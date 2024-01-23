@@ -31,6 +31,18 @@ management:
     env:
       enabled: true
 
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
+
 # Creates a redirect from /console to /swagger-ui/index.html
 springdoc:
   swagger-ui:
