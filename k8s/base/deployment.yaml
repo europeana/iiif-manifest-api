@@ -14,15 +14,15 @@ spec:
           livenessProbe:
             httpGet:
               port: 8080
-              path: /actuator/info
-            initialDelaySeconds: 30
-            periodSeconds: 30
+              path: /actuator/health/liveness
+            initialDelaySeconds: 40
+            periodSeconds: 20
           readinessProbe:
             httpGet:
               port: 8080
-              path: /actuator/info
-            initialDelaySeconds: 30
-            periodSeconds: 30
+              path: /actuator/health/readiness
+            initialDelaySeconds: 40
+            periodSeconds: 20
           volumeMounts:
             - name: secret
               mountPath: "/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/iiif.user.properties"
