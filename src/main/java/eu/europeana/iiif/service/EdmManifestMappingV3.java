@@ -538,7 +538,9 @@ public final class EdmManifestMappingV3 {
         // case 3 - rendered - No time mode added as we paint an image here
         if(mediaType.isRendered()) {
             // Use the URL of the thumbnail for the respective WebResource as id of the Annotation Body
-            annoBody = new AnnotationBody(c.getThumbnail()[0].getId(), "Image");
+            if(c.getThumbnail()!=null && c.getThumbnail().length>0) {
+                annoBody = new AnnotationBody(c.getThumbnail()[0].getId(), "Image");
+            }
 
             // update the width and height
             setHeightWidthForRendered(c);

@@ -94,5 +94,14 @@ public class EdmManifestData {
             "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"webResourceEdmRights\":"+
             "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"image/jpeg\", \"svcsHasService\": [\"service2Id\"]  }"+
             "] } ], \"services\": [{\"about\": \"service1Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
+
+
+    public static final String TEST_RENDERING_FOR_OEMBED_MIMETYPE = "{\"object\": { \"proxies\":[{\"about\":\"/proxy/provider/testing\",\"proxyIn\":[\"/aggregation/provider/testing\"]}]," +
+        "\"aggregations\": [ {\"about\":\"/aggregation/provider/testing\",\"edmIsShownBy\": \"wr3Id\", \"hasView\": [\"wr2Id\"], \"webResources\": [ "+
+        "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":"+
+        "{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"application/json+oembed\" },"+
+        "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"htmlAttributionSnippet\": \"<span>wr2Attribution</span>\", \"webResourceEdmRights\":"+
+        "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"application/xml+oembed\" }"+
+        "] } ], \"services\": [{\"about\": \"service3Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
 }
 
