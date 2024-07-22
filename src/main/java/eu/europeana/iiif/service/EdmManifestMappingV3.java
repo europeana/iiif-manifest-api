@@ -543,9 +543,13 @@ public final class EdmManifestMappingV3 {
             // update the width and height
             setHeightWidthForRendered(c);
 
+           //EA-3745 - use media type 'service' for oembed mimeTypes who do not have type configured in 'mediacategories.xml'
+            String mediaTypeValue =StringUtils.isEmpty(mediaType.getType()) && EdmManifestUtils.EMBEDED_RESOURCE_MIME_TYPES.contains(mediaType.getMimeType()) ?
+                EdmManifestUtils.SERVICE:mediaType.getType();
+
             // add rendering in canvas for original web resource url
             c.setRendering(new Rendering((String) webResource.get(EdmManifestUtils.ABOUT),
-                    mediaType.getType(),
+                    mediaTypeValue,
                     mediaType.getMimeType(),
                     new LanguageMap(EdmManifestUtils.LINGUISTIC, mediaType.getLabel())));
 
