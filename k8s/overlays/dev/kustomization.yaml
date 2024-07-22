@@ -2,8 +2,10 @@ resources:
   - ../../base
   - nodeport.yaml
 
-patchesStrategicMerge:
-  - deployment_patch.yaml
+patches:
+  - path: deployment_patch.yaml
 
-commonLabels:
-  app: iiif-api
+labels:
+  - includeSelectors: true
+    pairs:
+      app: iiif-api
