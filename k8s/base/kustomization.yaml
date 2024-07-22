@@ -1,8 +1,10 @@
 resources:
   - deployment.yaml
 
-commonLabels:
-  app: iiif-api
+labels:
+  - includeSelectors: true
+    pairs:
+      app: iiif-api
 
 # expects files to be in the same directory
 secretGenerator:
