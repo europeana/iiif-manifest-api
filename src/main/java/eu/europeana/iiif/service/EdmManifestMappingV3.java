@@ -39,7 +39,7 @@ public final class EdmManifestMappingV3 {
 
     private static final Logger LOG = LogManager.getLogger(EdmManifestMappingV3.class);
 
-    private static String THUMBNAIL_API_URL;
+    private static String thumbnailApiUrl;
 
     private EdmManifestMappingV3() {
     }
@@ -57,7 +57,6 @@ public final class EdmManifestMappingV3 {
      */
     private static MediaType ifEuScreenGetMediaType(MediaTypes mediaTypes, Object jsonDoc, String europeanaId, String isShownBy) {
         MediaType euScreenTypeHack = null;
-
         //1. find edmType (try first Europeana Proxy, use other proxies as fallback)
         String edmType = (String) EdmManifestUtils.getFirstValueArray("edmType", europeanaId,
                 JsonPath.parse(jsonDoc).read("$.object.proxies[?(@.europeanaProxy == true)].edmType", String[].class));
@@ -74,7 +73,7 @@ public final class EdmManifestMappingV3 {
         if (isEuScreenItem(edmType, isShownBy, isShownAt)) {
             LOG.debug("Item is EUScreen :  edmType - {}, isShownBy - {}", edmType, isShownBy);
             // if the item is EUscreen then the value will always be present
-            euScreenTypeHack = mediaTypes.getEUScreenType(edmType).get();
+            euScreenTypeHack=  mediaTypes.getEUScreenType(edmType).orElse(null);
             isShownBy = isShownAt; // replace isShownBy with IsShownAt for EU Screen items
         }
         return euScreenTypeHack;
@@ -102,7 +101,7 @@ public final class EdmManifestMappingV3 {
      * @return IIIF Manifest v3 object
      */
     static ManifestV3 getManifestV3(ManifestSettings ms, MediaTypes mediaTypes, Object jsonDoc) {
-        THUMBNAIL_API_URL = ms.getThumbnailApiUrl();
+        thumbnailApiUrl = ms.getThumbnailApiUrl();
         String europeanaId = EdmManifestUtils.getEuropeanaId(jsonDoc);
         String isShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(jsonDoc, europeanaId, "edmIsShownBy");
 
@@ -330,10 +329,11 @@ public final class EdmManifestMappingV3 {
      * @return Image object, or null if either provided String was null
      */
     static eu.europeana.iiif.model.v3.Image[] getCanvasThumbnailImageV3(String webresourceId) {
-        if (StringUtils.isAnyEmpty(THUMBNAIL_API_URL, webresourceId)) {
+        if (StringUtils.isAnyEmpty(thumbnailApiUrl, webresourceId)) {
             return new eu.europeana.iiif.model.v3.Image[] {};
         }
-        return new eu.europeana.iiif.model.v3.Image[] {new eu.europeana.iiif.model.v3.Image(THUMBNAIL_API_URL + webresourceId + CANVAS_THUMBNAIL_POSTFIX)};
+        return new eu.europeana.iiif.model.v3.Image[] {new eu.europeana.iiif.model.v3.Image(
+            thumbnailApiUrl + webresourceId + CANVAS_THUMBNAIL_POSTFIX)};
     }
 
 
@@ -445,41 +445,12 @@ public final class EdmManifestMappingV3 {
                                                                  WebResource webResource,
                                                                  Map<String, Object>[] services,
                                                                  MediaType euScreenTypeHack) {
-        eu.europeana.iiif.model.v3.Canvas c =
-                new eu.europeana.iiif.model.v3.Canvas(settings.getCanvasId(europeanaId, order), order);
-
-        c.setLabel(new LanguageMap(null, "p. "+order));
-
-        Object obj = webResource.get(EdmManifestUtils.EBUCORE_HEIGHT);
-        if (obj instanceof Integer){
-            c.setHeight((Integer) obj);
-        }
-
-        obj = webResource.get(EdmManifestUtils.EBUCORE_WIDTH);
-        if (obj instanceof Integer){
-            c.setWidth((Integer) obj);
-        }
-
-        String durationText = (String) webResource.get(EdmManifestUtils.EBUCORE_DURATION);
-        if (durationText != null) {
-            Long durationInMs = Long.valueOf(durationText);
-            c.setDuration(durationInMs / 1000D);
-        }
-
-        String attributionText = (String) webResource.get(EdmManifestUtils.HTML_ATTRIB_SNIPPET);
-        if (!StringUtils.isEmpty(attributionText)){
-            c.setRequiredStatement(createRequiredStatementMap(attributionText));
-        }
-
-        LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get("webResourceEdmRights");
-        if (license != null && !license.values().isEmpty()) {
-            c.setRights(new Rights(license.values().iterator().next().get(0)));
-        }
-
-        //EA-3325: check if the webResource has a "svcsHasService"; if not, add a thumbnail
-        if (Objects.isNull(webResource.get(EdmManifestUtils.SVCS_HAS_SERVICE))){
-            c.setThumbnail(getCanvasThumbnailImageV3(webResource.getId()));
-        }
+        Canvas c = createCanvas(settings, europeanaId, order);
+        setHeightAndWidthForCanvas(webResource, c);
+        setDurationForCanvas(webResource, c);
+        setRequiredStatementForCanvas(webResource, c);
+        setRightsForCanvas(webResource, c);
+        setThumbnailIfRequired(webResource, c);
 
         // a canvas has 1 annotation page by default (an extra annotation page is added later if there is a full text available)
         AnnotationPage annoPage = new AnnotationPage(null); // id is not really necessary in this case
@@ -488,15 +459,12 @@ public final class EdmManifestMappingV3 {
         // Add annotation - annotation page has 1 annotation
         Annotation anno = new Annotation(null);
         annoPage.setItems(new Annotation[] { anno });
-
         anno.setTarget(c.getId());
 
         // Fetch the mime type from the web resource
         String ebucoreMimeType = (String) webResource.get(EdmManifestUtils.EBUCORE_HAS_MIMETYPE);
         MediaType mediaType = null;
-
         // MEDIA TYPE handling..
-
         // case 1 -  EU screen items. Override the media type
         if (euScreenTypeHack != null) {
             LOG.debug("Override mediaType {} with {} because of EUScreen hack", mediaType, euScreenTypeHack);
@@ -523,8 +491,24 @@ public final class EdmManifestMappingV3 {
 
         // Now create the annotation body with webresource url and media type
         // EA- 3436 add technical metadata for case 2 and 3
-        AnnotationBody annoBody = new AnnotationBody((String) webResource.get(EdmManifestUtils.ABOUT), mediaType.getType());
+        AnnotationBody annoBody = getAnnotationBody(webResource, mediaType, anno,c);
+        // annotation has 1 annotationBody
+        anno.setBody(annoBody);
+        // body can have a service
+        setServiceIdForAnnotation(europeanaId, webResource, services, annoBody);
+        return c;
+    }
 
+    private static Canvas createCanvas(ManifestSettings settings, String europeanaId, int order) {
+        Canvas c =
+                new Canvas(settings.getCanvasId(europeanaId, order), order);
+        c.setLabel(new LanguageMap(null, "p. "+ order));
+        return c;
+    }
+
+    private static AnnotationBody getAnnotationBody(WebResource webResource, MediaType mediaType,
+        Annotation anno, Canvas c) {
+        AnnotationBody annoBody = new AnnotationBody((String) webResource.get(EdmManifestUtils.ABOUT), mediaType.getType());
         // case 2 - browser supported
         if (mediaType.isBrowserSupported() ) {
             annoBody.setFormat(mediaType.getMimeType());
@@ -534,40 +518,77 @@ public final class EdmManifestMappingV3 {
             }
             addTechnicalMetadata(c, annoBody);
         }
-
         // case 3 - rendered - No time mode added as we paint an image here
         if(mediaType.isRendered()) {
             // Use the URL of the thumbnail for the respective WebResource as id of the Annotation Body
             if(c.getThumbnail()!=null && c.getThumbnail().length>0) {
                 annoBody = new AnnotationBody(c.getThumbnail()[0].getId(), "Image");
             }
-
             // update the width and height
             setHeightWidthForRendered(c);
-
            //EA-3745 - use media type 'service' for oembed mimeTypes who do not have type configured in 'mediacategories.xml'
-            String mediaTypeValue =StringUtils.isEmpty(mediaType.getType()) && EdmManifestUtils.EMBEDED_RESOURCE_MIME_TYPES.contains(mediaType.getMimeType()) ?
-                EdmManifestUtils.SERVICE:mediaType.getType();
-
+            String mediaTypeValue=StringUtils.isEmpty(mediaType.getType()) && EdmManifestUtils.EMBEDED_RESOURCE_MIME_TYPES.contains(
+                mediaType.getMimeType()) ?
+                EdmManifestUtils.SERVICE: mediaType.getType();
             // add rendering in canvas for original web resource url
             c.setRendering(new Rendering((String) webResource.get(EdmManifestUtils.ABOUT),
                     mediaTypeValue,
                     mediaType.getMimeType(),
                     new LanguageMap(EdmManifestUtils.LINGUISTIC, mediaType.getLabel())));
-
             addTechnicalMetadata(c, annoBody);
         }
-        // annotation has 1 annotationBody
-        anno.setBody(annoBody);
+        return annoBody;
+    }
 
-        // body can have a service
+    private static void setServiceIdForAnnotation(String europeanaId, WebResource webResource,
+        Map<String, Object>[] services, AnnotationBody annoBody) {
         String serviceId = EdmManifestUtils.getServiceId(webResource, europeanaId);
         if (serviceId != null) {
-            eu.europeana.iiif.model.v3.Service service = new eu.europeana.iiif.model.v3.Service(serviceId, ManifestDefinitions.IMAGE_SERVICE_TYPE_3);
-            service.setProfile(EdmManifestUtils.lookupServiceDoapImplements(services, serviceId, europeanaId));
+            Service service = new Service(serviceId, ManifestDefinitions.IMAGE_SERVICE_TYPE_3);
+            service.setProfile(EdmManifestUtils.lookupServiceDoapImplements(services, serviceId,
+                europeanaId));
             annoBody.setService(service);
         }
-        return c;
+    }
+
+    private static void setThumbnailIfRequired(WebResource webResource, Canvas c) {
+        //EA-3325: check if the webResource has a "svcsHasService"; if not, add a thumbnail
+        if (Objects.isNull(webResource.get(EdmManifestUtils.SVCS_HAS_SERVICE))){
+            c.setThumbnail(getCanvasThumbnailImageV3(webResource.getId()));
+        }
+    }
+
+    private static void setRightsForCanvas(WebResource webResource, Canvas c) {
+        LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get("webResourceEdmRights");
+        if (license != null && !license.values().isEmpty()) {
+            c.setRights(new Rights(license.values().iterator().next().get(0)));
+        }
+    }
+
+    private static void setRequiredStatementForCanvas(WebResource webResource, Canvas c) {
+        String attributionText = (String) webResource.get(EdmManifestUtils.HTML_ATTRIB_SNIPPET);
+        if (!StringUtils.isEmpty(attributionText)){
+            c.setRequiredStatement(createRequiredStatementMap(attributionText));
+        }
+    }
+
+    private static void setDurationForCanvas(WebResource webResource, Canvas c) {
+        String durationText = (String) webResource.get(EdmManifestUtils.EBUCORE_DURATION);
+        if (durationText != null) {
+            Long durationInMs = Long.valueOf(durationText);
+            c.setDuration(durationInMs / 1000D);
+        }
+    }
+
+    private static void setHeightAndWidthForCanvas(WebResource webResource, Canvas c) {
+        Object obj = webResource.get(EdmManifestUtils.EBUCORE_HEIGHT);
+        if (obj instanceof Integer val){
+            c.setHeight(val);
+        }
+        obj = webResource.get(EdmManifestUtils.EBUCORE_WIDTH);
+        if (obj instanceof Integer val){
+            c.setWidth(val);
+        }
     }
 
     /**
