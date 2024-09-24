@@ -56,15 +56,24 @@ public class EdmManifestData {
 
     public static final String TEST_SEQUENCE_3CANVAS_1SERVICE = "{\"object\": { \"proxies\":[{\"about\":\"/proxy/provider/testing\",\"proxyIn\":[\"/aggregation/provider/testing\"]}]," +
             "\"aggregations\": [ {\"about\":\"/aggregation/provider/testing\",\"edmIsShownBy\": \"wr3Id\", \"hasView\": [\"wr2Id\"], \"webResources\": [ "+
-//            "{\"about\": \"wr1Id\", " +
-            "{\"about\": \"" + TEST_CANVAS_THUMBNAIL_ID + "\", " +
-            "\"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":"+
+            "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":"+
             "{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"image/jpeg\" },"+
             "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"htmlAttributionSnippet\": \"<span>wr2Attribution</span>\", \"webResourceEdmRights\":"+
             "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"audio/mp4\" },"+
             "{\"about\": \"wr3Id\", \"textAttributionSnippet\": \"wr3Attribution\", \"htmlAttributionSnippet\": \"<span>wr3Attribution</span>\", \"webResourceEdmRights\":"+
             "{\"def\":[\"wr3License\"]}, \"ebucoreHasMimeType\": \"image/webp\", \"svcsHasService\": [\"service3Id\"], \"ebucoreDuration\": \"98765\"  }"+
             "] } ], \"services\": [{\"about\": \"service3Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
+
+    public static final String TEST_SEQUENCE_1CANVAS_THUMB = "{\"object\": { \"proxies\":[{\"about\":\"/proxy/provider/testing\",\"proxyIn\":[\"/aggregation/provider/testing\"]}]," +
+            "\"aggregations\": [ {\"about\":\"/aggregation/provider/testing\",\"edmIsShownBy\": \"wr2Id\", " +
+            "\"hasView\": [\"" + TEST_CANVAS_THUMBNAIL_ID + "\"], " +
+            "\"webResources\": [ "+
+            "{\"about\": \"" + TEST_CANVAS_THUMBNAIL_ID + "\", " +
+            "\"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":"+
+            "{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"image/jpeg\" },"+
+            "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"htmlAttributionSnippet\": \"<span>wr2Attribution</span>\", \"webResourceEdmRights\":"+
+            "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"image/webp\", \"svcsHasService\": [\"service2Id\"], \"ebucoreDuration\": \"98765\"  }"+
+            "] } ], \"services\": [{\"about\": \"service2Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
 
 
     public static final String TEST_SEQUENCE_MULTIPLE_PROXY_AGG = "{ \"object\" : { \"aggregations\": [" +
@@ -99,7 +108,7 @@ public class EdmManifestData {
             "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"image/jpeg\", \"svcsHasService\": [\"service2Id\"]  }"+
             "] } ], \"services\": [{\"about\": \"service1Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
 
-    public static final String CANVAS_THUMBNAIL_ENCODED_URL = "https%3A%2F%2Fwww.museumap.hu%2Fmedia-provider-webapp%2Frest%2Ffile%2Fpreview%2Fsolr%2Foai-aggregated-bib9568907%3FmediaId%3D323992%26size%3Dmasterview%26tenant_id%3DMuseumap%26defaultImage%3Dtrue";
+    public static final String CANVAS_THUMBNAIL_ENCODED_URL = "https%3A%2F%2Fwww.museumap.hu%2Fmedia-provider-webapp%2Frest%2Ffile%2Fpreview%2Fsolr%2Foai-aggregated-bib9568907%3FmediaId%3D323995%26size%3Dmasterview%26tenant_id%3DMuseumap%26defaultImage%3Dtrue";
 
     public static final String CANVAS_THUMBNAIL_DECODED_URL = "https://www.museumap.hu/media-provider-webapp/rest/file/preview/solr/oai-aggregated-bib9568907?mediaId=323992&size=masterview&tenant_id=Museumap&defaultImage=true";
 }

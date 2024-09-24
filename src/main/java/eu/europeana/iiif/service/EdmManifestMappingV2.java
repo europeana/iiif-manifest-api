@@ -204,12 +204,12 @@ public final class EdmManifestMappingV2 {
      * @param webresourceId hasview image ID
      * @return Image object, or null if either provided String was null
      */
-    static eu.europeana.iiif.model.v2.Image getCanvasThumbnailImageV2(String webresourceId) {
-        if (StringUtils.isAnyEmpty(THUMBNAIL_API_URL, webresourceId)) {
+    static eu.europeana.iiif.model.v2.Image getCanvasThumbnailImageV2(String webresourceId, String ThumbnailApiUrl) {
+        if (StringUtils.isAnyEmpty(ThumbnailApiUrl, webresourceId)) {
             return null;
         }
         return new eu.europeana.iiif.model.v2.Image(
-            THUMBNAIL_API_URL + webresourceId + CANVAS_THUMBNAIL_POSTFIX,
+            ThumbnailApiUrl + webresourceId + CANVAS_THUMBNAIL_POSTFIX,
             null,
             null);
     }
@@ -351,7 +351,7 @@ public final class EdmManifestMappingV2 {
 
         //EA-3325: check if the webResource has a "svcsHasService"; if not, add a thumbnail
         if (Objects.isNull(webResource.get(EdmManifestUtils.SVCS_HAS_SERVICE))){
-            c.setThumbnail(getCanvasThumbnailImageV2(URLEncoder.encode(webResource.getId(), StandardCharsets.UTF_8)));
+            c.setThumbnail(getCanvasThumbnailImageV2(URLEncoder.encode(webResource.getId(), StandardCharsets.UTF_8), settings.getThumbnailApiUrl()));
         }
 
         LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get(EdmManifestUtils.WEB_RESOURCE_EDM_RIGHTS);

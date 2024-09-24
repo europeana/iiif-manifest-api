@@ -1,5 +1,6 @@
 package eu.europeana.iiif.service;
 
+import static eu.europeana.iiif.model.ManifestDefinitions.CANVAS_THUMBNAIL_POSTFIX;
 import static eu.europeana.iiif.service.EdmManifestData.CANVAS_THUMBNAIL_DECODED_URL;
 import static eu.europeana.iiif.service.EdmManifestData.CANVAS_THUMBNAIL_ENCODED_URL;
 
@@ -293,7 +294,6 @@ public class EdmManifestV2MappingTest {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
         String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
         Sequence[] sequence = EdmManifestMappingV2.getSequencesV2(settings, mediaTypes,"/test-id", edmIsShownBy, document);
-//        sequence[0].getCanvases()[0].setThumbnail(new eu.europeana.iiif.model.v2.Image(CANVAS_THUMBNAIL_ENCODED_URL, 40, 40));
         Assertions.assertNotNull(sequence);
         Assertions.assertEquals(1, sequence.length); // there should always be only 1 sequence
 
@@ -311,7 +311,6 @@ public class EdmManifestV2MappingTest {
         ecv.label = "p. 1";
         ecv.attribution = "wr3Attribution";
         ecv.license = "wr3License";
-        ecv.thumbNail = new eu.europeana.iiif.model.v2.Image(CANVAS_THUMBNAIL_DECODED_URL, 40, 40);
         ecv.annotationAndBody = new ExpectedAnnotationAndBodyValues();
         ecv.annotationAndBody.idEndsWith = "/test-id/annotation/p1";
         ecv.annotationAndBody.onId = ecv.id;
@@ -334,9 +333,6 @@ public class EdmManifestV2MappingTest {
         Assertions.assertEquals(ecv.attribution, c.getAttribution());
         Assertions.assertEquals(ecv.license, c.getLicense());
 
-        // test thumbnail URL encoding
-        Assertions.assertEquals(ecv.thumbNail.getId(), c.getThumbnail().getId());
-
         // test image/annotation part (can be at most 1)
         if (ecv.annotationAndBody == null) {
             Assertions.assertNull(c.getAttribution());
@@ -346,6 +342,32 @@ public class EdmManifestV2MappingTest {
             checkAnnotationAndBody(ecv.annotationAndBody, c.getImages()[0]);
         }
     }
+
+    /**
+     * Test if canvas thumbnails are URLencoded properly
+     */
+    @Test
+    public void testCanvasWithThumbnail() {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_1CANVAS_THUMB);
+        String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
+        Sequence[] sequence = EdmManifestMappingV2.getSequencesV2(settings, mediaTypes,"/test-id", edmIsShownBy, document);
+        Assertions.assertNotNull(sequence);
+        Assertions.assertEquals(1, sequence.length); // one sequence
+
+        // test canvas part
+        Assertions.assertTrue(sequence[0].getStartCanvas().endsWith("/test-id" + "/canvas/p1"));
+        Assertions.assertNotNull(sequence[0].getCanvases());
+        Assertions.assertEquals(2, sequence[0].getCanvases().length); // with two canvasii
+
+        // only the second canvas contains the canvas thumbnail and needs checking
+        ExpectedCanvasValues ecv = new ExpectedCanvasValues();
+        ecv.id = sequence[0].getCanvases()[1].getId();
+        String ThumbnailUrl = settings.getThumbnailApiUrl() + CANVAS_THUMBNAIL_ENCODED_URL + CANVAS_THUMBNAIL_POSTFIX;
+        ecv.thumbNail = new eu.europeana.iiif.model.v2.Image(ThumbnailUrl, null, null);
+
+        Assertions.assertEquals(ecv.thumbNail.getId(), sequence[0].getCanvases()[1].getThumbnail().getId());
+    }
+
 
     /**
      * Test if we generate an annotation and annotation body object (and containing service object) properly
