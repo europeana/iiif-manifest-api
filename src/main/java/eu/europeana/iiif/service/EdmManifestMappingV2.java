@@ -10,6 +10,8 @@ import eu.europeana.iiif.model.MediaType;
 import eu.europeana.iiif.model.WebResource;
 import eu.europeana.iiif.model.v2.*;
 import eu.europeana.iiif.model.v3.LanguageMap;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -349,7 +351,7 @@ public final class EdmManifestMappingV2 {
 
         //EA-3325: check if the webResource has a "svcsHasService"; if not, add a thumbnail
         if (Objects.isNull(webResource.get(EdmManifestUtils.SVCS_HAS_SERVICE))){
-            c.setThumbnail(getCanvasThumbnailImageV2(webResource.getId()));
+            c.setThumbnail(getCanvasThumbnailImageV2(URLEncoder.encode(webResource.getId(), StandardCharsets.UTF_8)));
         }
 
         LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get(EdmManifestUtils.WEB_RESOURCE_EDM_RIGHTS);

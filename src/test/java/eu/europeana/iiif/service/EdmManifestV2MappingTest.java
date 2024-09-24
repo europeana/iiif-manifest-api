@@ -1,5 +1,8 @@
 package eu.europeana.iiif.service;
 
+import static eu.europeana.iiif.service.EdmManifestData.CANVAS_THUMBNAIL_DECODED_URL;
+import static eu.europeana.iiif.service.EdmManifestData.CANVAS_THUMBNAIL_ENCODED_URL;
+
 import com.jayway.jsonpath.Configuration;
 import eu.europeana.iiif.config.AppConfig;
 import eu.europeana.iiif.config.ManifestSettings;
@@ -290,6 +293,7 @@ public class EdmManifestV2MappingTest {
         Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_3CANVAS_1SERVICE);
         String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
         Sequence[] sequence = EdmManifestMappingV2.getSequencesV2(settings, mediaTypes,"/test-id", edmIsShownBy, document);
+//        sequence[0].getCanvases()[0].setThumbnail(new eu.europeana.iiif.model.v2.Image(CANVAS_THUMBNAIL_ENCODED_URL, 40, 40));
         Assertions.assertNotNull(sequence);
         Assertions.assertEquals(1, sequence.length); // there should always be only 1 sequence
 
@@ -307,6 +311,7 @@ public class EdmManifestV2MappingTest {
         ecv.label = "p. 1";
         ecv.attribution = "wr3Attribution";
         ecv.license = "wr3License";
+        ecv.thumbNail = new eu.europeana.iiif.model.v2.Image(CANVAS_THUMBNAIL_DECODED_URL, 40, 40);
         ecv.annotationAndBody = new ExpectedAnnotationAndBodyValues();
         ecv.annotationAndBody.idEndsWith = "/test-id/annotation/p1";
         ecv.annotationAndBody.onId = ecv.id;
@@ -328,6 +333,9 @@ public class EdmManifestV2MappingTest {
         // TODO read height, width from configuration and check it
         Assertions.assertEquals(ecv.attribution, c.getAttribution());
         Assertions.assertEquals(ecv.license, c.getLicense());
+
+        // test thumbnail URL encoding
+        Assertions.assertEquals(ecv.thumbNail.getId(), c.getThumbnail().getId());
 
         // test image/annotation part (can be at most 1)
         if (ecv.annotationAndBody == null) {
@@ -371,6 +379,7 @@ public class EdmManifestV2MappingTest {
         String attribution;
         String license;
         ExpectedAnnotationAndBodyValues annotationAndBody;
+        Image thumbNail;
     }
 
     private static class ExpectedAnnotationAndBodyValues {

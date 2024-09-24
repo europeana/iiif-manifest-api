@@ -11,6 +11,8 @@ import eu.europeana.iiif.model.WebResource;
 import eu.europeana.iiif.model.WebResourceSorter;
 import eu.europeana.iiif.model.v3.Collection;
 import eu.europeana.iiif.model.v3.*;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.commons.lang3.StringUtils;
@@ -478,7 +480,7 @@ public final class EdmManifestMappingV3 {
 
         //EA-3325: check if the webResource has a "svcsHasService"; if not, add a thumbnail
         if (Objects.isNull(webResource.get(EdmManifestUtils.SVCS_HAS_SERVICE))){
-            c.setThumbnail(getCanvasThumbnailImageV3(webResource.getId()));
+            c.setThumbnail(getCanvasThumbnailImageV3(URLEncoder.encode(webResource.getId(), StandardCharsets.UTF_8)));
         }
 
         // a canvas has 1 annotation page by default (an extra annotation page is added later if there is a full text available)
