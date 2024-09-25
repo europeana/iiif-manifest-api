@@ -22,5 +22,32 @@
     <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat\-embed\-core@.*$</packageUrl>
     <cve>CVE-2022-45143</cve>
   </suppress>
-
+  <suppress>
+    <notes><![CDATA[
+   file name: spring-web-5.3.27.jar
+   ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.springframework/spring-web@.*$</packageUrl>
+    <vulnerabilityName>CVE-2024-22262</vulnerabilityName>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+   file name: spring-web-5.3.27.jar
+   ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.springframework/spring-web@.*$</packageUrl>
+    <vulnerabilityName>CVE-2024-22243</vulnerabilityName>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+   file name: spring-web-5.3.27.jar
+   ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.springframework/spring-web@.*$</packageUrl>
+    <vulnerabilityName>CVE-2024-38809</vulnerabilityName>
+  </suppress>
+  <suppress>
+    <notes><![CDATA[
+   file name: swagger-ui-5.11.8.jar: swagger-ui-bundle.js
+   ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+    <vulnerabilityName>CVE-2024-45801</vulnerabilityName>
+  </suppress>
 </suppressions>
