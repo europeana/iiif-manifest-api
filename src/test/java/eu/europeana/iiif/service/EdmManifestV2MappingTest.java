@@ -1,5 +1,9 @@
 package eu.europeana.iiif.service;
 
+import static eu.europeana.iiif.model.ManifestDefinitions.CANVAS_THUMBNAIL_POSTFIX;
+import static eu.europeana.iiif.service.EdmManifestData.CANVAS_THUMBNAIL_DECODED_URL;
+import static eu.europeana.iiif.service.EdmManifestData.CANVAS_THUMBNAIL_ENCODED_URL;
+
 import com.jayway.jsonpath.Configuration;
 import eu.europeana.iiif.config.AppConfig;
 import eu.europeana.iiif.config.ManifestSettings;
@@ -340,6 +344,32 @@ public class EdmManifestV2MappingTest {
     }
 
     /**
+     * Test if canvas thumbnails are URLencoded properly
+     */
+    @Test
+    public void testCanvasWithThumbnail() {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_1CANVAS_THUMB);
+        String edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
+        Sequence[] sequence = EdmManifestMappingV2.getSequencesV2(settings, mediaTypes,"/test-id", edmIsShownBy, document);
+        Assertions.assertNotNull(sequence);
+        Assertions.assertEquals(1, sequence.length); // one sequence
+
+        // test canvas part
+        Assertions.assertTrue(sequence[0].getStartCanvas().endsWith("/test-id" + "/canvas/p1"));
+        Assertions.assertNotNull(sequence[0].getCanvases());
+        Assertions.assertEquals(2, sequence[0].getCanvases().length); // with two canvasii
+
+        // only the second canvas contains the canvas thumbnail and needs checking
+        ExpectedCanvasValues ecv = new ExpectedCanvasValues();
+        ecv.id = sequence[0].getCanvases()[1].getId();
+        String ThumbnailUrl = settings.getThumbnailApiUrl() + CANVAS_THUMBNAIL_ENCODED_URL + CANVAS_THUMBNAIL_POSTFIX;
+        ecv.thumbNail = new eu.europeana.iiif.model.v2.Image(ThumbnailUrl, null, null);
+
+        Assertions.assertEquals(ecv.thumbNail.getId(), sequence[0].getCanvases()[1].getThumbnail().getId());
+    }
+
+
+    /**
      * Test if we generate an annotation and annotation body object (and containing service object) properly
      */
     public void checkAnnotationAndBody(ExpectedAnnotationAndBodyValues eabv, Annotation ann) {
@@ -371,6 +401,7 @@ public class EdmManifestV2MappingTest {
         String attribution;
         String license;
         ExpectedAnnotationAndBodyValues annotationAndBody;
+        Image thumbNail;
     }
 
     private static class ExpectedAnnotationAndBodyValues {

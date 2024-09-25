@@ -27,3 +27,4 @@ nbdist/
 
 ### JEnv ###
 .java-version
+/pom-local-depcheck.xml
