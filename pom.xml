@@ -24,7 +24,7 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <sonar.organization>europeana</sonar.organization>
 
-        <fulltext-common.version>0.9.1</fulltext-common.version>
+        <fulltext-common.version>0.9.6</fulltext-common.version>
         <apicommons.version>0.3.20</apicommons.version>
         <!-- 3rd party -->
         <spring-boot.version>2.7.11</spring-boot.version>
@@ -255,7 +255,7 @@
                     <plugin>
                         <groupId>org.owasp</groupId>
                         <artifactId>dependency-check-maven</artifactId>
-                        <version>9.2.0</version>
+                        <version>10.0.2</version>
                         <configuration>
                             <nvdApiKeyEnvironmentVariable>NVD_APIKEY</nvdApiKeyEnvironmentVariable>
                             <!-- see EA-3505 why we host the known exploited vulnerabilties file ourselves -->
