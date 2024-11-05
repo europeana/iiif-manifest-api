@@ -278,7 +278,8 @@ public final class EdmManifestUtils {
     static Object getFirstValueArray(String fieldName, String europeanaId, Object[] values) {
         if (values.length >= 1) {
             if (!StringUtils.isEmpty(fieldName) && values.length > 1) {
-                LOG.warn("Multiple {} values found for record {}, returning first", fieldName, europeanaId);
+                // This happens actually quite often in production, so we lowered log severity from WARN to DEBUG
+                LOG.debug("Multiple {} values found for record {}, returning first", fieldName, europeanaId);
             }
             return values[0];
         }
