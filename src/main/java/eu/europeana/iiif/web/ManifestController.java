@@ -134,8 +134,8 @@ public class ManifestController {
         //temporary logging
         LOG.info("Request details : "+ request.getRequestURI() +"  Headers -  "
             + " If-None-Match:"+ request.getHeader("If-None-Match")
-        //    + " If-Modified-Since:" + request.getHeader("If-Modified-Since")
-        //    + " lastModifiedTimeOfRecord: " + lastModified
+            + " If-Modified-Since:" + request.getHeader("If-Modified-Since")
+            + " lastModifiedTimeOfRecord: " + lastModified
             + " etag: " + eTag
         );
 
