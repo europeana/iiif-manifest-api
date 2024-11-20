@@ -128,6 +128,17 @@ public class ManifestController {
         String eTag = generateETag(id, lastModified, iiifVersion);
         HttpHeaders headers = CacheUtils.generateCacheHeaders("no-cache", eTag, lastModified, ACCEPT);
         ResponseEntity cached = CacheUtils.checkCached(request, headers, lastModified, eTag);
+
+
+
+        //temporary logging
+        LOG.info("Request details : "+ request.getRequestURI() +"  Headers -  "
+            + " If-None-Match:"+ request.getHeader("If-None-Match")
+        //    + " If-Modified-Since:" + request.getHeader("If-Modified-Since")
+        //    + " lastModifiedTimeOfRecord: " + lastModified
+            + " etag: " + eTag
+        );
+
         if (cached != null) {
             LOG.debug("Returning 304 response");
             return cached;
