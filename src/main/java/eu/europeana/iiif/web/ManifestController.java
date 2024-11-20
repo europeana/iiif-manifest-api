@@ -8,6 +8,7 @@ import eu.europeana.iiif.service.CacheUtils;
 import eu.europeana.iiif.service.EdmManifestUtils;
 import eu.europeana.iiif.service.ManifestService;
 import eu.europeana.iiif.service.ValidateUtils;
+import java.util.Collections;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -132,12 +133,19 @@ public class ManifestController {
 
 
         //temporary logging
-        LOG.info("Request details : "+ request.getRequestURI() +"  Headers -  "
-            + " If-None-Match:"+ request.getHeader("If-None-Match")
-            + " If-Modified-Since:" + request.getHeader("If-Modified-Since")
-            + " lastModifiedTimeOfRecord: " + lastModified
+        LOG.info("Request details : "+ request.getRequestURI()
+//            +"  Headers -  "
+//            + " If-None-Match:"+ request.getHeader("If-None-Match")
+//            + " If-Modified-Since:" + request.getHeader("If-Modified-Since")
+            + " , lastModifiedTimeOfRecord: " + lastModified
             + " etag: " + eTag
         );
+
+        StringBuilder str = new StringBuilder();
+        Collections.list(request.getHeaderNames()).stream().forEach(p->
+           str.append( " "+p.toString()+ " : " + request.getHeader(p.toString()) + "\n" )
+            );
+        LOG.info(str);
 
         if (cached != null) {
             LOG.debug("Returning 304 response");
