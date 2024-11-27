@@ -154,6 +154,7 @@ public class ManifestSettings {
 
     /**
      * @return Fulltext Base URL defined in iiif.properties from where we can do a HEAD request to check if a full-text is available
+     * This value is not used while presenting the manifest output and only used to call api.
      */
     public String getFullTextApiBaseUrl() {
         return ValidateUtils.formatBaseUrl(fullTextApiBaseUrl);
