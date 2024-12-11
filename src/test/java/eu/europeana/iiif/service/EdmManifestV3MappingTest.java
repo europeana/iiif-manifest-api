@@ -33,6 +33,7 @@ public class EdmManifestV3MappingTest {
 
     // Initialize the manifest service, because that will setup our default Jackson mapper configuration used in the tests
     private static final ManifestService ms = new ManifestService(new ManifestSettings(), new MediaTypes());
+    public static final String MIMETYPE_APPLICATION_JSON_OEMBED = "application/json+oembed";
 
     @Autowired
     private ManifestSettings settings;
@@ -616,5 +617,16 @@ public class EdmManifestV3MappingTest {
                 testLanguageMap(expectedKey, expectedMap.get(expectedKey), map);
             }
         }
+    }
+
+    //Note:Refer mediacategories.xml for media type configuration and rendering support.
+    @Test
+    public void testRenderingForEmbededReource(){
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_RENDERING_FOR_OEMBED_MIMETYPE);
+        Canvas[] canvases = EdmManifestMappingV3.getItems(settings, mediaTypes, "/test-id", "wr1Id", document, null);
+        Rendering rendering = canvases[0].getRendering();
+        Assertions.assertEquals("oEmbed",rendering.getLabel().get(EdmManifestUtils.LINGUISTIC)[0]);
+        Assertions.assertEquals(EdmManifestUtils.SERVICE,rendering.getType().get());
+        Assertions.assertEquals(MIMETYPE_APPLICATION_JSON_OEMBED,rendering.getFormat());
     }
 }

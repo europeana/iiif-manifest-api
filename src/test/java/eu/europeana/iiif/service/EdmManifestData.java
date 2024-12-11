@@ -111,5 +111,14 @@ public class EdmManifestData {
     public static final String CANVAS_THUMBNAIL_ENCODED_URL = "https%3A%2F%2Fwww.museumap.hu%2Fmedia-provider-webapp%2Frest%2Ffile%2Fpreview%2Fsolr%2Foai-aggregated-bib9568907%3FmediaId%3D323995%26size%3Dmasterview%26tenant_id%3DMuseumap%26defaultImage%3Dtrue";
 
     public static final String CANVAS_THUMBNAIL_DECODED_URL = "https://www.museumap.hu/media-provider-webapp/rest/file/preview/solr/oai-aggregated-bib9568907?mediaId=323992&size=masterview&tenant_id=Museumap&defaultImage=true";
+
+    public static final String TEST_RENDERING_FOR_OEMBED_MIMETYPE = "{\"object\": { \"proxies\":[{\"about\":\"/proxy/provider/testing\",\"proxyIn\":[\"/aggregation/provider/testing\"]}]," +
+            "\"aggregations\": [ {\"about\":\"/aggregation/provider/testing\",\"edmIsShownBy\": \"wr3Id\", \"hasView\": [\"wr2Id\"], \"webResources\": [ "+
+            "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":"+
+            "{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"application/json+oembed\" },"+
+            "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"htmlAttributionSnippet\": \"<span>wr2Attribution</span>\", \"webResourceEdmRights\":"+
+            "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"application/xml+oembed\" }"+
+            "] } ], \"services\": [{\"about\": \"service3Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
+
 }
 

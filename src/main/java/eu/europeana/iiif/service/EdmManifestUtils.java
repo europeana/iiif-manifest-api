@@ -39,6 +39,8 @@ public final class EdmManifestUtils {
     public static final String EBUCORE_DURATION = "ebucoreDuration";
     public static final String EBUCORE_HAS_MIMETYPE = "ebucoreHasMimeType";
     public static final String LINGUISTIC = "zxx";
+    public static final String SERVICE = "Service";
+    public static final List<String> EMBEDED_RESOURCE_MIME_TYPES = List.of("application/json+oembed","application/xml+oembed");
 
 
     private EdmManifestUtils() {
