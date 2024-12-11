@@ -75,7 +75,6 @@ public class EdmManifestData {
             "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"image/webp\", \"svcsHasService\": [\"service2Id\"], \"ebucoreDuration\": \"98765\"  }"+
             "] } ], \"services\": [{\"about\": \"service2Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
 
-
     public static final String TEST_SEQUENCE_MULTIPLE_PROXY_AGG = "{ \"object\" : { \"aggregations\": [" +
             "{\"about\": \"/aggregation/provider/1/\", \"edmIsShownBy\": \"provider_edmIsShownBy\", \"hasView\": [\"wr2Id\"]," +
             "\"webResources\": [{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"image/webp\"}," +
@@ -119,6 +118,5 @@ public class EdmManifestData {
             "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"htmlAttributionSnippet\": \"<span>wr2Attribution</span>\", \"webResourceEdmRights\":"+
             "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"application/xml+oembed\" }"+
             "] } ], \"services\": [{\"about\": \"service3Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
-
 }
 
