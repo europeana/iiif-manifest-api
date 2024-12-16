@@ -8,6 +8,19 @@
         <version>2.4</version>
     </parent>
 
+    <repositories>
+        <repository>
+            <id>libs-release-local</id>
+            <name>europeana-releases</name>
+            <url>https://artifactory.eanadev.org/artifactory/libs-release</url>
+        </repository>
+        <repository>
+            <id>libs-snapshots-local</id>
+            <name>europeana-snapshots</name>
+            <url>https://artifactory.eanadev.org/artifactory/libs-snapshot</url>
+        </repository>
+    </repositories>
+
     <groupId>eu.europeana.iiif</groupId>
     <artifactId>manifest-api</artifactId>
     <version>0.8.6-SNAPSHOT</version>
