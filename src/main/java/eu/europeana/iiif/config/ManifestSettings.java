@@ -47,7 +47,7 @@ public class ManifestSettings {
     private String fullTextApiBaseUrl;
 
     @Value("${record-api.baseurl.internal}")
-    private String recordApiBaseUrl;
+    private String recordApiBaseUrlInternal;
 
     @Value("${record-api.baseurl.external}")
     private String recordApiBaseUrlExternal;
@@ -164,8 +164,8 @@ public class ManifestSettings {
      * @return Record API Base URL from where we should retrieve record json data.This is URL includes the internal rout
      *  to search and record api.
      */
-    public String getRecordApiBaseUrl() {
-        return ValidateUtils.formatBaseUrl(recordApiBaseUrl);
+    public String getRecordApiBaseUrlInternal() {
+        return ValidateUtils.formatBaseUrl(recordApiBaseUrlInternal);
     }
 
     public String getRecordApiBaseUrlExternal() {
