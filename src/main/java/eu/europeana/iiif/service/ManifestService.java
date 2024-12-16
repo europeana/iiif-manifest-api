@@ -191,7 +191,7 @@ public class ManifestService {
      *                       RecordRetrieveException on all other problems)
      */
     public String getRecordJson(String recordId, String wsKey) throws EuropeanaApiException {
-        String recordUrl = buildRecordUrl(recordId, wsKey, settings.getRecordApiBaseUrl());
+        String recordUrl = buildRecordUrl(recordId, wsKey, settings.getRecordApiBaseUrlInternal());
         return fetchRecordJson(recordId, recordUrl);
     }
 
@@ -214,7 +214,7 @@ public class ManifestService {
             recordUrl = buildRecordUrl(recordId, wsKey, recordApiUrl.toString());
         } else {
 
-            recordUrl = buildRecordUrl(recordId, wsKey, settings.getRecordApiBaseUrl());
+            recordUrl = buildRecordUrl(recordId, wsKey, settings.getRecordApiBaseUrlInternal());
         }
         return fetchRecordJson(recordId, recordUrl);
     }
