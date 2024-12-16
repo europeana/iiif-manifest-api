@@ -1,12 +1,15 @@
 package eu.europeana.iiif.service;
 
 import static eu.europeana.iiif.model.ManifestDefinitions.ATTRIBUTION_STRING;
+import static eu.europeana.iiif.model.ManifestDefinitions.CANVAS_THUMBNAIL_POSTFIX;
+import static eu.europeana.iiif.service.EdmManifestData.CANVAS_THUMBNAIL_ENCODED_URL;
 
 import com.jayway.jsonpath.Configuration;
 import eu.europeana.iiif.config.AppConfig;
 import eu.europeana.iiif.config.ManifestSettings;
 import eu.europeana.iiif.config.MediaTypes;
 import eu.europeana.iiif.config.SerializationConfig;
+import eu.europeana.iiif.model.v2.Sequence;
 import eu.europeana.iiif.model.v3.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -458,6 +461,33 @@ public class EdmManifestV3MappingTest {
         }
     }
 
+    /**
+     * Test if canvas thumbnails are URLencoded properly
+     */
+    @Test
+    public void testCanvasWithThumbnail() {
+        Object document = Configuration.defaultConfiguration().jsonProvider().parse(EdmManifestData.TEST_SEQUENCE_1CANVAS_THUMB);
+        String     edmIsShownBy = EdmManifestUtils.getValueFromDataProviderAggregation(document, null, "edmIsShownBy");
+        Sequence[] sequence     = EdmManifestMappingV2.getSequencesV2(settings, mediaTypes, "/test-id", edmIsShownBy, document);
+        Assertions.assertNotNull(sequence);
+        Assertions.assertEquals(1, sequence.length); // one sequence
+
+        // test canvas part
+        Assertions.assertTrue(sequence[0].getStartCanvas().endsWith("/test-id" + "/canvas/p1"));
+        Assertions.assertNotNull(sequence[0].getCanvases());
+        Assertions.assertEquals(2, sequence[0].getCanvases().length); // with two canvasii
+
+        // only the second canvas contains the canvas thumbnail and needs checking
+        String thumbnailUrl = settings.getThumbnailApiUrl() + CANVAS_THUMBNAIL_ENCODED_URL + CANVAS_THUMBNAIL_POSTFIX;
+        ExpectedCanvasAndAnnotationPageValues ecapv = new ExpectedCanvasAndAnnotationPageValues();
+        eu.europeana.iiif.model.v3.Image[] Thumbnails = {
+            new eu.europeana.iiif.model.v3.Image(thumbnailUrl)
+        };
+        ecapv.thumbnails = Thumbnails;
+
+        Assertions.assertEquals(ecapv.thumbnails[0].getId(), sequence[0].getCanvases()[1].getThumbnail().getId());
+    }
+
     private void checkAnnotationAndBodyAndServiceValues(ExpectedAnnotationAndBodyValues[] expectedAnnotations, Annotation[] annotations) {
         Assertions.assertNotNull(annotations);
         Assertions.assertNotNull(expectedAnnotations);
@@ -498,6 +528,7 @@ public class EdmManifestV3MappingTest {
         // in these tests there can be only 1 annotationPage (because full-text availability check is done elsewhere)
         String annoPageid;
         String annoPageType;
+        Image[] thumbnails;
         ExpectedAnnotationAndBodyValues[] annoPageAnnotationAndBody;
     }
 

@@ -32,6 +32,8 @@ public class EdmManifestData {
     
     public static final String TEST_THUMBNAIL_ID = "https://www.europeana.eu/api/v2/thumbnail-by-url.json?uri=test&size=LARGE&type=IMAGE";
     public static final String TEST_THUMBNAIL = "{\"object\": {\"europeanaAggregation\" :{ \"edmPreview\":\""+TEST_THUMBNAIL_ID+"\"}}}";
+
+    public static final String TEST_CANVAS_THUMBNAIL_ID = "https://www.museumap.hu/media-provider-webapp/rest/file/preview/solr/oai-aggregated-bib9568907?mediaId=323995&size=masterview&tenant_id=Museumap&defaultImage=true";
     
     public static final String TEST_NAVDATE = "{\"object\": {\"proxies\":[{}, {\"dctermsIssued\":{\"en\":[\"NOT A REAL DATE\"]}}, {\"dctermsIssued\":{\"def\":[\"1922-03-15\"]}} ]}}";
 
@@ -62,6 +64,16 @@ public class EdmManifestData {
             "{\"def\":[\"wr3License\"]}, \"ebucoreHasMimeType\": \"image/webp\", \"svcsHasService\": [\"service3Id\"], \"ebucoreDuration\": \"98765\"  }"+
             "] } ], \"services\": [{\"about\": \"service3Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
 
+    public static final String TEST_SEQUENCE_1CANVAS_THUMB = "{\"object\": { \"proxies\":[{\"about\":\"/proxy/provider/testing\",\"proxyIn\":[\"/aggregation/provider/testing\"]}]," +
+            "\"aggregations\": [ {\"about\":\"/aggregation/provider/testing\",\"edmIsShownBy\": \"wr2Id\", " +
+            "\"hasView\": [\"" + TEST_CANVAS_THUMBNAIL_ID + "\"], " +
+            "\"webResources\": [ "+
+            "{\"about\": \"" + TEST_CANVAS_THUMBNAIL_ID + "\", " +
+            "\"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":"+
+            "{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"image/jpeg\" },"+
+            "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"htmlAttributionSnippet\": \"<span>wr2Attribution</span>\", \"webResourceEdmRights\":"+
+            "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"image/webp\", \"svcsHasService\": [\"service2Id\"], \"ebucoreDuration\": \"98765\"  }"+
+            "] } ], \"services\": [{\"about\": \"service2Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
 
     public static final String TEST_SEQUENCE_MULTIPLE_PROXY_AGG = "{ \"object\" : { \"aggregations\": [" +
             "{\"about\": \"/aggregation/provider/1/\", \"edmIsShownBy\": \"provider_edmIsShownBy\", \"hasView\": [\"wr2Id\"]," +
@@ -95,13 +107,16 @@ public class EdmManifestData {
             "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"image/jpeg\", \"svcsHasService\": [\"service2Id\"]  }"+
             "] } ], \"services\": [{\"about\": \"service1Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
 
+    public static final String CANVAS_THUMBNAIL_ENCODED_URL = "https%3A%2F%2Fwww.museumap.hu%2Fmedia-provider-webapp%2Frest%2Ffile%2Fpreview%2Fsolr%2Foai-aggregated-bib9568907%3FmediaId%3D323995%26size%3Dmasterview%26tenant_id%3DMuseumap%26defaultImage%3Dtrue";
+
+    public static final String CANVAS_THUMBNAIL_DECODED_URL = "https://www.museumap.hu/media-provider-webapp/rest/file/preview/solr/oai-aggregated-bib9568907?mediaId=323992&size=masterview&tenant_id=Museumap&defaultImage=true";
 
     public static final String TEST_RENDERING_FOR_OEMBED_MIMETYPE = "{\"object\": { \"proxies\":[{\"about\":\"/proxy/provider/testing\",\"proxyIn\":[\"/aggregation/provider/testing\"]}]," +
-        "\"aggregations\": [ {\"about\":\"/aggregation/provider/testing\",\"edmIsShownBy\": \"wr3Id\", \"hasView\": [\"wr2Id\"], \"webResources\": [ "+
-        "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":"+
-        "{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"application/json+oembed\" },"+
-        "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"htmlAttributionSnippet\": \"<span>wr2Attribution</span>\", \"webResourceEdmRights\":"+
-        "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"application/xml+oembed\" }"+
-        "] } ], \"services\": [{\"about\": \"service3Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
+            "\"aggregations\": [ {\"about\":\"/aggregation/provider/testing\",\"edmIsShownBy\": \"wr3Id\", \"hasView\": [\"wr2Id\"], \"webResources\": [ "+
+            "{\"about\": \"wr1Id\", \"textAttributionSnippet\": \"wr1Attribution\" , \"webResourceEdmRights\":"+
+            "{\"def\":[\"wr1License\"]}, \"ebucoreHasMimeType\": \"application/json+oembed\" },"+
+            "{\"about\": \"wr2Id\", \"textAttributionSnippet\": \"wr2Attribution\", \"htmlAttributionSnippet\": \"<span>wr2Attribution</span>\", \"webResourceEdmRights\":"+
+            "{\"def\":[\"wr2License\"]}, \"ebucoreHasMimeType\": \"application/xml+oembed\" }"+
+            "] } ], \"services\": [{\"about\": \"service3Id\", \"doapImplements\": [\"serviceProfile\"]}] } }";
 }
 

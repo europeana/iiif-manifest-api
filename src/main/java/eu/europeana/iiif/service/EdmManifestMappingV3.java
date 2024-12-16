@@ -11,6 +11,8 @@ import eu.europeana.iiif.model.WebResource;
 import eu.europeana.iiif.model.WebResourceSorter;
 import eu.europeana.iiif.model.v3.Collection;
 import eu.europeana.iiif.model.v3.*;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.commons.lang3.StringUtils;
@@ -445,12 +447,41 @@ public final class EdmManifestMappingV3 {
                                                                  WebResource webResource,
                                                                  Map<String, Object>[] services,
                                                                  MediaType euScreenTypeHack) {
-        Canvas c = createCanvas(settings, europeanaId, order);
-        setHeightAndWidthForCanvas(webResource, c);
-        setDurationForCanvas(webResource, c);
-        setRequiredStatementForCanvas(webResource, c);
-        setRightsForCanvas(webResource, c);
-        setThumbnailIfRequired(webResource, c);
+        eu.europeana.iiif.model.v3.Canvas c =
+                new eu.europeana.iiif.model.v3.Canvas(settings.getCanvasId(europeanaId, order), order);
+
+        c.setLabel(new LanguageMap(null, "p. "+order));
+
+        Object obj = webResource.get(EdmManifestUtils.EBUCORE_HEIGHT);
+        if (obj instanceof Integer){
+            c.setHeight((Integer) obj);
+        }
+
+        obj = webResource.get(EdmManifestUtils.EBUCORE_WIDTH);
+        if (obj instanceof Integer){
+            c.setWidth((Integer) obj);
+        }
+
+        String durationText = (String) webResource.get(EdmManifestUtils.EBUCORE_DURATION);
+        if (durationText != null) {
+            Long durationInMs = Long.valueOf(durationText);
+            c.setDuration(durationInMs / 1000D);
+        }
+
+        String attributionText = (String) webResource.get(EdmManifestUtils.HTML_ATTRIB_SNIPPET);
+        if (!StringUtils.isEmpty(attributionText)){
+            c.setRequiredStatement(createRequiredStatementMap(attributionText));
+        }
+
+        LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get("webResourceEdmRights");
+        if (license != null && !license.values().isEmpty()) {
+            c.setRights(new Rights(license.values().iterator().next().get(0)));
+        }
+
+        //EA-3325: check if the webResource has a "svcsHasService"; if not, add a thumbnail
+        if (Objects.isNull(webResource.get(EdmManifestUtils.SVCS_HAS_SERVICE))){
+            c.setThumbnail(getCanvasThumbnailImageV3(URLEncoder.encode(webResource.getId(), StandardCharsets.UTF_8)));
+        }
 
         // a canvas has 1 annotation page by default (an extra annotation page is added later if there is a full text available)
         AnnotationPage annoPage = new AnnotationPage(null); // id is not really necessary in this case
