@@ -396,7 +396,9 @@ public final class EdmManifestMappingV2 {
 
          // case 3
         if (mediaType.isRendered() && !mediaType.isVideoOrSound()) {
-            annoBody = new eu.europeana.iiif.model.v2.AnnotationBody(c.getThumbnail().getId());
+            if(c.getThumbnail()!=null) {
+                annoBody = new eu.europeana.iiif.model.v2.AnnotationBody(c.getThumbnail().getId());
+            }
             // update height and width
             setHeightWidthForRendered(c);
             // set rendering
