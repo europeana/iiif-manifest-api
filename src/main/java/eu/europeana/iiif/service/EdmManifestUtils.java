@@ -42,9 +42,6 @@ public final class EdmManifestUtils {
     public static final String EBUCORE_HAS_MIMETYPE = "ebucoreHasMimeType";
     public static final String LINGUISTIC = "zxx";
     public static final String SERVICE = "Service";
-    public static final List<String> EMBEDED_RESOURCE_MIME_TYPES = List.of("application/json+oembed","application/xml+oembed");
-
-    public static final List<String> LABELS_FOR_SPECIALIZED_MEDIATYPES = List.of("FLV","WMA","WMV","AVI","AMR","MKV","JP2000","PICT","TIFF","XCF","DjVu","PSD","TXT","PDF","RTF","EPUB","oEmbed");
 
     private EdmManifestUtils() {
         // private constructor to prevent initialization
@@ -309,8 +306,8 @@ public final class EdmManifestUtils {
      * @param thumbnailURL
      * @return String
      */
-    public static String getIdForAnnotation(String annotationID, MediaType mediaType,String thumbnailURL) {
-        if(LABELS_FOR_SPECIALIZED_MEDIATYPES.contains(mediaType.getLabel())){
+    public static String getIdForAnnotation(String annotationID, MediaType mediaType, String thumbnailURL) {
+        if (mediaType.isSpecialisedMediaType()) {
             annotationID = thumbnailURL + annotationID +
                 Optional.ofNullable(mediaType.getType()).map(String::toUpperCase).map(type -> "&type=" + type).orElse("");
         }
