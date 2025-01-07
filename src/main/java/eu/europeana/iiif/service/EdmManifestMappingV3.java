@@ -431,7 +431,6 @@ public final class EdmManifestMappingV3 {
             }
         }
         return canvases.toArray(new eu.europeana.iiif.model.v3.Canvas[0]);
-
     }
 
 
@@ -508,7 +507,9 @@ public final class EdmManifestMappingV3 {
 
     private static AnnotationBody getAnnotationBody(WebResource webResource, MediaType mediaType,
         Annotation anno, Canvas c) {
-        AnnotationBody annoBody = new AnnotationBody((String) webResource.get(EdmManifestUtils.ABOUT), mediaType.getType());
+        //EA-3745 For specialized formats, generate the image url (which is actually a thumbnail url) based on the media type
+        String idForAnnotation =EdmManifestUtils.getIdForAnnotation((String) webResource.get(EdmManifestUtils.ABOUT),mediaType,thumbnailApiUrl);
+        AnnotationBody annoBody = new AnnotationBody(idForAnnotation, mediaType.getType());
         // case 2 - browser supported
         if (mediaType.isBrowserSupported() ) {
             annoBody.setFormat(mediaType.getMimeType());
