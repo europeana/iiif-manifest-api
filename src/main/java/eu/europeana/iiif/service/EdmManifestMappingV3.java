@@ -433,7 +433,6 @@ public final class EdmManifestMappingV3 {
             }
         }
         return canvases.toArray(new eu.europeana.iiif.model.v3.Canvas[0]);
-
     }
 
 
@@ -539,7 +538,9 @@ public final class EdmManifestMappingV3 {
 
     private static AnnotationBody getAnnotationBody(WebResource webResource, MediaType mediaType,
         Annotation anno, Canvas c) {
-        AnnotationBody annoBody = new AnnotationBody((String) webResource.get(EdmManifestUtils.ABOUT), mediaType.getType());
+        //EA-3745 For specialized formats, generate the image url (which is actually a thumbnail url) based on the media type
+        String idForAnnotation = EdmManifestUtils.getIdForAnnotation((String) webResource.get(EdmManifestUtils.ABOUT),mediaType,thumbnailApiUrl);
+        AnnotationBody annoBody = new AnnotationBody(idForAnnotation, mediaType.getType());
         // case 2 - browser supported
         if (mediaType.isBrowserSupported() ) {
             annoBody.setFormat(mediaType.getMimeType());
@@ -557,10 +558,8 @@ public final class EdmManifestMappingV3 {
             }
             // update the width and height
             setHeightWidthForRendered(c);
-           //EA-3745 - use media type 'service' for oembed mimeTypes who do not have type configured in 'mediacategories.xml'
-            String mediaTypeValue=StringUtils.isEmpty(mediaType.getType()) && EdmManifestUtils.EMBEDED_RESOURCE_MIME_TYPES.contains(
-                mediaType.getMimeType()) ?
-                EdmManifestUtils.SERVICE: mediaType.getType();
+           //EA-3745 - use media type 'service' for oembed mimeTypes
+            String mediaTypeValue= mediaType.isOEmbed() ? EdmManifestUtils.SERVICE: mediaType.getType();
             // add rendering in canvas for original web resource url
             c.setRendering(new Rendering((String) webResource.get(EdmManifestUtils.ABOUT),
                     mediaTypeValue,

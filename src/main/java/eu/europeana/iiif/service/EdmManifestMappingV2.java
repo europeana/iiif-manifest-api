@@ -334,15 +334,7 @@ public final class EdmManifestMappingV2 {
 
         c.setLabel("p. "+order);
 
-        Object obj = webResource.get(EdmManifestUtils.EBUCORE_HEIGHT);
-        if (obj instanceof Integer){
-            c.setHeight((Integer) obj);
-        }
-
-        obj = webResource.get(EdmManifestUtils.EBUCORE_WIDTH);
-        if (obj instanceof Integer){
-            c.setWidth((Integer) obj);
-        }
+        setCanvasHeightAndWidth(webResource, c);
 
         String attributionText = (String) webResource.get(EdmManifestUtils.TEXT_ATTRIB_SNIPPET);
         if (!StringUtils.isEmpty(attributionText)){
@@ -385,7 +377,9 @@ public final class EdmManifestMappingV2 {
         }
 
         // Now create the annotation body based on the media type (annotation has 1 annotationBody)
-        eu.europeana.iiif.model.v2.AnnotationBody annoBody = new eu.europeana.iiif.model.v2.AnnotationBody((String) webResource.get(EdmManifestUtils.ABOUT));
+        //EA-3745 For specialized formats, generate the image url (which is actually a thumbnail url) based on the media type
+        String idForAnnotation = EdmManifestUtils.getIdForAnnotation((String) webResource.get(EdmManifestUtils.ABOUT), mediaType,THUMBNAIL_API_URL);
+        eu.europeana.iiif.model.v2.AnnotationBody annoBody = new eu.europeana.iiif.model.v2.AnnotationBody(idForAnnotation);
 
         // EA- 3436 add technical metadata for case 2 and 3
         // case 2
@@ -415,6 +409,18 @@ public final class EdmManifestMappingV2 {
         }
         c.getImages()[0].setResource(annoBody);
         return c;
+    }
+
+    private static void setCanvasHeightAndWidth(WebResource webResource, Canvas c) {
+        Object obj = webResource.get(EdmManifestUtils.EBUCORE_HEIGHT);
+        if (obj instanceof Integer){
+            c.setHeight((Integer) obj);
+        }
+
+        obj = webResource.get(EdmManifestUtils.EBUCORE_WIDTH);
+        if (obj instanceof Integer){
+            c.setWidth((Integer) obj);
+        }
     }
 
     /**
