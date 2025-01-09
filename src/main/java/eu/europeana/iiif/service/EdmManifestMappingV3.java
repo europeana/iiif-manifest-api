@@ -524,8 +524,11 @@ public final class EdmManifestMappingV3 {
         AnnotationBody annoBody = getAnnotationBody(webResource, mediaType, anno,c);
         // annotation has 1 annotationBody
         anno.setBody(annoBody);
-        // body can have a service
-        setServiceIdForAnnotation(europeanaId, webResource, services, annoBody);
+        // body can have a service.
+        // EA-3475 Do not add service for specialized formats
+        if(!mediaType.isRendered()) {
+            setServiceIdForAnnotation(europeanaId, webResource, services, annoBody);
+        }
         return c;
     }
 
@@ -538,9 +541,7 @@ public final class EdmManifestMappingV3 {
 
     private static AnnotationBody getAnnotationBody(WebResource webResource, MediaType mediaType,
         Annotation anno, Canvas c) {
-        //EA-3745 For specialized formats, generate the image url (which is actually a thumbnail url) based on the media type
-        String idForAnnotation = EdmManifestUtils.getIdForAnnotation((String) webResource.get(EdmManifestUtils.ABOUT),mediaType,thumbnailApiUrl);
-        AnnotationBody annoBody = new AnnotationBody(idForAnnotation, mediaType.getType());
+        AnnotationBody annoBody = new AnnotationBody((String) webResource.get(EdmManifestUtils.ABOUT), mediaType.getType());
         // case 2 - browser supported
         if (mediaType.isBrowserSupported() ) {
             annoBody.setFormat(mediaType.getMimeType());
@@ -552,9 +553,12 @@ public final class EdmManifestMappingV3 {
         }
         // case 3 - rendered - No time mode added as we paint an image here
         if(mediaType.isRendered()) {
+            //EA-3745 rendered ones are specialized formats.Generate the image url (which is actually a thumbnail url) based on the media type
+            String idForAnnotation = EdmManifestUtils.getIdForAnnotation((String) webResource.get(EdmManifestUtils.ABOUT),mediaType,thumbnailApiUrl);
+            annoBody = new AnnotationBody(idForAnnotation, EdmManifestUtils.IMAGE);
             // Use the URL of the thumbnail for the respective WebResource as id of the Annotation Body
             if(c.getThumbnail()!=null && c.getThumbnail().length>0) {
-                annoBody = new AnnotationBody(c.getThumbnail()[0].getId(), "Image");
+                annoBody = new AnnotationBody(c.getThumbnail()[0].getId(), EdmManifestUtils.IMAGE);
             }
             // update the width and height
             setHeightWidthForRendered(c);
@@ -643,7 +647,9 @@ public final class EdmManifestMappingV3 {
     private static void addTechnicalMetadata(Canvas canvas, AnnotationBody body) {
         body.setHeight(canvas.getHeight());
         body.setWidth(canvas.getWidth());
-        body.setDuration(canvas.getDuration());
+        if(!EdmManifestUtils.IMAGE.equals(body.getType().orElse(null))) {
+            body.setDuration(canvas.getDuration());
+        }
     }
 
     /**

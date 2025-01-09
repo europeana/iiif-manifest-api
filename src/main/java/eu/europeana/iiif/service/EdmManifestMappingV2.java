@@ -377,9 +377,7 @@ public final class EdmManifestMappingV2 {
         }
 
         // Now create the annotation body based on the media type (annotation has 1 annotationBody)
-        //EA-3745 For specialized formats, generate the image url (which is actually a thumbnail url) based on the media type
-        String idForAnnotation = EdmManifestUtils.getIdForAnnotation((String) webResource.get(EdmManifestUtils.ABOUT), mediaType,THUMBNAIL_API_URL);
-        eu.europeana.iiif.model.v2.AnnotationBody annoBody = new eu.europeana.iiif.model.v2.AnnotationBody(idForAnnotation);
+        eu.europeana.iiif.model.v2.AnnotationBody annoBody = new eu.europeana.iiif.model.v2.AnnotationBody((String) webResource.get(EdmManifestUtils.ABOUT));
 
         // EA- 3436 add technical metadata for case 2 and 3
         // case 2
@@ -389,7 +387,10 @@ public final class EdmManifestMappingV2 {
          }
 
          // case 3
-        if (mediaType.isRendered() && !mediaType.isVideoOrSound()) {
+        if (mediaType.isRendered()) {
+            //EA-3745 For specialized formats, generate the image url (which is actually a thumbnail url) based on the media type
+            annoBody = new eu.europeana.iiif.model.v2.AnnotationBody(EdmManifestUtils.getIdForAnnotation(
+                (String) webResource.get(EdmManifestUtils.ABOUT), mediaType,THUMBNAIL_API_URL));
             if(c.getThumbnail()!=null) {
                 annoBody = new eu.europeana.iiif.model.v2.AnnotationBody(c.getThumbnail().getId());
             }
@@ -400,15 +401,23 @@ public final class EdmManifestMappingV2 {
             addTechnicalMetadata(c, annoBody);
         }
 
-        // body can have a service
-        String serviceId = EdmManifestUtils.getServiceId(webResource, europeanaId);
-        if (serviceId != null) {
-            eu.europeana.iiif.model.v2.Service service = new eu.europeana.iiif.model.v2.Service(serviceId, ManifestDefinitions.IMAGE_CONTEXT_VALUE);
-            service.setProfile(EdmManifestUtils.lookupServiceDoapImplements(services, serviceId, europeanaId));
-            annoBody.setService(service);
+        // body can have a service. EA-3475 Do not add service for specialized formats
+        if(!mediaType.isRendered()) {
+            setServiceForAnnotation(europeanaId, webResource, services, annoBody);
         }
         c.getImages()[0].setResource(annoBody);
         return c;
+    }
+
+    private static void setServiceForAnnotation(String europeanaId, WebResource webResource,
+        Map<String, Object>[] services, AnnotationBody annoBody) {
+        String serviceId = EdmManifestUtils.getServiceId(webResource, europeanaId);
+        if (serviceId != null) {
+            Service service = new Service(serviceId, ManifestDefinitions.IMAGE_CONTEXT_VALUE);
+            service.setProfile(EdmManifestUtils.lookupServiceDoapImplements(services, serviceId,
+                europeanaId));
+            annoBody.setService(service);
+        }
     }
 
     private static void setCanvasHeightAndWidth(WebResource webResource, Canvas c) {
@@ -425,14 +434,14 @@ public final class EdmManifestMappingV2 {
 
     /**
      * If media type is present and
-     * is either browser or rendered supported but has type video or sound
+     * is either browser but has type video or sound
      * return true
      *
      * @param mediaType
      * @return
      */
     private static boolean ifSupportedMediaTypeIsVideoOrSound(MediaType mediaType) {
-        return mediaType != null && ((mediaType.isRendered() || mediaType.isBrowserSupported()) && mediaType.isVideoOrSound());
+        return mediaType != null && (mediaType.isBrowserSupported() && mediaType.isVideoOrSound());
     }
 
     /**
