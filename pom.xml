@@ -38,11 +38,11 @@
         <sonar.organization>europeana</sonar.organization>
 
         <fulltext-common.version>0.9.7</fulltext-common.version>
-        <apicommons.version>0.3.20</apicommons.version>
+        <apicommons.version>0.4.3-SNAPSHOT</apicommons.version>
         <!-- 3rd party -->
         <spring-boot.version>2.7.11</spring-boot.version>
         <springdoc.version>1.8.0</springdoc.version>
-        <jackson-core.version>2.14.1</jackson-core.version>
+        <jackson-core.version>2.18.2</jackson-core.version>
         <jsonpath.version>2.9.0</jsonpath.version>
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
         <http-client.version>4.5.13</http-client.version>
@@ -90,6 +90,10 @@
                     <artifactId>logback-classic</artifactId>
                     <groupId>ch.qos.logback</groupId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                    <artifactId>jackson-datatype-jsr310</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -99,6 +103,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                    <artifactId>jackson-datatype-jsr310</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -145,9 +155,23 @@
             </exclusions>
         </dependency>
 
+        <!-- Error module, EuropeanaGlobalExceptionHandler is present in web module now -->
         <dependency>
             <groupId>eu.europeana.api.commons</groupId>
             <artifactId>commons-error</artifactId>
+            <version>${apicommons.version}</version>
+            <exclusions>
+                <!-- exclude all other dependencies coming in from commons-error -->
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>eu.europeana.api.commons</groupId>
+            <artifactId>commons-web</artifactId>
             <version>${apicommons.version}</version>
             <exclusions>
                 <!-- exclude all other dependencies coming in from commons-error -->
@@ -169,13 +193,6 @@
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-crypto</artifactId>
             <version>${spring-security-crypto.version}</version>
-        </dependency>
-
-        <!-- for serializing -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>${jackson-core.version}</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.io-informatics.oss/jackson-jsonld -->
@@ -200,7 +217,27 @@
             </exclusions>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-xml -->
+        <!-- for serializing -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson-core.version}</version>
+        </dependency>
+
+        <!-- To resolve NoSuchMethodError due to clashes in versions included transitively , adding them separately-->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson-core.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson-core.version}</version>
+        </dependency>
+
+        <!-- for media Types xml configuration  -->
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-xml</artifactId>
