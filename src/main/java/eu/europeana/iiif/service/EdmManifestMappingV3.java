@@ -451,31 +451,10 @@ public final class EdmManifestMappingV3 {
 
         c.setLabel(new LanguageMap(null, "p. "+order));
 
-        Object obj = webResource.get(EdmManifestUtils.EBUCORE_HEIGHT);
-        if (obj instanceof Integer){
-            c.setHeight((Integer) obj);
-        }
-
-        obj = webResource.get(EdmManifestUtils.EBUCORE_WIDTH);
-        if (obj instanceof Integer){
-            c.setWidth((Integer) obj);
-        }
-
-        String durationText = (String) webResource.get(EdmManifestUtils.EBUCORE_DURATION);
-        if (durationText != null) {
-            Long durationInMs = Long.valueOf(durationText);
-            c.setDuration(durationInMs / 1000D);
-        }
-
-        String attributionText = (String) webResource.get(EdmManifestUtils.HTML_ATTRIB_SNIPPET);
-        if (!StringUtils.isEmpty(attributionText)){
-            c.setRequiredStatement(createRequiredStatementMap(attributionText));
-        }
-
-        LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get("webResourceEdmRights");
-        if (license != null && !license.values().isEmpty()) {
-            c.setRights(new Rights(license.values().iterator().next().get(0)));
-        }
+        setHeightAndWidthForCanvas(webResource, c);
+        setDurationForCanvas(webResource, c);
+        setRequiredStatementForCanvas(webResource, c);
+        setRightsForCanvas(webResource, c);
 
         //EA-3325: check if the webResource has a "svcsHasService"; if not, add a thumbnail
         if (Objects.isNull(webResource.get(EdmManifestUtils.SVCS_HAS_SERVICE))){
@@ -552,12 +531,12 @@ public final class EdmManifestMappingV3 {
             addTechnicalMetadata(c, annoBody);
         }
         // case 3 - rendered - No time mode added as we paint an image here
-        if(mediaType.isRendered()) {
+        if (mediaType.isRendered()) {
             //EA-3745 rendered ones are specialized formats.Generate the image url (which is actually a thumbnail url) based on the media type
             String idForAnnotation = EdmManifestUtils.getIdForAnnotation((String) webResource.get(EdmManifestUtils.ABOUT),mediaType,thumbnailApiUrl);
             annoBody = new AnnotationBody(idForAnnotation, EdmManifestUtils.IMAGE);
             // Use the URL of the thumbnail for the respective WebResource as id of the Annotation Body
-            if(c.getThumbnail()!=null && c.getThumbnail().length>0) {
+            if (c.getThumbnail() != null && c.getThumbnail().length > 0) {
                 annoBody = new AnnotationBody(c.getThumbnail()[0].getId(), EdmManifestUtils.IMAGE);
             }
             // update the width and height
@@ -585,13 +564,6 @@ public final class EdmManifestMappingV3 {
         }
     }
 
-    private static void setThumbnailIfRequired(WebResource webResource, Canvas c) {
-        //EA-3325: check if the webResource has a "svcsHasService"; if not, add a thumbnail
-        if (Objects.isNull(webResource.get(EdmManifestUtils.SVCS_HAS_SERVICE))){
-            c.setThumbnail(getCanvasThumbnailImageV3(webResource.getId()));
-        }
-    }
-
     private static void setRightsForCanvas(WebResource webResource, Canvas c) {
         LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get("webResourceEdmRights");
         if (license != null && !license.values().isEmpty()) {
@@ -616,12 +588,13 @@ public final class EdmManifestMappingV3 {
 
     private static void setHeightAndWidthForCanvas(WebResource webResource, Canvas c) {
         Object obj = webResource.get(EdmManifestUtils.EBUCORE_HEIGHT);
-        if (obj instanceof Integer val){
-            c.setHeight(val);
+        if (obj instanceof Integer){
+            c.setHeight((Integer) obj);
         }
+
         obj = webResource.get(EdmManifestUtils.EBUCORE_WIDTH);
-        if (obj instanceof Integer val){
-            c.setWidth(val);
+        if (obj instanceof Integer){
+            c.setWidth((Integer) obj);
         }
     }
 

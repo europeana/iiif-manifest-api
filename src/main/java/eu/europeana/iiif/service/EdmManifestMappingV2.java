@@ -386,12 +386,13 @@ public final class EdmManifestMappingV2 {
              addTechnicalMetadata(c, annoBody);
          }
 
-         // case 3
+         // case 3 - Now we are generating canvas for video/sound in v2
         if (mediaType.isRendered()) {
             //EA-3745 For specialized formats, generate the image url (which is actually a thumbnail url) based on the media type
-            annoBody = new eu.europeana.iiif.model.v2.AnnotationBody(EdmManifestUtils.getIdForAnnotation(
-                (String) webResource.get(EdmManifestUtils.ABOUT), mediaType,THUMBNAIL_API_URL));
-            if(c.getThumbnail()!=null) {
+            annoBody = new eu.europeana.iiif.model.v2.AnnotationBody(
+                    EdmManifestUtils.getIdForAnnotation((String) webResource.get(EdmManifestUtils.ABOUT), mediaType,THUMBNAIL_API_URL));
+
+            if (c.getThumbnail() != null) {
                 annoBody = new eu.europeana.iiif.model.v2.AnnotationBody(c.getThumbnail().getId());
             }
             // update height and width
