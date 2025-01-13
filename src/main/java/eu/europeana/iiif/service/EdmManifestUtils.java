@@ -43,6 +43,8 @@ public final class EdmManifestUtils {
     public static final String LINGUISTIC = "zxx";
     public static final String SERVICE = "Service";
 
+    public static final String IMAGE = "Image";
+
     private EdmManifestUtils() {
         // private constructor to prevent initialization
     }
@@ -300,17 +302,16 @@ public final class EdmManifestUtils {
     }
 
     /**EA-3745  Generate ID for annotation based on associated webResource.
-     * For specialized formats the thumbnail URL is used as id.
+     * For specialized formats i.e. the ones which are rendered the thumbnail URL is used as id.
      * @param annotationID
      * @param mediaType
      * @param thumbnailURL
      * @return String
      */
     public static String getIdForAnnotation(String annotationID, MediaType mediaType, String thumbnailURL) {
-        if (mediaType.isSpecialisedMediaType()) {
-            annotationID = thumbnailURL + annotationID +
-                Optional.ofNullable(mediaType.getType()).map(String::toUpperCase).map(type -> "&type=" + type).orElse("");
-        }
-        return annotationID;
+        return thumbnailURL + annotationID +
+            Optional.ofNullable(mediaType.getType()).map(String::toUpperCase)
+                .map(type -> "&type=" + type).orElse("");
+
     }
 }

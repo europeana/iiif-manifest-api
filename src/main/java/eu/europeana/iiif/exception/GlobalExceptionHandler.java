@@ -1,6 +1,6 @@
 package eu.europeana.iiif.exception;
 
-import eu.europeana.api.commons.error.EuropeanaGlobalExceptionHandler;
+import eu.europeana.api.commons.web.exception.EuropeanaGlobalExceptionHandler;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 
 /**

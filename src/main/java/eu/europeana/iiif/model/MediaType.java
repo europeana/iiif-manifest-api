@@ -20,8 +20,6 @@ public class MediaType {
     public static final String  VIDEO    = "Video";
     public static final String  SOUND    = "Sound";
 
-    private static final List<String> LABELS_FOR_SPECIALIZED_MEDIATYPES = List.of("FLV","WMA","WMV","AVI","AMR","MKV","JP2000","PICT","TIFF","XCF","DjVu","PSD","TXT","PDF","RTF","EPUB","oEmbed");
-
     @JacksonXmlProperty(localName =  "mediaType", isAttribute = true)
     private String mimeType;
 
@@ -68,10 +66,6 @@ public class MediaType {
 
     public boolean isOEmbed() {
         return O_EMBED.equals(getLabel());
-    }
-
-    public boolean isSpecialisedMediaType() {
-        return LABELS_FOR_SPECIALIZED_MEDIATYPES.contains(getLabel());
     }
 }
 
