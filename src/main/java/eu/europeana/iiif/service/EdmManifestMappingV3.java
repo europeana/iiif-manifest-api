@@ -433,7 +433,6 @@ public final class EdmManifestMappingV3 {
             }
         }
         return canvases.toArray(new eu.europeana.iiif.model.v3.Canvas[0]);
-
     }
 
 
@@ -452,31 +451,10 @@ public final class EdmManifestMappingV3 {
 
         c.setLabel(new LanguageMap(null, "p. "+order));
 
-        Object obj = webResource.get(EdmManifestUtils.EBUCORE_HEIGHT);
-        if (obj instanceof Integer){
-            c.setHeight((Integer) obj);
-        }
-
-        obj = webResource.get(EdmManifestUtils.EBUCORE_WIDTH);
-        if (obj instanceof Integer){
-            c.setWidth((Integer) obj);
-        }
-
-        String durationText = (String) webResource.get(EdmManifestUtils.EBUCORE_DURATION);
-        if (durationText != null) {
-            Long durationInMs = Long.valueOf(durationText);
-            c.setDuration(durationInMs / 1000D);
-        }
-
-        String attributionText = (String) webResource.get(EdmManifestUtils.HTML_ATTRIB_SNIPPET);
-        if (!StringUtils.isEmpty(attributionText)){
-            c.setRequiredStatement(createRequiredStatementMap(attributionText));
-        }
-
-        LinkedHashMap<String, ArrayList<String>> license = (LinkedHashMap<String, ArrayList<String>>) webResource.get("webResourceEdmRights");
-        if (license != null && !license.values().isEmpty()) {
-            c.setRights(new Rights(license.values().iterator().next().get(0)));
-        }
+        setHeightAndWidthForCanvas(webResource, c);
+        setDurationForCanvas(webResource, c);
+        setRequiredStatementForCanvas(webResource, c);
+        setRightsForCanvas(webResource, c);
 
         //EA-3325: check if the webResource has a "svcsHasService"; if not, add a thumbnail
         if (Objects.isNull(webResource.get(EdmManifestUtils.SVCS_HAS_SERVICE))){
@@ -525,8 +503,11 @@ public final class EdmManifestMappingV3 {
         AnnotationBody annoBody = getAnnotationBody(webResource, mediaType, anno,c);
         // annotation has 1 annotationBody
         anno.setBody(annoBody);
-        // body can have a service
-        setServiceIdForAnnotation(europeanaId, webResource, services, annoBody);
+        // body can have a service.
+        // EA-3475 Do not add service for specialized formats
+        if(!mediaType.isRendered()) {
+            setServiceIdForAnnotation(europeanaId, webResource, services, annoBody);
+        }
         return c;
     }
 
@@ -550,17 +531,18 @@ public final class EdmManifestMappingV3 {
             addTechnicalMetadata(c, annoBody);
         }
         // case 3 - rendered - No time mode added as we paint an image here
-        if(mediaType.isRendered()) {
+        if (mediaType.isRendered()) {
+            //EA-3745 rendered ones are specialized formats.Generate the image url (which is actually a thumbnail url) based on the media type
+            String idForAnnotation = EdmManifestUtils.getIdForAnnotation((String) webResource.get(EdmManifestUtils.ABOUT),mediaType,thumbnailApiUrl);
+            annoBody = new AnnotationBody(idForAnnotation, EdmManifestUtils.IMAGE);
             // Use the URL of the thumbnail for the respective WebResource as id of the Annotation Body
-            if(c.getThumbnail()!=null && c.getThumbnail().length>0) {
-                annoBody = new AnnotationBody(c.getThumbnail()[0].getId(), "Image");
+            if (c.getThumbnail() != null && c.getThumbnail().length > 0) {
+                annoBody = new AnnotationBody(c.getThumbnail()[0].getId(), EdmManifestUtils.IMAGE);
             }
             // update the width and height
             setHeightWidthForRendered(c);
-           //EA-3745 - use media type 'service' for oembed mimeTypes who do not have type configured in 'mediacategories.xml'
-            String mediaTypeValue=StringUtils.isEmpty(mediaType.getType()) && EdmManifestUtils.EMBEDED_RESOURCE_MIME_TYPES.contains(
-                mediaType.getMimeType()) ?
-                EdmManifestUtils.SERVICE: mediaType.getType();
+           //EA-3745 - use media type 'service' for oembed mimeTypes
+            String mediaTypeValue= mediaType.isOEmbed() ? EdmManifestUtils.SERVICE: mediaType.getType();
             // add rendering in canvas for original web resource url
             c.setRendering(new Rendering((String) webResource.get(EdmManifestUtils.ABOUT),
                     mediaTypeValue,
@@ -579,13 +561,6 @@ public final class EdmManifestMappingV3 {
             service.setProfile(EdmManifestUtils.lookupServiceDoapImplements(services, serviceId,
                 europeanaId));
             annoBody.setService(service);
-        }
-    }
-
-    private static void setThumbnailIfRequired(WebResource webResource, Canvas c) {
-        //EA-3325: check if the webResource has a "svcsHasService"; if not, add a thumbnail
-        if (Objects.isNull(webResource.get(EdmManifestUtils.SVCS_HAS_SERVICE))){
-            c.setThumbnail(getCanvasThumbnailImageV3(webResource.getId()));
         }
     }
 
@@ -613,12 +588,13 @@ public final class EdmManifestMappingV3 {
 
     private static void setHeightAndWidthForCanvas(WebResource webResource, Canvas c) {
         Object obj = webResource.get(EdmManifestUtils.EBUCORE_HEIGHT);
-        if (obj instanceof Integer val){
-            c.setHeight(val);
+        if (obj instanceof Integer){
+            c.setHeight((Integer) obj);
         }
+
         obj = webResource.get(EdmManifestUtils.EBUCORE_WIDTH);
-        if (obj instanceof Integer val){
-            c.setWidth(val);
+        if (obj instanceof Integer){
+            c.setWidth((Integer) obj);
         }
     }
 
@@ -644,7 +620,9 @@ public final class EdmManifestMappingV3 {
     private static void addTechnicalMetadata(Canvas canvas, AnnotationBody body) {
         body.setHeight(canvas.getHeight());
         body.setWidth(canvas.getWidth());
-        body.setDuration(canvas.getDuration());
+        if(!EdmManifestUtils.IMAGE.equals(body.getType().orElse(null))) {
+            body.setDuration(canvas.getDuration());
+        }
     }
 
     /**

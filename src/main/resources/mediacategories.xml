@@ -37,6 +37,6 @@
         <format mediaType="application/epub+zip"         label="EPUB"        type="Text"       support="Rendered"/>
         <format                                                              type="Video"      support="EUScreen"/>
         <format                                                              type="Sound"      support="EUScreen"/>
-        <format mediaType="application/json+oembed"      label="oEmbed"                        support="Rendered"/>
-        <format mediaType="application/xml+oembed"       label="oEmbed"                        support="Rendered"/>
+        <format mediaType="application/json+oembed"      label="oEmbed"      type="Video"      support="Rendered"/>
+        <format mediaType="application/xml+oembed"       label="oEmbed"      type="Video"      support="Rendered"/>
 </config>
