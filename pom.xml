@@ -37,8 +37,8 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <sonar.organization>europeana</sonar.organization>
 
-        <fulltext-common.version>0.9.7</fulltext-common.version>
-        <apicommons.version>0.4.3-SNAPSHOT</apicommons.version>
+        <fulltext-common.version>0.9.8</fulltext-common.version>
+        <apicommons.version>0.4.2</apicommons.version>
         <!-- 3rd party -->
         <spring-boot.version>2.7.11</spring-boot.version>
         <springdoc.version>1.8.0</springdoc.version>
