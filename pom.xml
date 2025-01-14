@@ -55,7 +55,7 @@
 
         <dependency-check-maven.version>10.0.4</dependency-check-maven.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
-        <spring-security.version>6.3.3</spring-security.version>
+        <spring-security.version>6.3.5</spring-security.version>
         <spring-security-crypto.version>6.3.3</spring-security-crypto.version>
 
     </properties>
